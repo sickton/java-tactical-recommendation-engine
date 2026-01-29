@@ -1,14 +1,14 @@
 package com.sickton.jgaffer.domain;
 
-import java.util.List;
+import java.util.*;
 
 public class Team {
     private final String name;
     private final Squad squad;
-    private final List<Player> playingXI;
+    private final Set<Player> playingXI;
     private final Formation form;
 
-    public Team(Squad s, List<Player> playingXI, Formation form) {
+    public Team(Squad s, Set<Player> playingXI, Formation form) {
         this.squad = s;
         this.name = s.getTeam();
         this.playingXI = playingXI;
@@ -23,7 +23,7 @@ public class Team {
         return squad;
     }
 
-    public List<Player> getPlayingXI() {
+    public Set<Player> getPlayingXI() {
         return playingXI;
     }
 

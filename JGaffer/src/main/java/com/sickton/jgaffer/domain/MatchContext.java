@@ -4,22 +4,22 @@ public class MatchContext {
     private final String title;
     private final Team home;
     private final Team away;
-    private final int h_goals;
-    private final int a_goals;
+    private final int homeGoals;
+    private final int awayGoals;
     private final int minute;
-    private final double h_pos;
-    private final double a_pos;
+    private final double homePossession;
+    private final double awayPossession;
 
     public MatchContext(String t, Team h, Team a, int hg, int ag, int m, double hp, double ap)
     {
         this.title = t;
         this.home = h;
         this.away = a;
-        this.h_goals = hg;
-        this.a_goals = ag;
+        this.homeGoals = hg;
+        this.awayGoals = ag;
         this.minute = m;
-        this.h_pos = hp;
-        this.a_pos = ap;
+        this.homePossession = hp;
+        this.awayPossession = ap;
     }
 
     public String getTitle() {
@@ -33,23 +33,23 @@ public class MatchContext {
         return away;
     }
 
-    public int getH_goals() {
-        return h_goals;
+    public int getHomeGoals() {
+        return homeGoals;
     }
 
-    public int getA_goals() {
-        return a_goals;
+    public int getAwayGoals() {
+        return awayGoals;
     }
 
     public int getMinute() {
         return minute;
     }
 
-    public double getH_pos() {
-        return h_pos;
+    public double getHomePossession() {
+        return homePossession;
     }
 
-    public double getA_pos() {
-        return a_pos;
+    public double getAwayPossession() {
+        return awayPossession;
     }
 }
