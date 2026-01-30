@@ -1,5 +1,7 @@
 package com.sickton.jgaffer.domain;
 
+import com.sickton.jgaffer.exceptions.*;
+
 public class Player {
     private final String name;
     private final Position pos;
@@ -8,6 +10,8 @@ public class Player {
     public Player(String name, Position p, int as) {
         this.name = name;
         this.pos = p;
+        if(as > 5 || as < 0)
+                throw new PlayerException("Player has invalid adaptability score");
         this.adaptabilityScore = as;
     }
 
