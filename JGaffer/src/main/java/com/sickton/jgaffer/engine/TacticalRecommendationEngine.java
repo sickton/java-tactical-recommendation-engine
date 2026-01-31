@@ -9,7 +9,7 @@ import com.sickton.jgaffer.rules.early_minutes.EarlyTeamWinning;
 import com.sickton.jgaffer.rules.late_minutes.LateTeamDrawing;
 import com.sickton.jgaffer.rules.late_minutes.LateTeamLosing;
 import com.sickton.jgaffer.rules.late_minutes.LateTeamWinning;
-import com.sickton.jgaffer.rules.middle_minutes.MiddleMinutesLosing;
+import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamLosing;
 import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamDrawing;
 import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamWinning;
 import com.sickton.jgaffer.rules.other_factors.RedCardRules;
@@ -36,7 +36,7 @@ public class TacticalRecommendationEngine {
         lateRules.add(new LateTeamWinning());
         lateRules.add(new LateTeamDrawing());
         middleRules.add(new MiddleTeamWinning());
-        middleRules.add(new MiddleMinutesLosing());
+        middleRules.add(new MiddleTeamLosing());
         middleRules.add(new MiddleTeamDrawing());
         earlyRules.add(new EarlyTeamLosing());
         earlyRules.add(new EarlyTeamDrawing());
