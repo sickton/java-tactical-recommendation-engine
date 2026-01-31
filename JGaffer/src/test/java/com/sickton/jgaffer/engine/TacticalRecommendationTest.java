@@ -103,11 +103,16 @@ public class TacticalRecommendationTest {
     @Test
     public void testTacticReturned() {
         MatchContext m = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 0, 77, 45.0, 55.0);
-//        MatchContext mOne = new MatchContext("LIV-CITY", homeTeam, awayTeam, 1, 0, 55, 56.0, 44.0);
-//        MatchContext mTwo = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 2, 82, 39.0, 61.0);
+        MatchContext mOne = new MatchContext("LIV-CITY", homeTeam, awayTeam, 1, 0, 55, 56.0, 44.0);
+        MatchContext mTwo = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 2, 82, 39.0, 61.0);
 
         TacticalRecommendationEngine engine = new TacticalRecommendationEngine();
 
         assertEquals(Tactic.MID_BLOCK, engine.recommend(m, homeTeam));
+        assertEquals(Tactic.POSSESSION, engine.recommend(m, awayTeam));
+        assertEquals(Tactic.POSSESSION, engine.recommend(mOne, homeTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(mOne, awayTeam));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommend(mTwo, homeTeam));
+        assertEquals(Tactic.POSSESSION, engine.recommend(mTwo, awayTeam));
     }
 }
