@@ -3,7 +3,7 @@ package com.sickton.jgaffer.rules.middle_minutes;
 import com.sickton.jgaffer.domain.*;
 import com.sickton.jgaffer.rules.TacticalRule;
 
-public class MiddleMinutesLosing extends TacticalRule {
+public class MiddleTeamLosing extends TacticalRule {
     @Override
     public boolean applies(MatchContext context, Team team) {
         return !redCards(team) && !isFinalMinutesOfGame(context) && !isEarlyMinutesOfGame(context)
