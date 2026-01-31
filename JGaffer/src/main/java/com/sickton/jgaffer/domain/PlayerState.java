@@ -4,12 +4,14 @@ public class PlayerState {
     private final Player player;
     private final InjuryStatus injury;
     private final StaminaLevel stamina;
+    private final boolean redCarded;
 
-    public PlayerState(Player player, InjuryStatus i, StaminaLevel s)
+    public PlayerState(Player player, InjuryStatus i, StaminaLevel s, boolean redCarded)
     {
         this.player = player;
         this.injury = i;
         this.stamina = s;
+        this.redCarded = redCarded;
     }
 
     public Player getPlayer()
@@ -25,5 +27,10 @@ public class PlayerState {
     public StaminaLevel getStamina()
     {
         return this.stamina;
+    }
+
+    public boolean isRedCarded()
+    {
+        return this.redCarded;
     }
 }

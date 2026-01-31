@@ -7,7 +7,7 @@ public class LateTeamDrawing extends TacticalRule {
 
     @Override
     public boolean applies(MatchContext context, Team team) {
-        return isFinalMinutesOfGame(context) && (teamStatus(context, team) == MatchStatus.DRAWING);
+        return !redCards(team) && isFinalMinutesOfGame(context) && (teamStatus(context, team) == MatchStatus.DRAWING);
     }
 
     @Override

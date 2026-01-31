@@ -7,6 +7,12 @@ import java.util.*;
 
 public abstract class TacticalRule {
 
+    protected static final int LATE_MINUTES = 70;
+    protected static final int EARLY_MINUTES = 20;
+    protected static final double LOW_THRESHOLD = 1.66;
+    protected static final double MEDIUM_THRESHOLD = 3.33;
+    protected static final double HIGH_THRESHOLD = 5.0;
+
     public abstract boolean applies(MatchContext context, Team team);
 
     public abstract Tactic recommend(MatchContext context, Team team);
@@ -16,31 +22,35 @@ public abstract class TacticalRule {
         Map<Player, PlayerState> playingXI = t.getPlayingXI();
         Set<Player> players = playingXI.keySet();
         int totalAdapt = 0;
+        int totalPlayers = 0;
         for(Player p : players)
         {
-            if(p.getPos() == Position.GK)
-                continue;
-            else
+            if(p.getPos() != Position.GK)
+            {
                 totalAdapt += p.getAdaptabilityScore();
+                totalPlayers++;
+            }
         }
-        double teamAvg = totalAdapt / 10.0;
-        if(teamAvg <= 1.66)
+        if(totalPlayers > 11 || totalPlayers == 0)
+            throw new MatchTeamException("Invalid number of players in team");
+        double teamAvg = totalAdapt / (double)totalPlayers;
+        if(teamAvg <= LOW_THRESHOLD)
             return TeamAdaptability.LOW;
-        else if(teamAvg > 1.66 && teamAvg <= 3.33)
+        else if(teamAvg > LOW_THRESHOLD && teamAvg <= MEDIUM_THRESHOLD)
             return TeamAdaptability.MEDIUM;
-        else if(teamAvg > 3.33 && teamAvg <= 5.0)
+        else if(teamAvg > MEDIUM_THRESHOLD && teamAvg <= HIGH_THRESHOLD)
             return TeamAdaptability.HIGH;
         return TeamAdaptability.LOW;
     }
 
     protected boolean isFinalMinutesOfGame(MatchContext context)
     {
-        return context.getMinute() >= 70;
+        return context.getMinute() >= LATE_MINUTES;
     }
 
     protected boolean isEarlyMinutesOfGame(MatchContext context)
     {
-        return context.getMinute() <= 20;
+        return context.getMinute() <= EARLY_MINUTES;
     }
 
     protected boolean hasHomeAdvantage(MatchContext context, Team team)
@@ -78,5 +88,14 @@ public abstract class TacticalRule {
         }
         else
             throw new MatchTeamException("Team entered does not play the match");
+    }
+
+    protected boolean redCards(Team team) {
+        Map<Player, PlayerState> playing = team.getPlayingXI();
+        for(PlayerState p : playing.values()) {
+            if(p.isRedCarded())
+                return true;
+        }
+        return false;
     }
 }

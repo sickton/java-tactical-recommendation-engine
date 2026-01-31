@@ -6,7 +6,7 @@ import com.sickton.jgaffer.rules.TacticalRule;
 public class EarlyTeamLosing extends TacticalRule {
     @Override
     public boolean applies(MatchContext context, Team team) {
-        return isEarlyMinutesOfGame(context) && (teamStatus(context, team) == MatchStatus.LOSING);
+        return !redCards(team) && isEarlyMinutesOfGame(context) && (teamStatus(context, team) == MatchStatus.LOSING);
     }
 
     @Override
@@ -16,7 +16,7 @@ public class EarlyTeamLosing extends TacticalRule {
         TeamAdaptability adaptability = findTeamAdaptability(team);
 
         if (gd <= -2 && adaptability == TeamAdaptability.HIGH) {
-            return Tactic.MID_BLOCK;
+            return Tactic.POSSESSION;
         }
 
         return Tactic.MID_BLOCK;

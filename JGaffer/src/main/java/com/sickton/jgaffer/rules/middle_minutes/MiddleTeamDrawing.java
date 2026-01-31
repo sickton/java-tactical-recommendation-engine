@@ -6,7 +6,7 @@ import com.sickton.jgaffer.rules.TacticalRule;
 public class MiddleTeamDrawing extends TacticalRule {
     @Override
     public boolean applies(MatchContext context, Team team) {
-        return !isFinalMinutesOfGame(context) && !isEarlyMinutesOfGame(context)
+        return !redCards(team) && !isFinalMinutesOfGame(context) && !isEarlyMinutesOfGame(context)
                 && (teamStatus(context, team) == MatchStatus.DRAWING);
     }
 

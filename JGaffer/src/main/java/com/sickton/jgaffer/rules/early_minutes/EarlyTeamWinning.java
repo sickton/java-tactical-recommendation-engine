@@ -6,10 +6,10 @@ import com.sickton.jgaffer.domain.Tactic;
 import com.sickton.jgaffer.domain.Team;
 import com.sickton.jgaffer.rules.TacticalRule;
 
-public class EarlyTeamWinnning extends TacticalRule {
+public class EarlyTeamWinning extends TacticalRule {
     @Override
     public boolean applies(MatchContext context, Team team) {
-        return isEarlyMinutesOfGame(context) && (teamStatus(context, team) == MatchStatus.WINNING);
+        return !redCards(team) && isEarlyMinutesOfGame(context) && (teamStatus(context, team) == MatchStatus.WINNING);
     }
 
     @Override

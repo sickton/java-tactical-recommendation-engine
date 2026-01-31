@@ -7,7 +7,7 @@ public class MiddleTeamWinning extends TacticalRule {
 
     @Override
     public boolean applies(MatchContext context, Team team) {
-        return !isFinalMinutesOfGame(context) && !isEarlyMinutesOfGame(context)
+        return !redCards(team) && !isFinalMinutesOfGame(context) && !isEarlyMinutesOfGame(context)
                 && (teamStatus(context, team) == MatchStatus.WINNING);
     }
 
