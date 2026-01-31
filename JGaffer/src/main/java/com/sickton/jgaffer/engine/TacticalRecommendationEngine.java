@@ -1,44 +1,33 @@
 package com.sickton.jgaffer.engine;
 
 import com.sickton.jgaffer.domain.*;
-import com.sickton.jgaffer.exceptions.*;
+import com.sickton.jgaffer.exceptions.MatchTeamException;
+import com.sickton.jgaffer.rules.TacticalRule;
+import com.sickton.jgaffer.rules.late_minutes.LateTeamDrawing;
+import com.sickton.jgaffer.rules.late_minutes.LateTeamLosing;
+import com.sickton.jgaffer.rules.late_minutes.LateTeamWinning;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TacticalRecommendationEngine {
-    public Tactic recommend(MatchContext context, Team team)
-    {
-        boolean currentTeamWin = false;
-        if(context.getHome().getName().equals(team.getName()))
-            currentTeamWin = context.getHomeGoals() > context.getAwayGoals();
-        else if(context.getAway().getName().equals(team.getName()))
-            currentTeamWin = context.getAwayGoals() > context.getHomeGoals();
-        if(context.getMinute() >= 70)
-        {
-            if(currentTeamWin)
-                return Tactic.POSSESSION;
-            else
-                return Tactic.HIGH_PRESS;
-        }
-        return Tactic.MID_BLOCK;
+
+    private List<TacticalRule> rules;
+
+    public TacticalRecommendationEngine() {
+        rules = new ArrayList<TacticalRule>();
+        rules.add(new LateTeamLosing());
+        rules.add(new LateTeamWinning());
+        rules.add(new LateTeamDrawing());
     }
 
-    /*public TeamAdaptibility findTeamAdaptability(Team t)
+    public Tactic recommend(MatchContext context, Team team)
     {
-        Map<Player, PlayerState> playingXI = t.getPlayingXI();
-        Set<Player> players = playingXI.keySet();
-        int totalAdapt = 0;
-        for(Player p : players)
+        for(TacticalRule rule : rules)
         {
-            if(p.getPos() == Position.GK)
-                continue;
-            else
-                totalAdapt += p.getAdaptabilityScore();
+            if(rule.applies(context,team))
+                return rule.recommend(context,team);
         }
-        double teamAvg = totalAdapt / 10;
-        if(teamAvg <= 1.66)
-            return TeamAdaptability.LOW;
-        else if(teamAvg > 1.66 && teamAvg <= 3.33)
-            return TeamAdaptability.MEDIUM;
-        else if(teamAvg > 3.33 && teamAvg <= 5.0)
-            return TeamAdaptability.HIGH;
-    }*/
+        throw new MatchTeamException("Error Recommending Tactic");
+    }
 }
