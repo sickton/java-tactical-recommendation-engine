@@ -1,6 +1,15 @@
 package com.sickton.jgaffer.engine;
 
 import com.sickton.jgaffer.domain.*;
+import com.sickton.jgaffer.rules.early_minutes.EarlyTeamDrawing;
+import com.sickton.jgaffer.rules.early_minutes.EarlyTeamLosing;
+import com.sickton.jgaffer.rules.early_minutes.EarlyTeamWinning;
+import com.sickton.jgaffer.rules.late_minutes.LateTeamDrawing;
+import com.sickton.jgaffer.rules.late_minutes.LateTeamLosing;
+import com.sickton.jgaffer.rules.late_minutes.LateTeamWinning;
+import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamDrawing;
+import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamLosing;
+import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamWinning;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -105,6 +114,15 @@ public class TacticalRecommendationTest {
         MatchContext m = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 0, 77, 45.0, 55.0);
         MatchContext mOne = new MatchContext("LIV-CITY", homeTeam, awayTeam, 1, 0, 55, 56.0, 44.0);
         MatchContext mTwo = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 2, 82, 39.0, 61.0);
+        MatchContext etw = new MatchContext("LIV-CITY", homeTeam, awayTeam, 1, 0, 17, 51.0, 49.0);
+        MatchContext etd = new MatchContext("LIV-CITY", homeTeam, awayTeam, 2, 2, 10, 48, 52);
+        MatchContext etl = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 2, 15, 48, 52);
+        MatchContext mtw = new MatchContext("LIV-CITY", homeTeam, awayTeam, 2, 0, 40, 53, 47);
+        MatchContext mtd = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 0, 52, 49, 51);
+        MatchContext mtl = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 2, 60, 50, 50);
+        MatchContext ltw = new MatchContext("LIV-CITY", homeTeam, awayTeam, 1, 0, 85, 52, 48);
+        MatchContext ltd = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 0, 82, 40, 60);
+        MatchContext ltl = new MatchContext("LIV-CITY", homeTeam, awayTeam, 0, 3, 80, 32, 68);
 
         TacticalRecommendationEngine engine = new TacticalRecommendationEngine();
 
@@ -114,5 +132,23 @@ public class TacticalRecommendationTest {
         assertEquals(Tactic.MID_BLOCK, engine.recommend(mOne, awayTeam));
         assertEquals(Tactic.HIGH_PRESS, engine.recommend(mTwo, homeTeam));
         assertEquals(Tactic.POSSESSION, engine.recommend(mTwo, awayTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(etw, homeTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(etw, awayTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(etd, homeTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(etd, awayTeam));
+        assertEquals(Tactic.POSSESSION, engine.recommend(etl, homeTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(etl, awayTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(mtw, homeTeam));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommend(mtw, awayTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(mtd, homeTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(mtd, awayTeam));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommend(mtl, homeTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(mtl, awayTeam));
+        assertEquals(Tactic.POSSESSION,  engine.recommend(ltw, homeTeam));
+        assertEquals(Tactic.COUNTER, engine.recommend(ltw, awayTeam));
+        assertEquals(Tactic.MID_BLOCK, engine.recommend(ltd, homeTeam));
+        assertEquals(Tactic.POSSESSION, engine.recommend(ltd, awayTeam));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommend(ltl, homeTeam));
+        assertEquals(Tactic.POSSESSION, engine.recommend(ltl, awayTeam));
     }
 }

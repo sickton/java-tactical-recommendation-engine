@@ -44,15 +44,40 @@ public class TacticalRecommendationEngine {
         miscRules.add(new RedCardRules());
     }
 
+    protected boolean validateRules(MatchContext match, Team team)
+    {
+        int rules = 0;
+        for(TacticalRule rule : earlyRules)
+            if(rule.applies(match, team))
+                rules++;
+        for(TacticalRule rule : lateRules)
+            if(rule.applies(match, team))
+                rules++;
+        for(TacticalRule rule : miscRules)
+            if(rule.applies(match, team))
+                rules++;
+        for(TacticalRule rule : middleRules)
+            if(rule.applies(match, team))
+                rules++;
+        if(rules == 1)
+            return true;
+        else
+            return false;
+    }
+
     public Tactic recommend(MatchContext context, Team team)
     {
         for(TacticalRule rule : miscRules)
         {
+            if(!validateRules(context, team))
+                throw new MatchTeamException("Invalid match setup");
             if(rule.applies(context, team))
                 return rule.recommend(context, team);
         }
         if(context.getMinute() <= EARLY_MINUTE)
         {
+            if(!validateRules(context, team))
+                throw new MatchTeamException("Invalid match setup");
             for(TacticalRule rule : earlyRules)
             {
                 if(rule.applies(context, team))
@@ -61,6 +86,8 @@ public class TacticalRecommendationEngine {
         }
         else if(context.getMinute() >= LATE_MINUTE)
         {
+            if(!validateRules(context, team))
+                throw new MatchTeamException("Invalid match setup");
             for(TacticalRule rule : lateRules)
             {
                 if(rule.applies(context, team))
@@ -69,6 +96,8 @@ public class TacticalRecommendationEngine {
         }
         else
         {
+            if(!validateRules(context, team))
+                throw new MatchTeamException("Invalid match setup");
             for(TacticalRule rule : middleRules)
             {
                 if(rule.applies(context, team))
