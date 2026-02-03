@@ -1,101 +1,52 @@
 package com.sickton.jgaffer.rules;
 
 import com.sickton.jgaffer.domain.*;
-import com.sickton.jgaffer.exceptions.MatchTeamException;
-
-import java.util.*;
 
 public abstract class TacticalRule {
+     /* Thresholds for time phases in a football game.
+     0-15 early minutes
+     16-44 closing half
+     45-50 half-time
+     51-60 building phase
+     61-70 tension time
+     71-87 late game
+     88+ stoppage time */
+    protected static final int EARLY_MINUTE_THRESHOLD = 15;
+    protected static final int FIRST_HALF_THRESHOLD = 45;
+    protected static final int SECOND_HALF_THRESHOLD = 50;
+    protected static final int ASSESSING_TIME = 60;
+    protected static final int TENSION_TIME_THRESHOLD = 70;
+    protected static final int STOPPAGE_TIME = 88;
 
-    protected static final int LATE_MINUTES = 70;
-    protected static final int EARLY_MINUTES = 20;
+    /* thresholds for team adaptability ranges */
     protected static final double LOW_THRESHOLD = 1.66;
     protected static final double MEDIUM_THRESHOLD = 3.33;
     protected static final double HIGH_THRESHOLD = 5.0;
+
+    protected static final double LOW_INTENT_THRESHOLD = 0.33;
+    protected static final double MEDIUM_INTENT_THRESHOLD = 0.66;
+    protected static final double HIGH_INTENT_THRESHOLD = 1;
 
     public abstract boolean applies(MatchContext context, Team team);
 
     public abstract Tactic recommend(MatchContext context, Team team);
 
-    protected TeamAdaptability findTeamAdaptability(Team t)
-    {
-        Map<Player, PlayerState> playingXI = t.getPlayingXI();
-        Set<Player> players = playingXI.keySet();
-        int totalAdapt = 0;
-        int totalPlayers = 0;
-        for(Player p : players)
-        {
-            if(p.getPos() != Position.GK)
-            {
-                totalAdapt += p.getAdaptabilityScore();
-                totalPlayers++;
-            }
-        }
-        if(totalPlayers > 11 || totalPlayers == 0)
-            throw new MatchTeamException("Invalid number of players in team");
-        double teamAvg = totalAdapt / (double)totalPlayers;
-        if(teamAvg <= LOW_THRESHOLD)
-            return TeamAdaptability.LOW;
-        else if(teamAvg > LOW_THRESHOLD && teamAvg <= MEDIUM_THRESHOLD)
-            return TeamAdaptability.MEDIUM;
-        else if(teamAvg > MEDIUM_THRESHOLD && teamAvg <= HIGH_THRESHOLD)
-            return TeamAdaptability.HIGH;
-        return TeamAdaptability.LOW;
+    public WeightCombination adjustWeights(double attack, double control, double defence) {
+        IntentRange attackIntent = getIntent(attack);
+        IntentRange controlIntent = getIntent(control);
+        IntentRange defenceIntent = getIntent(defence);
+
+        return new WeightCombination(attackIntent, defenceIntent, controlIntent);
     }
 
-    protected boolean isFinalMinutesOfGame(MatchContext context)
-    {
-        return context.getMinute() >= LATE_MINUTES;
-    }
-
-    protected boolean isEarlyMinutesOfGame(MatchContext context)
-    {
-        return context.getMinute() <= EARLY_MINUTES;
-    }
-
-    protected boolean hasHomeAdvantage(MatchContext context, Team team)
-    {
-        return context.getHome().getName().equals(team.getName());
-    }
-
-    protected MatchStatus teamStatus(MatchContext context, Team team) {
-        if(context.getHome().getName().equals(team.getName())) {
-            if(context.getHomeGoals() > context.getAwayGoals())
-                return MatchStatus.WINNING;
-            else if(context.getHomeGoals() == context.getAwayGoals())
-                return MatchStatus.DRAWING;
-            else
-                return MatchStatus.LOSING;
-        }
-        else if(context.getAway().getName().equals(team.getName())) {
-            if(context.getAwayGoals() > context.getHomeGoals())
-                return MatchStatus.WINNING;
-            else if(context.getAwayGoals() == context.getHomeGoals())
-                return MatchStatus.DRAWING;
-            else
-                return MatchStatus.LOSING;
-        }
+    public IntentRange getIntent(double intent) {
+        if(intent >= 0.0 && intent <= LOW_INTENT_THRESHOLD)
+            return IntentRange.LOW;
+        else if(intent > LOW_INTENT_THRESHOLD && intent <= MEDIUM_INTENT_THRESHOLD)
+            return IntentRange.MEDIUM;
+        else if(intent > MEDIUM_INTENT_THRESHOLD && intent <= HIGH_INTENT_THRESHOLD)
+            return IntentRange.HIGH;
         else
-            throw new MatchTeamException("Team entered does not play the match");
-    }
-
-    protected int goalDifference(MatchContext context, Team team) {
-        if(context.getHome().getName().equals(team.getName())) {
-            return context.getHomeGoals() - context.getAwayGoals();
-        }
-        else if(context.getAway().getName().equals(team.getName())) {
-            return context.getAwayGoals() - context.getHomeGoals();
-        }
-        else
-            throw new MatchTeamException("Team entered does not play the match");
-    }
-
-    protected boolean redCards(Team team) {
-        Map<Player, PlayerState> playing = team.getPlayingXI();
-        for(PlayerState p : playing.values()) {
-            if(p.isRedCarded())
-                return true;
-        }
-        return false;
+            throw new IllegalArgumentException("Invalid intent level");
     }
 }

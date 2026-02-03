@@ -49,33 +49,4 @@ public class TeamIntent {
     public double getDefence() {
         return this.defence;
     }
-
-    public void addAttack(double attack) {
-        this.attack = Math.min(this.attack + attack, 1);
-    }
-
-    public void deductAttack(double attack)
-    {
-        this.attack = Math.max(this.attack - attack, 0);
-    }
-
-    public void addControl(double control)
-    {
-        this.control = Math.min(this.control + control, 1);
-    }
-
-    public void deductControl(double control)
-    {
-        this.control = Math.max(this.control - control, 0);
-    }
-
-    public void addDefence(double defence)
-    {
-        this.defence = Math.min(this.defence + defence, 1);
-    }
-
-    public void deductDefence(double defence)
-    {
-        this.defence = Math.max(this.defence - defence, 0);
-    }
 }

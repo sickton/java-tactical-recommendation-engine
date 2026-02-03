@@ -1,7 +1,5 @@
 package com.sickton.jgaffer.domain;
 
-import com.sickton.jgaffer.exceptions.MatchTeamException;
-
 import java.util.*;
 
 public class Team {
@@ -9,7 +7,7 @@ public class Team {
     private final Squad squad;
     private final Map<Player, PlayerState> playingXI;
     private final Formation form;
-    private TeamIntent intent;
+    protected final TeamIntent intent;
 
     public Team(Squad s, Map<Player, PlayerState> playingXI, Formation form) {
         this.squad = s;
