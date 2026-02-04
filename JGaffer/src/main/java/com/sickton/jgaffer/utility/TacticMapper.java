@@ -9,10 +9,11 @@ import java.util.*;
 public class TacticMapper {
 
     protected static final int EXPECTED_FIELDS = 11;
+    protected static final String FILE_NAME = "input/tactics.csv";
 
-    public static Map<TacticKey, TacticSuggestion> mapTacticsAndWeights(String filename) {
+    public static Map<TacticKey, TacticSuggestion> mapTacticsAndWeights() {
         try {
-            Scanner sc = new Scanner(new FileInputStream(filename));
+            Scanner sc = new Scanner(new FileInputStream(FILE_NAME));
             Map<TacticKey, TacticSuggestion> map = new HashMap<>();
             int lineNumber = 0;
             while (sc.hasNextLine()) {

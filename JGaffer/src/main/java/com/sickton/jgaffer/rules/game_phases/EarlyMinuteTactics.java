@@ -60,6 +60,9 @@ public class EarlyMinuteTactics extends TacticalRule {
         WeightCombination combo = adjustWeights(clamp(attack),clamp(control), clamp(defense));
         Style teamStyle = team.getSquad().getTeamStyle();
         TacticKey key = new TacticKey(teamStyle, combo, GamePhase.EARLY_MINUTES);
-        return tacticMap.get(key).getSuggestedTactic();
+        TacticSuggestion suggestion = tacticMap.get(key);
+        if(suggestion == null)
+            throw new IllegalArgumentException("Invalid tactic situation present");
+        return suggestion.getSuggestedTactic();
     }
 }
