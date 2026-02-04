@@ -32,7 +32,7 @@ public abstract class TacticalRule {
 
     public abstract boolean applies(MatchContext context, Team team);
 
-    public abstract Tactic recommend(MatchContext context, Team team);
+    public abstract Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap);
 
     public WeightCombination adjustWeights(double attack, double control, double defence) {
         IntentRange attackIntent = getIntent(attack);
@@ -145,5 +145,9 @@ public abstract class TacticalRule {
             return TeamAdaptability.HIGH;
         else
             throw new IllegalArgumentException("Invalid Team input");
+    }
+
+    protected double clamp(double value) {
+        return Math.max(0.0, Math.min(1.0, value));
     }
 }

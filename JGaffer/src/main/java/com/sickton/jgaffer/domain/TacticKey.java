@@ -1,5 +1,7 @@
 package com.sickton.jgaffer.domain;
 
+import java.util.Objects;
+
 public class TacticKey {
     private final Style style;
     private final WeightCombination weight;
@@ -23,14 +25,23 @@ public class TacticKey {
         return phase;
     }
 
-    public boolean equals(TacticKey o) {
-        if(this.style.equals(o.style))
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TacticKey other = (TacticKey) o;
+        if(this.style.equals(other.style))
         {
-            if(this.weight.equals(o.weight))
+            if(this.weight.equals(other.weight))
             {
-                return this.phase.equals(o.phase);
+                return this.phase.equals(other.phase);
             }
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(style, weight, phase);
     }
 }

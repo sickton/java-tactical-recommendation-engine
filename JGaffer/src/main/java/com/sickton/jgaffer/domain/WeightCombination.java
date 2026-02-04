@@ -23,10 +23,14 @@ public class WeightCombination {
         return controllingRange;
     }
 
-    public boolean equals(WeightCombination o) {
-        return (this.attackingRange.equals(o.attackingRange))
-                && (this.defendingRange.equals(o.defendingRange))
-                && (this.controllingRange.equals(o.controllingRange));
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        WeightCombination that = (WeightCombination) o;
+        return (this.attackingRange.equals(that.attackingRange))
+                && (this.defendingRange.equals(that.defendingRange))
+                && (this.controllingRange.equals(that.controllingRange));
     }
 
 }
