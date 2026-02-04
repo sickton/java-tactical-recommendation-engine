@@ -1,109 +1,55 @@
 package com.sickton.jgaffer.engine;
 
 import com.sickton.jgaffer.domain.*;
-import com.sickton.jgaffer.exceptions.MatchTeamException;
 import com.sickton.jgaffer.rules.TacticalRule;
-import com.sickton.jgaffer.rules.early_minutes.EarlyTeamDrawing;
-import com.sickton.jgaffer.rules.early_minutes.EarlyTeamLosing;
-import com.sickton.jgaffer.rules.early_minutes.EarlyTeamWinning;
-import com.sickton.jgaffer.rules.late_minutes.LateTeamDrawing;
-import com.sickton.jgaffer.rules.late_minutes.LateTeamLosing;
-import com.sickton.jgaffer.rules.late_minutes.LateTeamWinning;
-import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamLosing;
-import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamDrawing;
-import com.sickton.jgaffer.rules.middle_minutes.MiddleTeamWinning;
-import com.sickton.jgaffer.rules.other_factors.RedCardRules;
+import com.sickton.jgaffer.rules.game_phases.*;
+import com.sickton.jgaffer.utility.TacticMapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class TacticalRecommendationEngine {
-
-    protected static final int EARLY_MINUTE = 20;
-    protected static final int LATE_MINUTE = 70;
-
-    private final List<TacticalRule> earlyRules;
-    private final List<TacticalRule> lateRules;
-    private final List<TacticalRule> middleRules;
-    private final List<TacticalRule> miscRules;
+    private final Map<TacticKey, TacticSuggestion> tacticMapping;
+    private final List<TacticalRule> gamePhaseTactics;
 
     public TacticalRecommendationEngine() {
-        earlyRules = new ArrayList<>();
-        lateRules = new ArrayList<>();
-        middleRules = new ArrayList<>();
-        miscRules = new ArrayList<>();
-        lateRules.add(new LateTeamLosing());
-        lateRules.add(new LateTeamWinning());
-        lateRules.add(new LateTeamDrawing());
-        middleRules.add(new MiddleTeamWinning());
-        middleRules.add(new MiddleTeamLosing());
-        middleRules.add(new MiddleTeamDrawing());
-        earlyRules.add(new EarlyTeamLosing());
-        earlyRules.add(new EarlyTeamDrawing());
-        earlyRules.add(new EarlyTeamWinning());
-        miscRules.add(new RedCardRules());
+        tacticMapping = TacticMapper.mapTacticsAndWeights();
+        gamePhaseTactics = initializeTactics();
     }
 
-    protected boolean validateRules(MatchContext match, Team team)
-    {
+    private List<TacticalRule> initializeTactics() {
+        List<TacticalRule> tactics = new ArrayList<>();
+        //add instances of tactical rules, made based on phases in a game in that order
+        //0-15 Early Minutes
+        //16-44 Closing Half
+        //45-50 HalfTime
+        //51-60 BuildPhase
+        //61-70 TensionTime
+        //71-88 LateGame
+        //88+ StoppageTime
+        tactics.add(new EarlyMinuteTactics());
+        tactics.add(new ClosingHalfTactics());
+        tactics.add(new HalfTimeTactics());
+        tactics.add(new BuildPhaseTactics());
+        tactics.add(new TensionTimeTactics());
+        tactics.add(new LateGameTactics());
+        tactics.add(new StoppageTimeTactics());
+        return tactics;
+    }
+
+    public Tactic recommendTactic(MatchContext context, Team team) {
         int rules = 0;
-        for(TacticalRule rule : earlyRules)
-            if(rule.applies(match, team))
+        TacticalRule tacticRule = null;
+        for(TacticalRule tacticalRule : gamePhaseTactics) {
+            if(tacticalRule.applies(context, team)) {
                 rules++;
-        for(TacticalRule rule : lateRules)
-            if(rule.applies(match, team))
-                rules++;
-        for(TacticalRule rule : miscRules)
-            if(rule.applies(match, team))
-                rules++;
-        for(TacticalRule rule : middleRules)
-            if(rule.applies(match, team))
-                rules++;
-        if(rules == 1)
-            return true;
+                tacticRule = tacticalRule;
+            }
+        }
+        if(rules != 1)
+            throw new IllegalArgumentException("Invalid match situation, belongs to more than one phase of the game");
         else
-            return false;
-    }
-
-    public Tactic recommend(MatchContext context, Team team)
-    {
-        for(TacticalRule rule : miscRules)
-        {
-            if(!validateRules(context, team))
-                throw new MatchTeamException("Invalid match setup");
-            if(rule.applies(context, team))
-                return rule.recommend(context, team);
-        }
-        if(context.getMinute() <= EARLY_MINUTE)
-        {
-            if(!validateRules(context, team))
-                throw new MatchTeamException("Invalid match setup");
-            for(TacticalRule rule : earlyRules)
-            {
-                if(rule.applies(context, team))
-                    return rule.recommend(context, team);
-            }
-        }
-        else if(context.getMinute() >= LATE_MINUTE)
-        {
-            if(!validateRules(context, team))
-                throw new MatchTeamException("Invalid match setup");
-            for(TacticalRule rule : lateRules)
-            {
-                if(rule.applies(context, team))
-                    return rule.recommend(context, team);
-            }
-        }
-        else
-        {
-            if(!validateRules(context, team))
-                throw new MatchTeamException("Invalid match setup");
-            for(TacticalRule rule : middleRules)
-            {
-                if(rule.applies(context, team))
-                    return rule.recommend(context, team);
-            }
-        }
-        throw new MatchTeamException("Invalid match situation");
+            return tacticRule.recommend(context, team, tacticMapping);
     }
 }
