@@ -8,7 +8,7 @@ import org.junit.jupiter.api.TestInstance;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TacticalRecommendationTest {
@@ -95,12 +95,100 @@ public class TacticalRecommendationTest {
         MatchContext lateGame = new MatchContext("LIV-RMD", home, away, 2, 1, 80, 53, 47);
         MatchContext stoppageTime = new MatchContext("LIV-RMD", home, away, 2, 1, 91, 57, 43);
 
-        assertNotNull(engine.recommendTactic(earlyGame, home));
-        assertNotNull(engine.recommendTactic(closingHalf, home));
-        assertNotNull(engine.recommendTactic(halfTime, home));
-        assertNotNull(engine.recommendTactic(buildPhase, home));
-        assertNotNull(engine.recommendTactic(tensionTime, home));
-        assertNotNull(engine.recommendTactic(lateGame, home));
-        assertNotNull(engine.recommendTactic(stoppageTime, home));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommendTactic(earlyGame, home));
+        assertEquals(Tactic.GEGENPRESSING, engine.recommendTactic(closingHalf, home));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommendTactic(halfTime, home));
+        assertEquals(Tactic.GEGENPRESSING, engine.recommendTactic(buildPhase, home));
+        assertEquals(Tactic.GEGENPRESSING, engine.recommendTactic(tensionTime, home));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommendTactic(lateGame, home));
+        assertEquals(Tactic.DIRECT_PLAY, engine.recommendTactic(stoppageTime, home));
+
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(earlyGame, away));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(closingHalf, away));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(halfTime, away));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(buildPhase, away));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(tensionTime, away));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommendTactic(lateGame, away));
+        assertEquals(Tactic.DIRECT_PLAY, engine.recommendTactic(stoppageTime, away));
+    }
+
+    @Test
+    public void testCLFinal() {
+        Player sommer = new Player("Yann Sommer", Position.GK, 4);
+        Player pavard = new Player("Benjamin Pavard", Position.DEF, 4);
+        Player bastoni = new Player("Alessandro Bastoni", Position.DEF, 5);
+        Player acerbi = new Player("Francesco Acerbi", Position.DEF, 4);
+        Player barella = new Player("Nicolo Barella", Position.MID, 5);
+        Player hakan = new Player("Hakan Calhanoglu", Position.MID, 5);
+        Player dimarco = new Player("Federico Dimarco", Position.MID, 4);
+        Player darmian = new Player("Matteo Darmian", Position.MID, 3);
+        Player mkhitaryan = new Player("Henrikh Mkhitaryan", Position.MID, 4);
+        Player lautaro = new Player("Lautaro Martinez", Position.FWD, 5);
+        Player thuram = new Player("Marcus Thuram", Position.FWD, 4);
+
+        Map<Player, PlayerAvailability> interAvail = new HashMap<>();
+        Map<Player, PlayerState> interXI = new HashMap<>();
+
+        Player[] interPlayers = {sommer, pavard, bastoni, acerbi, barella, hakan, dimarco, darmian, mkhitaryan, lautaro, thuram};
+
+        for (Player p : interPlayers) {
+            interAvail.put(p, PlayerAvailability.AVAILABLE);
+            interXI.put(p, new PlayerState(p, InjuryStatus.NONE, StaminaLevel.MEDIUM, false));
+        }
+
+        Squad interSquad = new Squad("Inter Milan", interAvail, "Simone Inzaghi", Style.CONTROLLING);
+        Team homeTeam = new Team(interSquad, interXI, Formation.F_5_3_2);
+
+        // -------- PSG (Attacking/Direct) --------
+        Player donnarumma = new Player("Gianluigi Donnarumma", Position.GK, 5);
+        Player marquinhos = new Player("Marquinhos", Position.DEF, 5);
+        Player pacho = new Player("Willian Pacho", Position.DEF, 4);
+        Player hakimi = new Player("Achraf Hakimi", Position.DEF, 5);
+        Player nuno = new Player("Nuno Mendes", Position.DEF, 4);
+        Player vitinha = new Player("Vitinha", Position.MID, 4);
+        Player zairEmery = new Player("Warren Zaire-Emery", Position.MID, 4);
+        Player neves = new Player("Joao Neves", Position.MID, 4);
+        Player dembele = new Player("Ousmane Dembele", Position.FWD, 5);
+        Player barcola = new Player("Bradley Barcola", Position.FWD, 4);
+        Player ramos = new Player("Goncalo Ramos", Position.FWD, 4);
+
+        Map<Player, PlayerAvailability> psgAvail = new HashMap<>();
+        Map<Player, PlayerState> psgXI = new HashMap<>();
+
+        Player[] psgPlayers = {donnarumma, marquinhos, pacho, hakimi, nuno, vitinha, zairEmery, neves, dembele, barcola, ramos};
+
+        for (Player p : psgPlayers) {
+            psgAvail.put(p, PlayerAvailability.AVAILABLE);
+            psgXI.put(p, new PlayerState(p, InjuryStatus.NONE, StaminaLevel.MEDIUM, false));
+        }
+
+        Squad psgSquad = new Squad("PSG", psgAvail, "Luis Enrique", Style.ATTACKING);
+        Team awayTeam = new Team(psgSquad, psgXI, Formation.F_4_3_3);
+
+        TacticalRecommendationEngine engine = new TacticalRecommendationEngine();
+
+        MatchContext earlyGame = new MatchContext("INT-PSG", homeTeam, awayTeam, 0, 0, 10, 45, 55);
+        MatchContext closingHalf = new MatchContext("INT-PSG", homeTeam, awayTeam, 0, 0, 38, 48, 52);
+        MatchContext halfTime = new MatchContext("INT-PSG", homeTeam, awayTeam, 1, 0, 45, 49, 51);
+        MatchContext buildPhase = new MatchContext("INT-PSG", homeTeam, awayTeam, 1, 0, 53, 40, 60);
+        MatchContext tensionTime = new MatchContext("INT-PSG", homeTeam, awayTeam, 1, 1, 66, 50, 50);
+        MatchContext lateGame = new MatchContext("INT-PSG", homeTeam, awayTeam, 2, 1, 80, 43, 57);
+        MatchContext stoppageTime = new MatchContext("INT-PSG", homeTeam, awayTeam, 2, 1, 91, 35, 65);
+
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(earlyGame, homeTeam));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(closingHalf, homeTeam));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(halfTime, homeTeam));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(buildPhase, homeTeam));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(tensionTime, homeTeam));
+        assertEquals(Tactic.CONTROL, engine.recommendTactic(lateGame, homeTeam));
+        assertEquals(Tactic.DIRECT_PLAY, engine.recommendTactic(stoppageTime, homeTeam));
+
+        assertEquals(Tactic.HIGH_PRESS, engine.recommendTactic(earlyGame, awayTeam));
+        assertEquals(Tactic.GEGENPRESSING, engine.recommendTactic(closingHalf, awayTeam));
+        assertEquals(Tactic.HIGH_PRESS, engine.recommendTactic(halfTime, awayTeam));
+        assertEquals(Tactic.GEGENPRESSING, engine.recommendTactic(buildPhase, awayTeam));
+        assertEquals(Tactic.GEGENPRESSING, engine.recommendTactic(tensionTime, awayTeam));
+        assertEquals(Tactic.GEGENPRESSING, engine.recommendTactic(lateGame, awayTeam));
+        assertEquals(Tactic.DIRECT_PLAY, engine.recommendTactic(stoppageTime, awayTeam));
     }
 }
