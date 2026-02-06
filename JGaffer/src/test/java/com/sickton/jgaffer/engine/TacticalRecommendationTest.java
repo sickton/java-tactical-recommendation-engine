@@ -33,7 +33,6 @@ public class TacticalRecommendationTest {
         Player grav    = new Player("Ryan Gravenberch", Position.MID, 4);
         Player jones   = new Player("Curtis Jones", Position.MID, 3);
 
-        Map<Player, PlayerAvailability> livAvailability = new HashMap<>();
         Map<Player, PlayerState> livXI = new HashMap<>();
 
         Player[] livPlayers = {
@@ -43,11 +42,10 @@ public class TacticalRecommendationTest {
         };
 
         for (Player p : livPlayers) {
-            livAvailability.put(p, PlayerAvailability.AVAILABLE);
             livXI.put(p, new PlayerState(p, InjuryStatus.NONE, StaminaLevel.MEDIUM, false));
         }
 
-        Squad liverpool = new Squad("Liverpool",livAvailability,"Arne Slot",Style.ATTACKING);
+        Squad liverpool = new Squad("Liverpool","Arne Slot",Style.ATTACKING);
 
         home = new Team(liverpool,livXI,Formation.F_4_3_3);
 
@@ -65,7 +63,6 @@ public class TacticalRecommendationTest {
         Player rodrygo   = new Player("Rodrygo", Position.FWD, 4);
         Player joselu    = new Player("Joselu", Position.FWD, 3);
 
-        Map<Player, PlayerAvailability> rmAvailability = new HashMap<>();
         Map<Player, PlayerState> rmXI = new HashMap<>();
 
         Player[] rmPlayers = {
@@ -75,10 +72,9 @@ public class TacticalRecommendationTest {
         };
 
         for (Player p : rmPlayers) {
-            rmAvailability.put(p, PlayerAvailability.AVAILABLE);
             rmXI.put(p, new PlayerState(p, InjuryStatus.NONE, StaminaLevel.MEDIUM, false));
         }
-        Squad realMadrid = new Squad("Real Madrid",rmAvailability,"Carlo Ancelotti",Style.CONTROLLING);
+        Squad realMadrid = new Squad("Real Madrid","Carlo Ancelotti",Style.CONTROLLING);
         away = new Team(realMadrid,rmXI,Formation.F_4_3_3);
     }
 
@@ -126,17 +122,15 @@ public class TacticalRecommendationTest {
         Player lautaro = new Player("Lautaro Martinez", Position.FWD, 5);
         Player thuram = new Player("Marcus Thuram", Position.FWD, 4);
 
-        Map<Player, PlayerAvailability> interAvail = new HashMap<>();
         Map<Player, PlayerState> interXI = new HashMap<>();
 
         Player[] interPlayers = {sommer, pavard, bastoni, acerbi, barella, hakan, dimarco, darmian, mkhitaryan, lautaro, thuram};
 
         for (Player p : interPlayers) {
-            interAvail.put(p, PlayerAvailability.AVAILABLE);
             interXI.put(p, new PlayerState(p, InjuryStatus.NONE, StaminaLevel.MEDIUM, false));
         }
 
-        Squad interSquad = new Squad("Inter Milan", interAvail, "Simone Inzaghi", Style.CONTROLLING);
+        Squad interSquad = new Squad("Inter Milan", "Simone Inzaghi", Style.CONTROLLING);
         Team homeTeam = new Team(interSquad, interXI, Formation.F_5_3_2);
 
         // -------- PSG (Attacking/Direct) --------
@@ -152,17 +146,15 @@ public class TacticalRecommendationTest {
         Player barcola = new Player("Bradley Barcola", Position.FWD, 4);
         Player ramos = new Player("Goncalo Ramos", Position.FWD, 4);
 
-        Map<Player, PlayerAvailability> psgAvail = new HashMap<>();
         Map<Player, PlayerState> psgXI = new HashMap<>();
 
         Player[] psgPlayers = {donnarumma, marquinhos, pacho, hakimi, nuno, vitinha, zairEmery, neves, dembele, barcola, ramos};
 
         for (Player p : psgPlayers) {
-            psgAvail.put(p, PlayerAvailability.AVAILABLE);
             psgXI.put(p, new PlayerState(p, InjuryStatus.NONE, StaminaLevel.MEDIUM, false));
         }
 
-        Squad psgSquad = new Squad("PSG", psgAvail, "Luis Enrique", Style.ATTACKING);
+        Squad psgSquad = new Squad("PSG", "Luis Enrique", Style.ATTACKING);
         Team awayTeam = new Team(psgSquad, psgXI, Formation.F_4_3_3);
 
         TacticalRecommendationEngine engine = new TacticalRecommendationEngine();
