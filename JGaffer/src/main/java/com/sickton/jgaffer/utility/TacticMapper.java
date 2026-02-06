@@ -9,7 +9,7 @@ import java.util.*;
 public class TacticMapper {
 
     protected static final int EXPECTED_FIELDS = 11;
-    protected static final String FILE_NAME = "input/tactics.csv";
+    protected static final String FILE_NAME = "src/main/java/com/sickton/jgaffer/input/tactics.csv";
 
     public static Map<TacticKey, TacticSuggestion> mapTacticsAndWeights() {
         try {
