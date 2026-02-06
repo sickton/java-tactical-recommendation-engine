@@ -1,5 +1,7 @@
 package com.sickton.jgaffer.domain;
 
+import java.util.Objects;
+
 public class WeightCombination {
     private final IntentRange attackingRange;
     private final IntentRange defendingRange;
@@ -33,4 +35,8 @@ public class WeightCombination {
                 && (this.controllingRange.equals(that.controllingRange));
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(attackingRange, controllingRange, defendingRange);
+    }
 }
