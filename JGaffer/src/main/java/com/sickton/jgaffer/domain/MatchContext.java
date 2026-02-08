@@ -7,10 +7,8 @@ public class MatchContext {
     private final int homeGoals;
     private final int awayGoals;
     private final int minute;
-    private final double homePossession;
-    private final double awayPossession;
 
-    public MatchContext(String t, Team h, Team a, int hg, int ag, int m, double hp, double ap)
+    public MatchContext(String t, Team h, Team a, int hg, int ag, int m)
     {
         this.title = t;
         this.home = h;
@@ -18,8 +16,6 @@ public class MatchContext {
         this.homeGoals = hg;
         this.awayGoals = ag;
         this.minute = m;
-        this.homePossession = hp;
-        this.awayPossession = ap;
     }
 
     public String getTitle() {
@@ -43,13 +39,5 @@ public class MatchContext {
 
     public int getMinute() {
         return minute;
-    }
-
-    public double getHomePossession() {
-        return homePossession;
-    }
-
-    public double getAwayPossession() {
-        return awayPossession;
     }
 }

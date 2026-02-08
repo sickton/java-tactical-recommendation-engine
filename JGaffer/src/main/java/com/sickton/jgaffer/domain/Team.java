@@ -5,16 +5,18 @@ import java.util.*;
 public class Team {
     private final String name;
     private final Squad squad;
-    private final Map<Player, PlayerState> playingXI;
     private final Formation form;
     protected final TeamIntent intent;
+    private final StaminaLevel staminaLevel;
+    private final TeamAdaptability adaptability;
 
-    public Team(Squad s, Map<Player, PlayerState> playingXI, Formation form) {
+    public Team(Squad s, Formation form, StaminaLevel stamina, TeamAdaptability adaptability) {
         this.squad = s;
         this.name = s.getTeam();
-        this.playingXI = playingXI;
         this.form = form;
         this.intent = new TeamIntent(s);
+        this.staminaLevel = stamina;
+        this.adaptability = adaptability;
     }
 
     public TeamIntent getIntent() {
@@ -29,8 +31,12 @@ public class Team {
         return squad;
     }
 
-    public Map<Player, PlayerState> getPlayingXI() {
-        return playingXI;
+    public StaminaLevel getStaminaLevel() {
+        return staminaLevel;
+    }
+
+    public TeamAdaptability getAdaptabilityLevel() {
+        return adaptability;
     }
 
     public Formation getForm() {
