@@ -65,4 +65,10 @@ public class PremierLeagueFactory {
         }
         return matches;
     }
+
+    public static Team buildTeamFromName(String name)
+    {
+        FileStorage file = teamData.get(name);
+        return new Team(file.getSquadData(), file.getStaminaData(), file.getAdaptabilityData());
+    }
 }

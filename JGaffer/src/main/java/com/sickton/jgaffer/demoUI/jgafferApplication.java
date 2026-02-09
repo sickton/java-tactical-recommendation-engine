@@ -1,10 +1,13 @@
 package com.sickton.jgaffer.demoUI;
 
 import com.sickton.jgaffer.domain.MatchContext;
+import com.sickton.jgaffer.domain.Tactic;
+import com.sickton.jgaffer.domain.Team;
+import com.sickton.jgaffer.engine.TacticalRecommendationEngine;
 import com.sickton.jgaffer.utility.ApplicationParser;
-import com.sickton.jgaffer.utility.FileStorage;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 
 public class jgafferApplication {
@@ -54,6 +57,21 @@ public class jgafferApplication {
         }
     }
 
+    public static void displayTactics()
+    {
+        System.out.println("+---------------------+");
+        System.out.println("|        Tactic       |");
+        System.out.println("+---------------------+");
+        System.out.println("|        CONTROL      |");
+        System.out.println("|     COUNTER_ATTACK  |");
+        System.out.println("|      DIRECT_PLAY    |");
+        System.out.println("|     GEGENPRESSING   |");
+        System.out.println("|       HIGH_PRESS    |");
+        System.out.println("|       LOW_BLOCK     |");
+        System.out.println("|       TIKI_TAKA     |");
+        System.out.println("+---------------------+");
+    }
+
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         displayTeams();
@@ -62,6 +80,41 @@ public class jgafferApplication {
         showFixtures(teams.get(teamId));
         System.out.print("Enter the Match Number to retrieve a context - ");
         Integer matchNumber = sc.nextInt();
-        MatchContext matchContext = matchContextMap.get(matchContextMap.get(titles.get(matchNumber)));
+        Team team = PremierLeagueFactory.buildTeamFromName(teams.get(teamId));
+        TacticalRecommendationEngine engine = new TacticalRecommendationEngine();
+        Random random = new Random();
+        int minute = random.nextInt(90 - 1 + 1) + 1;
+        MatchContext matchContext = matchContextMap.get(titles.get(matchNumber).concat("_".concat("" + minute)));
+        System.out.println("-------------------------------------------------------------------");
+        System.out.println(matchContext.toString());
+        System.out.println("-------------------------------------------------------------------");
+        displayTactics();
+        System.out.println("Enter your tactical suggestion for " + teams.get(teamId));
+        String tactic = sc.next();
+        Tactic userTact = Tactic.valueOf(tactic);
+        Tactic systemTact = engine.recommendTactic(matchContext, team);
+        String prompt = """
+                        You are a football tactical analyst.
+                        Explain why the %s tactic is recommended in this situation.
+                        Assume that the reader has nearly no knowledge of how a football game works.
+                        Make it simpler for the reader.
+                        I am playing as %s team and the recommended tactic is for the team I am playing.
+                        Match details:
+                            %s
+                        Explain in 4–5 sentences using football language.
+                        """
+                        .formatted(systemTact, matchContext.toString(), teams.get(teamId));
+        OpenAIClient openAIClient = new OpenAIClient(System.getenv("OPENAI_API_KEY"));
+        TacticalExplanationService aiexp = new TacticalExplanationService(openAIClient);
+        if(userTact.equals(systemTact))
+        {
+            System.out.println("Congrats! The system matched the tactical recommendation with yours!");
+            System.out.println(aiexp.generateExplanation(prompt));
+        }
+        else
+        {
+            System.out.println("Sorry, the system recommends - " + systemTact + "!");
+            System.out.println(aiexp.generateExplanation(prompt));
+        }
     }
 }

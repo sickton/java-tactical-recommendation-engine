@@ -52,8 +52,6 @@ public class ApplicationParser {
                     continue;
                 String[] parts = line.split(",");
                 String squadName = parts[0];
-                String squadCode = parts[1];
-                String id = parts[2];
                 String manager = parts[3];
                 Style teamStyle = Style.valueOf(parts[4]);
                 TeamAdaptability adaptability = TeamAdaptability.valueOf(parts[5]);

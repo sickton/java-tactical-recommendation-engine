@@ -40,4 +40,32 @@ public class MatchContext {
     public int getMinute() {
         return minute;
     }
+
+    @Override
+    public String toString() {
+        return "Match - " +
+                getTitle() +
+                "\n" +
+                "Minutes - " +
+                getMinute() + "'" +
+                "\n" +
+                "Scoreline - " +
+                getHomeGoals() +
+                "-" +
+                getAwayGoals() +
+                "\n" +
+                "Home Team Name - " + getHome().getName() +
+                "\n" +
+                "Away Team Name - " + getAway().getName() +
+                "\n" +
+                "Team Stamina - " +
+                getHome().getStaminaLevel() + " - " + getAway().getStaminaLevel() +
+                "\n" +
+                "Team Adaptability - " +
+                getHome().getAdaptabilityLevel() + " - " + getAway().getAdaptabilityLevel() +
+                "\n" +
+                "Home Team Intent - " +
+                getHome().getIntent().toString() + "\n Away Team Intent - " +  getAway().getIntent().toString() +
+                "\n";
+    }
 }
