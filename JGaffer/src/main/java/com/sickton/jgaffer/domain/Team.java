@@ -5,15 +5,15 @@ import java.util.*;
 public class Team {
     private final String name;
     private final Squad squad;
-    private final Formation form;
+    //private final Formation form;
     protected final TeamIntent intent;
     private final StaminaLevel staminaLevel;
     private final TeamAdaptability adaptability;
 
-    public Team(Squad s, Formation form, StaminaLevel stamina, TeamAdaptability adaptability) {
+    public Team(Squad s, StaminaLevel stamina, TeamAdaptability adaptability) {
         this.squad = s;
         this.name = s.getTeam();
-        this.form = form;
+        //this.form = form;
         this.intent = new TeamIntent(s);
         this.staminaLevel = stamina;
         this.adaptability = adaptability;
@@ -39,7 +39,7 @@ public class Team {
         return adaptability;
     }
 
-    public Formation getForm() {
-        return form;
-    }
+//    public Formation getForm() {
+//        return form;
+//    }
 }

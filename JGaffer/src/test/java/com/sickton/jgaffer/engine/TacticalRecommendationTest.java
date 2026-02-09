@@ -20,10 +20,10 @@ public class TacticalRecommendationTest {
     public void setUp()
     {
         Squad liverpool = new Squad("Liverpool","Arne Slot",Style.ATTACKING);
-        home = new Team(liverpool,Formation.F_4_3_3, StaminaLevel.MEDIUM, TeamAdaptability.HIGH);
+        home = new Team(liverpool, StaminaLevel.MEDIUM, TeamAdaptability.HIGH);
 
         Squad realMadrid = new Squad("Real Madrid","Carlo Ancelotti",Style.CONTROLLING);
-        away = new Team(realMadrid, Formation.F_4_3_3, StaminaLevel.MEDIUM, TeamAdaptability.HIGH);
+        away = new Team(realMadrid, StaminaLevel.MEDIUM, TeamAdaptability.HIGH);
     }
 
     @Test
@@ -59,10 +59,10 @@ public class TacticalRecommendationTest {
     @Test
     public void testCLFinal() {
         Squad interSquad = new Squad("Inter Milan", "Simone Inzaghi", Style.CONTROLLING);
-        Team homeTeam = new Team(interSquad, Formation.F_5_3_2, StaminaLevel.MEDIUM, TeamAdaptability.HIGH);
+        Team homeTeam = new Team(interSquad, StaminaLevel.MEDIUM, TeamAdaptability.HIGH);
 
         Squad psgSquad = new Squad("PSG", "Luis Enrique", Style.ATTACKING);
-        Team awayTeam = new Team(psgSquad, Formation.F_4_3_3, StaminaLevel.MEDIUM, TeamAdaptability.HIGH);
+        Team awayTeam = new Team(psgSquad, StaminaLevel.MEDIUM, TeamAdaptability.HIGH);
 
         TacticalRecommendationEngine engine = new TacticalRecommendationEngine();
 
