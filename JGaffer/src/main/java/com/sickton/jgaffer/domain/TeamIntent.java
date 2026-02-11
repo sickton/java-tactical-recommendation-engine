@@ -49,4 +49,15 @@ public class TeamIntent {
     public double getDefence() {
         return this.defence;
     }
+
+    @Override
+    public String toString() {
+        String attack = Double.toString(getAttack());
+        String defence = Double.toString(getDefence());
+        String control = Double.toString(getControl());
+        attack = attack.substring(0, attack.indexOf('.') + 3);
+        defence = defence.substring(0, defence.indexOf('.') + 3);
+        control = control.substring(0, control.indexOf('.') + 3);
+        return "+ Attack - " + attack + "\n+ Defence - " + defence + "\n+ Control - " + control;
+    }
 }

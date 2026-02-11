@@ -1,0 +1,21 @@
+team_name,code,id,manager,style,team_adaptability,team_stamina
+Arsenal,ARS,1,Mikel Arteta,CONTROLLING,HIGH,HIGH
+Aston Villa,AVL,2,Unai Emery,CONTROLLING,MEDIUM,HIGH
+Bournemouth,BOU,3,Andoni Iroala,ATTACKING,LOW,HIGH
+Brentford,BRE,4,Thomas Frank,ATTACKING,MEDIUM,HIGH
+Brighton,BHA,5,Fabian Hurzeler,CONTROLLING,HIGH,MEDIUM
+Chelsea,CHE,6,Enzo Maresca,CONTROLLING,MEDIUM,HIGH
+Crystal Palace,CRY,7,Oliver Glasner,ATTACKING,MEDIUM,HIGH
+Everton,EVE,8,Sean Dyche,DEFENSIVE,MEDIUM,MEDIUM
+Fulham,FUL,9,Marco Silva,CONTROLLING,HIGH,MEDIUM
+Liverpool,LIV,10,Arne Slot,CONTROLLING,HIGH,HIGH
+Manchester City,MCI,11,Pep Guardiola,CONTROLLING,HIGH,HIGH
+Manchester United,MUN,12,Ruben Amorim,ATTACKING,MEDIUM,HIGH
+Newcastle United,NEW,13,Eddie Howe,ATTACKING,MEDIUM,HIGH
+Nottingham Forest,NFO,14,Nuno Espirito Santo,DEFENSIVE,MEDIUM,MEDIUM
+Tottenham Hotspur,TOT,15,Ange Postecoglu,ATTACKING,MEDIUM,HIGH
+West Ham United,WHU,16,Graham Potter,CONTROLLING,MEDIUM,LOW
+Wolves,WOL,17,Vitor Pereira,DEFENSIVE,MEDIUM,MEDIUM
+Leicester City,LEI,18,Steve Cooper,DEFENSIVE,LOW,MEDIUM
+Ipswich Town,IPS,19,Kieran McKenna,ATTACKING,MEDIUM,HIGH
+Southampton,SOU,20,Ivan Juric,CONTROLLING,MEDIUM,HIGH
