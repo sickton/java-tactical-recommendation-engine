@@ -1,4 +1,4 @@
-package com.sickton.jgaffer.demoUI;
+package com.sickton.jgaffer.openAIService;
 
 public class TacticalExplanationService {
 

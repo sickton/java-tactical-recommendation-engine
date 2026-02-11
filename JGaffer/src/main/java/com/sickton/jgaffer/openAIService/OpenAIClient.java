@@ -1,4 +1,4 @@
-package com.sickton.jgaffer.demoUI;
+package com.sickton.jgaffer.openAIService;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -29,7 +29,7 @@ public class OpenAIClient {
 
         String requestBody = """
         {
-          "model": "gpt-4.1-mini",
+          "model": "gpt-4.1",
           "input": "%s",
           "temperature": 0.3,
           "max_output_tokens": 180
