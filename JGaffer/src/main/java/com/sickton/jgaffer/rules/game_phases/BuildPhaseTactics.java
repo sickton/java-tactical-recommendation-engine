@@ -5,16 +5,47 @@ import com.sickton.jgaffer.rules.TacticalRule;
 
 import java.util.Map;
 
+/**
+ * Tactical rule for the Build Phase (minutes 51-60).
+ *
+ * <p>Covers the early second-half period where halftime adjustments are implemented.
+ * Factors in both stamina and adaptability — highly adaptable teams receive amplified
+ * control adjustments, reflecting their ability to execute tactical changes effectively.</p>
+ *
+ * @see TacticalRule
+ * @see GamePhase#BUILD_PHASE
+ * @author sickton
+ */
 public class BuildPhaseTactics extends TacticalRule {
     protected static final double ADJUST_ONE = 0.03;
     protected static final double ADJUST_TWO = 0.05;
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param context the current match context containing the match minute
+     * @param team    the team being evaluated
+     * @return {@code true} if the current minute falls within the Build Phase (51-60)
+     */
     @Override
     public boolean applies(MatchContext context, Team team) {
         GamePhase phase = checkGamePhase(context.getMinute());
         return phase == GamePhase.BUILD_PHASE;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Factors in both stamina and adaptability for the early second-half period.
+     * Highly adaptable teams receive amplified control adjustments, reflecting their
+     * ability to execute tactical changes effectively after halftime.</p>
+     *
+     * @param context  the current match context including score and team information
+     * @param team     the team for which a tactic is being recommended
+     * @param tacticMap the tactic lookup map keyed by {@link TacticKey}
+     * @return the recommended {@link Tactic} for the build phase
+     * @throws IllegalArgumentException if the match situation is invalid or no tactic mapping exists
+     */
     @Override
     public Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
         TeamIntent intent = team.getIntent();

@@ -10,6 +10,22 @@ import com.sickton.jgaffer.utility.ApplicationParser;
 
 import java.util.*;
 
+/**
+ * Main entry point for the JGaffer CLI application.
+ *
+ * <p>Provides an interactive command-line interface where users select a Premier League
+ * team and fixture, view the match context at a randomly generated minute, suggest a
+ * tactic, and receive the engine's recommendation with an AI-generated explanation.</p>
+ *
+ * <p>Orchestrates the full user flow: team selection, fixture display, tactic input,
+ * engine invocation via {@link TacticalRecommendationEngine}, and explanation generation
+ * via {@link TacticalExplanationService}.</p>
+ *
+ * @see TacticalRecommendationEngine
+ * @see PremierLeagueFactory
+ * @see TacticalExplanationService
+ * @author sickton
+ */
 public class jgafferApplication {
     protected static Map<Integer, String> teams = ApplicationParser.buildTeamMap();
     protected static Map<String, MatchContext> matchContextMap = PremierLeagueFactory.buildAllContexts();

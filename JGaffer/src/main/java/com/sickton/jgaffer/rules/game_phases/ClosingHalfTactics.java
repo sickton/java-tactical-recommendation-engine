@@ -5,6 +5,17 @@ import com.sickton.jgaffer.rules.TacticalRule;
 
 import java.util.Map;
 
+/**
+ * Tactical rule for the Closing Half phase (minutes 16-44).
+ *
+ * <p>Intensifies tactical adjustments as halftime approaches. Incorporates a
+ * stamina factor that scales weight changes — low-stamina teams receive dampened
+ * adjustments to conserve energy heading into the break.</p>
+ *
+ * @see TacticalRule
+ * @see GamePhase#CLOSING_HALF
+ * @author sickton
+ */
 public class ClosingHalfTactics extends TacticalRule {
     protected static final double ADJUST_ONE = 0.03;
     protected static final double ADJUST_TWO = 0.05;
@@ -14,12 +25,32 @@ public class ClosingHalfTactics extends TacticalRule {
     protected static final double MEDIUM_STAMINA_FACTOR = 1.00;
     protected static final double HIGH_STAMINA_FACTOR = 1.05;
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param context the current match context containing the match minute
+     * @param team    the team being evaluated
+     * @return {@code true} if the current minute falls within the Closing Half phase (16-44)
+     */
     @Override
     public boolean applies(MatchContext context, Team team) {
         GamePhase phase = checkGamePhase(context.getMinute());
         return phase == GamePhase.CLOSING_HALF;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Intensifies tactical adjustments as halftime approaches, incorporating a
+     * stamina factor that scales weight changes. Low-stamina teams receive dampened
+     * adjustments to conserve energy heading into the break.</p>
+     *
+     * @param context  the current match context including score and team information
+     * @param team     the team for which a tactic is being recommended
+     * @param tacticMap the tactic lookup map keyed by {@link TacticKey}
+     * @return the recommended {@link Tactic} for the closing half phase
+     * @throws IllegalArgumentException if the match situation is invalid or no tactic mapping exists
+     */
     @Override
     public Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
         TeamIntent intent = team.getIntent();

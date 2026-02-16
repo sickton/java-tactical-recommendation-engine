@@ -5,18 +5,49 @@ import com.sickton.jgaffer.rules.TacticalRule;
 
 import java.util.Map;
 
+/**
+ * Tactical rule for the Half Time phase (minutes 45-50).
+ *
+ * <p>Represents the structured strategic recalibration window. Applies a goal
+ * difference bias on top of base adjustments — teams trailing by 2+ goals
+ * come out more aggressive, while teams leading by 2+ protect their structure.</p>
+ *
+ * @see TacticalRule
+ * @see GamePhase#HALF_TIME
+ * @author sickton
+ */
 public class HalfTimeTactics extends TacticalRule {
     protected static final double GOAL_BIAS = 0.03;
 
     protected static final double ADJUST_ONE = 0.03;
     protected static final double ADJUST_TWO = 0.05;
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param context the current match context containing the match minute
+     * @param team    the team being evaluated
+     * @return {@code true} if the current minute falls within the Half Time phase (45-50)
+     */
     @Override
     public boolean applies(MatchContext context, Team team) {
         GamePhase phase = checkGamePhase(context.getMinute());
         return phase == GamePhase.HALF_TIME;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Applies a strategic recalibration with goal-difference bias. Teams trailing
+     * by 2+ goals come out more aggressive, while teams leading by 2+ protect
+     * their structure.</p>
+     *
+     * @param context  the current match context including score and team information
+     * @param team     the team for which a tactic is being recommended
+     * @param tacticMap the tactic lookup map keyed by {@link TacticKey}
+     * @return the recommended {@link Tactic} for the half time phase
+     * @throws IllegalArgumentException if the match situation is invalid or no tactic mapping exists
+     */
     @Override
     public Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
         TeamIntent intent = team.getIntent();

@@ -1,5 +1,16 @@
 package com.sickton.jgaffer.openAIService;
 
+/**
+ * Service layer that generates AI-powered explanations for tactical decisions.
+ *
+ * <p>Wraps the {@link OpenAIClient} and provides graceful failure handling. If the
+ * OpenAI API is unavailable or returns an error, the service returns a fallback
+ * message instead of propagating the exception — ensuring the tactical recommendation
+ * flow is never disrupted by the explanation layer.</p>
+ *
+ * @see OpenAIClient
+ * @author sickton
+ */
 public class TacticalExplanationService {
 
     private final OpenAIClient openAIClient;

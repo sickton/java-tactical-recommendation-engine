@@ -5,6 +5,17 @@ import com.sickton.jgaffer.rules.TacticalRule;
 
 import java.util.Map;
 
+/**
+ * Tactical rule for the Tension Time phase (minutes 61-70).
+ *
+ * <p>Manages the volatile mid-second-half period where fatigue begins to influence
+ * structure. Applies both stamina and adaptability scaling factors, with larger
+ * base adjustments reflecting the increasing urgency of tactical decisions.</p>
+ *
+ * @see TacticalRule
+ * @see GamePhase#TENSION_TIME
+ * @author sickton
+ */
 public class TensionTimeTactics extends TacticalRule {
     protected static final double ADJUST_ONE   = 0.03;
     protected static final double ADJUST_TWO   = 0.05;
@@ -18,12 +29,32 @@ public class TensionTimeTactics extends TacticalRule {
     protected static final double MEDIUM_ADAPT_FACTOR = 1.00;
     protected static final double HIGH_ADAPT_FACTOR   = 1.05;
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param context the current match context containing the match minute
+     * @param team    the team being evaluated
+     * @return {@code true} if the current minute falls within the Tension Time phase (61-70)
+     */
     @Override
     public boolean applies(MatchContext context, Team team) {
         GamePhase phase = checkGamePhase(context.getMinute());
         return phase == GamePhase.TENSION_TIME;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Manages the volatile mid-second-half period with larger base adjustments
+     * reflecting increasing urgency. Applies both stamina and adaptability scaling
+     * factors as fatigue begins to influence team structure.</p>
+     *
+     * @param context  the current match context including score and team information
+     * @param team     the team for which a tactic is being recommended
+     * @param tacticMap the tactic lookup map keyed by {@link TacticKey}
+     * @return the recommended {@link Tactic} for the tension time phase
+     * @throws IllegalArgumentException if the match situation is invalid or no tactic mapping exists
+     */
     @Override
     public Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
         TeamIntent intent = team.getIntent();

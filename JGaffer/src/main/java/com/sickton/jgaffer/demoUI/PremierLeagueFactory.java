@@ -10,6 +10,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+/**
+ * Factory class for constructing Premier League domain objects from CSV data.
+ *
+ * <p>Builds the complete set of {@link MatchContext} objects from the MatchMinuteContext
+ * CSV file, keyed by "{@code matchTitle_minute}" for quick lookup. Also provides methods
+ * to retrieve fixture lists for a specific team and to construct {@link Team} objects
+ * from team names.</p>
+ *
+ * <p>Caches parsed title and squad data statically to avoid redundant file reads.</p>
+ *
+ * @see MatchContext
+ * @see Team
+ * @see ApplicationParser
+ * @author sickton
+ */
 public class PremierLeagueFactory {
     protected static final String PREMIER_LEAGUE_MATCH_CONTEXT = "JGaffer/src/main/java/com/sickton/jgaffer/input/MatchMinuteContext.csv";
     protected static Map<Integer, String> titles = ApplicationParser.parseTitles();

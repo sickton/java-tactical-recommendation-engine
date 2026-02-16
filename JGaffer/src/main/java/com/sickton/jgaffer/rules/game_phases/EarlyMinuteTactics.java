@@ -6,17 +6,48 @@ import com.sickton.jgaffer.utility.TacticMapper;
 
 import java.util.Map;
 
+/**
+ * Tactical rule for the Early Minutes phase (minutes 0-15).
+ *
+ * <p>Applies conservative weight adjustments focused on establishing structure
+ * and tempo. Winning teams consolidate control, drawing teams seek rhythm,
+ * and losing teams push forward while maintaining shape.</p>
+ *
+ * @see TacticalRule
+ * @see GamePhase#EARLY_MINUTES
+ * @author sickton
+ */
 public class EarlyMinuteTactics extends TacticalRule {
     protected static final double ADJUST_ONE = 0.03;
     protected static final double ADJUST_TWO = 0.05;
     protected static final double ADJUST_THREE = 0.08;
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param context the current match context containing the match minute
+     * @param team    the team being evaluated
+     * @return {@code true} if the current minute falls within the Early Minutes phase (0-15)
+     */
     @Override
     public boolean applies(MatchContext context, Team team) {
         GamePhase phase = super.checkGamePhase(context.getMinute());
         return phase == GamePhase.EARLY_MINUTES;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Applies conservative adjustments for the opening phase of the match.
+     * Winning teams consolidate control, drawing teams seek rhythm,
+     * and losing teams push forward while accepting defensive risk.</p>
+     *
+     * @param context  the current match context including score and team information
+     * @param team     the team for which a tactic is being recommended
+     * @param tacticMap the tactic lookup map keyed by {@link TacticKey}
+     * @return the recommended {@link Tactic} for the early minutes phase
+     * @throws IllegalArgumentException if the match situation is invalid or no tactic mapping exists
+     */
     @Override
     public Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
         TeamIntent teamIntent = team.getIntent();

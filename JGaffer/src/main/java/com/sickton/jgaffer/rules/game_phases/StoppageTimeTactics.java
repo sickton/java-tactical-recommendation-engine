@@ -5,6 +5,19 @@ import com.sickton.jgaffer.rules.TacticalRule;
 
 import java.util.Map;
 
+/**
+ * Tactical rule for Stoppage Time (minutes 88+).
+ *
+ * <p>Applies the most extreme weight adjustments of any phase, reflecting
+ * the desperation and finality of the closing moments. Uses the largest
+ * adjustment constants (up to 0.12) and the most aggressive low-stamina
+ * dampening factor (0.75). Losing teams go all-in on attack, while winning
+ * teams prioritize killing the game.</p>
+ *
+ * @see TacticalRule
+ * @see GamePhase#STOPPAGE_TIME
+ * @author sickton
+ */
 public class StoppageTimeTactics extends TacticalRule {
 
     protected static final double ADJUST_ONE   = 0.05;
@@ -15,12 +28,32 @@ public class StoppageTimeTactics extends TacticalRule {
     protected static final double MEDIUM_STAMINA_FACTOR = 1.00;
     protected static final double HIGH_STAMINA_FACTOR   = 1.05;
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param context the current match context containing the match minute
+     * @param team    the team being evaluated
+     * @return {@code true} if the current minute falls within Stoppage Time (88+)
+     */
     @Override
     public boolean applies(MatchContext context, Team team) {
         GamePhase phase = checkGamePhase(context.getMinute());
         return phase == GamePhase.STOPPAGE_TIME;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Applies the most extreme weight adjustments of any phase, reflecting
+     * the desperation and finality of the closing moments. Losing teams go
+     * all-in on attack, while winning teams prioritize killing the game.</p>
+     *
+     * @param context  the current match context including score and team information
+     * @param team     the team for which a tactic is being recommended
+     * @param tacticMap the tactic lookup map keyed by {@link TacticKey}
+     * @return the recommended {@link Tactic} for the stoppage time phase
+     * @throws IllegalArgumentException if the match situation is invalid or no tactic mapping exists
+     */
     @Override
     public Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
         TeamIntent intent = team.getIntent();

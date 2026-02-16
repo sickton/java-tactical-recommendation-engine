@@ -5,6 +5,18 @@ import com.sickton.jgaffer.rules.TacticalRule;
 
 import java.util.Map;
 
+/**
+ * Tactical rule for the Late Game phase (minutes 71-87).
+ *
+ * <p>Handles high-urgency tactical decisions heavily driven by the scoreline.
+ * Uses a reduced low-stamina factor (0.80) compared to earlier phases, reflecting
+ * the significant impact of fatigue at this stage. Both stamina and adaptability
+ * scale the weight adjustments.</p>
+ *
+ * @see TacticalRule
+ * @see GamePhase#LATE_GAME
+ * @author sickton
+ */
 public class LateGameTactics extends TacticalRule {
 
     protected static final double ADJUST_ONE   = 0.03;
@@ -19,12 +31,32 @@ public class LateGameTactics extends TacticalRule {
     protected static final double MEDIUM_ADAPT_FACTOR = 1.00;
     protected static final double HIGH_ADAPT_FACTOR   = 1.05;
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param context the current match context containing the match minute
+     * @param team    the team being evaluated
+     * @return {@code true} if the current minute falls within the Late Game phase (71-87)
+     */
     @Override
     public boolean applies(MatchContext context, Team team) {
         GamePhase phase = checkGamePhase(context.getMinute());
         return phase == GamePhase.LATE_GAME;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Handles high-urgency tactical decisions heavily driven by the scoreline.
+     * Uses a reduced low-stamina factor compared to earlier phases, reflecting
+     * the significant impact of fatigue at this stage.</p>
+     *
+     * @param context  the current match context including score and team information
+     * @param team     the team for which a tactic is being recommended
+     * @param tacticMap the tactic lookup map keyed by {@link TacticKey}
+     * @return the recommended {@link Tactic} for the late game phase
+     * @throws IllegalArgumentException if the match situation is invalid or no tactic mapping exists
+     */
     @Override
     public Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
         TeamIntent intent = team.getIntent();

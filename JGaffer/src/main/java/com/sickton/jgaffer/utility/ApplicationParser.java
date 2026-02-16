@@ -11,10 +11,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+/**
+ * Utility class for parsing CSV data files into application data structures.
+ *
+ * <p>Provides static methods to load Premier League match titles, squad information,
+ * team ID mappings, and team code mappings from CSV files. Acts as the primary
+ * data access layer between raw CSV input and the domain model.</p>
+ *
+ * @see FileStorage
+ * @see com.sickton.jgaffer.domain.Squad
+ * @author sickton
+ */
 public class ApplicationParser {
     protected static final String PREMIER_LEAGUE_TITLES = "JGaffer/src/main/java/com/sickton/jgaffer/input/PremierLeagueMatches.csv";
     protected static final String SQUAD_INFORMATION = "JGaffer/src/main/java/com/sickton/jgaffer/input/SquadInformation.csv";
 
+    /**
+     * Parses the Premier League match titles CSV file into a map of match IDs to title strings.
+     *
+     * @return a map where keys are match IDs and values are match title strings
+     * @throws RuntimeException if the CSV file cannot be found or read
+     */
     public static Map<Integer, String> parseTitles()
     {
         Map<Integer, String> titles = new HashMap<Integer, String>();
@@ -37,6 +54,13 @@ public class ApplicationParser {
         }
     }
 
+    /**
+     * Parses the squad information CSV file into a map of squad names to {@link FileStorage} objects.
+     *
+     * @return a map where keys are squad names and values are {@link FileStorage} bundles
+     *         containing squad, adaptability, and stamina data
+     * @throws RuntimeException if the CSV file cannot be found or read
+     */
     public static Map<String, FileStorage> parseSquadInformation()
     {
         Map<String, FileStorage> squads = new HashMap<>();
@@ -66,6 +90,11 @@ public class ApplicationParser {
         }
     }
 
+    /**
+     * Builds a static map of team IDs to Premier League team names for the current season.
+     *
+     * @return a map where keys are integer team IDs (1-20) and values are team name strings
+     */
     public static Map<Integer, String> buildTeamMap()
     {
         Map<Integer, String> teams = new HashMap<>();
@@ -92,6 +121,12 @@ public class ApplicationParser {
         return teams;
     }
 
+    /**
+     * Parses the squad information CSV to build a map of team names to their short codes.
+     *
+     * @return a map where keys are full team names and values are abbreviated team codes
+     * @throws RuntimeException if the CSV file cannot be found or read
+     */
     public static Map<String, String> getTeamCodeMap()
     {
         Map<String, String> code = new HashMap<>();

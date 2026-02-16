@@ -1,5 +1,13 @@
 package com.sickton.jgaffer.domain;
 
+/**
+ * Enumerates standard football formations.
+ *
+ * <p>Reserved for future use — planned to link tactical recommendations
+ * to specific formation structures.</p>
+ *
+ * @author sickton
+ */
 public enum Formation {
     F_4_3_3,
     F_3_4_3,

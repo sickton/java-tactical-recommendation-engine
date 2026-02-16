@@ -6,6 +6,19 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * HTTP client for communicating with the OpenAI API.
+ *
+ * <p>Sends prompts to OpenAI's GPT-4.1 model and returns natural language responses.
+ * Uses Java's built-in {@link java.net.http.HttpClient} with no external dependencies.
+ * Handles JSON escaping and response parsing internally.</p>
+ *
+ * <p><strong>Architectural boundary:</strong> This client is used exclusively for
+ * generating explanations. It never influences the tactical decision logic.</p>
+ *
+ * @see TacticalExplanationService
+ * @author sickton
+ */
 public class OpenAIClient {
 
     private static final String OPENAI_ENDPOINT = "https://api.openai.com/v1/responses";
