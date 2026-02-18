@@ -101,7 +101,7 @@ public class ClosingHalfTactics extends TacticalRule {
         // Opponent-aware counter-adjustment: nudge deltas before applying stamina
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefense};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_CLOSING);
         dAttack = deltas[0]; dControl = deltas[1]; dDefense = deltas[2];
         attack += (dAttack * staminaFactor);
         control += (dControl * staminaFactor);
@@ -138,7 +138,7 @@ public class ClosingHalfTactics extends TacticalRule {
         }
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefense};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_CLOSING);
         dAttack = deltas[0]; dControl = deltas[1]; dDefense = deltas[2];
         attack += (dAttack * staminaFactor);
         control += (dControl * staminaFactor);

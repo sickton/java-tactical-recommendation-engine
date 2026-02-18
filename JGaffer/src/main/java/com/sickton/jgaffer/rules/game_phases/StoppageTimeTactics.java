@@ -73,12 +73,11 @@ public class StoppageTimeTactics extends TacticalRule {
             // Last push to win
             dAttack  += ADJUST_THREE;
             dControl += ADJUST_ONE;
-            dDefence -= ADJUST_TWO;
+            dDefence -= ADJUST_ONE;
         }
         else if (isTeamLosing(context, team)) {
-            // All-in desperation
+            // All-in desperation — maintain minimal shape
             dAttack  += ADJUST_THREE;
-            dControl -= ADJUST_ONE;
             dDefence -= ADJUST_THREE;
         }
         else {
@@ -98,7 +97,7 @@ public class StoppageTimeTactics extends TacticalRule {
         // Opponent-aware counter-adjustment: applied before stamina scaling
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_STOPPAGE);
         dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> HIGH_STAMINA_FACTOR;
@@ -128,9 +127,9 @@ public class StoppageTimeTactics extends TacticalRule {
         if (isTeamWinning(context, team)) {
             dAttack -= ADJUST_TWO; dControl += ADJUST_TWO; dDefence += ADJUST_THREE;
         } else if (isTeamDrawing(context, team)) {
-            dAttack += ADJUST_THREE; dControl += ADJUST_ONE; dDefence -= ADJUST_TWO;
+            dAttack += ADJUST_THREE; dControl += ADJUST_ONE; dDefence -= ADJUST_ONE;
         } else if (isTeamLosing(context, team)) {
-            dAttack += ADJUST_THREE; dControl -= ADJUST_ONE; dDefence -= ADJUST_THREE;
+            dAttack += ADJUST_THREE; dDefence -= ADJUST_THREE;
         } else {
             throw new IllegalArgumentException("Invalid match situation in stoppage time");
         }
@@ -141,7 +140,7 @@ public class StoppageTimeTactics extends TacticalRule {
         }
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_STOPPAGE);
         dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> HIGH_STAMINA_FACTOR; case MEDIUM -> MEDIUM_STAMINA_FACTOR; case LOW -> LOW_STAMINA_FACTOR;

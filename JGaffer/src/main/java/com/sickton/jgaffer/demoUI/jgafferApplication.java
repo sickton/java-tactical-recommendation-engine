@@ -157,7 +157,13 @@ public class jgafferApplication {
         String oppStyle     = opponent.getSquad().getTeamStyle().name();
         String teamStamina  = team.getStaminaLevel().name();
         String teamAdapt    = team.getAdaptabilityLevel().name();
-        int goalDiff = Math.abs(matchContext.getHomeGoals() - matchContext.getAwayGoals());
+        int goalDiff;
+
+        if (matchContext.getHome().getName().equalsIgnoreCase(team.getName())) {
+            goalDiff = matchContext.getHomeGoals() - matchContext.getAwayGoals();
+        } else {
+            goalDiff = matchContext.getAwayGoals() - matchContext.getHomeGoals();
+        }
         String scoreline    = matchContext.getHomeGoals() + "-" + matchContext.getAwayGoals();
         String gamePhase;
         if      (minute <= 15)  gamePhase = "Early Minutes (0-15)";
@@ -168,24 +174,46 @@ public class jgafferApplication {
         else if (minute <= 87)  gamePhase = "Late Game (71-87)";
         else                    gamePhase = "Stoppage Time (88+)";
         String prompt = """
-You are a tactical analyst and football manager giving your squad a focused pre-play briefing.
-Recommended tactic: %s | Suggested formation: %s
-Team: %s | Opponent: %s
-Your style: %s | Opponent style: %s
-Stamina: %s | Adaptability: %s
-Game phase: %s | Minute: %d | Score: %s | Goal difference: %d
-Recommendation confidence: %d%%
+You are the head coach of %s delivering a clear tactical briefing to your players.
 
-Use plain ASCII only. No markdown, no bold, no emojis, no headings, no smart quotes.
-Give exactly 5 bullet points using a dash (-).
-- Points 1-3: explain the tactical reasoning using the context above (style matchup, game phase, score, stamina, formation).
-- Point 4: explain what risk the chosen tactic manages or accepts.
-- Point 5: a short, direct spoken instruction from the manager to the team (imperative, motivational).
+Context:
+Recommended tactic: %s
+Suggested formation: %s
+Opponent: %s
+Team style: %s | Opponent style: %s
+Stamina: %s | Adaptability: %s
+Game phase: %s
+Minute: %d
+Score: %s
+Goal difference from your perspective: %d
+Engine confidence: %d%%
+
+Assume %s is the team being managed. Interpret the score and goal difference from this team's perspective (winning, losing, or drawing).
+
+Use plain ASCII only. No markdown, no bold text, no emojis, no smart quotes.
+
+Give exactly 5 bullet points using a dash (-):
+- Points 1-2: explain why this tactic fits the current scoreline and game phase.
+- Point 3: explain the tactical matchup (style vs style and formation structure).
+- Point 4: explain the main risk this tactic accepts or prevents.
+- Point 5: a short, direct, imperative instruction to the team (motivational but realistic).
 """
-                .formatted(systemTact, suggestedFormation.getLabel(),
-                           team.getName(), opponent.getName(),
-                           teamStyle, oppStyle, teamStamina, teamAdapt,
-                           gamePhase, minute, scoreline, goalDiff, confidence);
+                .formatted(
+                        team.getName(),
+                        systemTact,
+                        suggestedFormation.getLabel(),
+                        opponent.getName(),
+                        teamStyle,
+                        oppStyle,
+                        teamStamina,
+                        teamAdapt,
+                        gamePhase,
+                        minute,
+                        scoreline,
+                        goalDiff,
+                        confidence,
+                        team.getName()
+                );
 
         OpenAIClient openAIClient = new OpenAIClient(System.getenv("OPENAI_API_KEY"));
         TacticalExplanationService aiexp = new TacticalExplanationService(openAIClient);

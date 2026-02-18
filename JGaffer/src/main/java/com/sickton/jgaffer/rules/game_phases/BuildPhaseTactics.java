@@ -90,7 +90,7 @@ public class BuildPhaseTactics extends TacticalRule {
         // Opponent-aware counter-adjustment: applied before stamina/adaptability scaling
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_BUILD);
         dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> 1.05;
@@ -106,6 +106,7 @@ public class BuildPhaseTactics extends TacticalRule {
             case LOW -> 0.90;
         };
         dControl *= adaptabilityFactor;
+        dAttack  *= adaptabilityFactor;
         attack  += dAttack;
         control += dControl;
         defence += dDefence;
@@ -139,7 +140,7 @@ public class BuildPhaseTactics extends TacticalRule {
         }
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_BUILD);
         dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> 1.05; case MEDIUM -> 1.00; case LOW -> 0.85;
@@ -149,6 +150,7 @@ public class BuildPhaseTactics extends TacticalRule {
             case HIGH -> 1.05; case MEDIUM -> 1.00; case LOW -> 0.90;
         };
         dControl *= adaptabilityFactor;
+        dAttack  *= adaptabilityFactor;
         attack += dAttack; control += dControl; defence += dDefence;
         double ca = clamp(attack), cc = clamp(control), cd = clamp(defence);
         int confidence = computeConfidence(ca, cc, cd);

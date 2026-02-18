@@ -92,7 +92,7 @@ public class EarlyMinuteTactics extends TacticalRule {
         // Opponent-aware counter-adjustment
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefense};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_EARLY);
         attack  += deltas[0];
         control += deltas[1];
         defense += deltas[2];
@@ -123,7 +123,7 @@ public class EarlyMinuteTactics extends TacticalRule {
         }
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefense};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_EARLY);
         attack  += deltas[0];
         control += deltas[1];
         defense += deltas[2];

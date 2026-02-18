@@ -41,6 +41,16 @@ public abstract class TacticalRule {
     protected static final double MEDIUM_INTENT_THRESHOLD = 0.66;
     protected static final double HIGH_INTENT_THRESHOLD = 1;
 
+    // Phase-scale multipliers for opponent style adjustments.
+    // Larger phases = later in the match = opponent context matters more.
+    protected static final double OPP_SCALE_EARLY    = 0.5;
+    protected static final double OPP_SCALE_CLOSING  = 0.75;
+    protected static final double OPP_SCALE_HALFTIME = 1.0;
+    protected static final double OPP_SCALE_BUILD    = 1.0;
+    protected static final double OPP_SCALE_TENSION  = 1.25;
+    protected static final double OPP_SCALE_LATE     = 1.5;
+    protected static final double OPP_SCALE_STOPPAGE = 2.0;
+
     /**
      * Determines whether this tactical rule applies to the current match context and team.
      *
@@ -282,19 +292,19 @@ public abstract class TacticalRule {
      * @param opponentStyle the opponent team's playing style
      * @param deltas        a double[3] array of {dAttack, dControl, dDefence} — modified in-place
      */
-    public void applyOpponentStyleAdjustments(Style opponentStyle, double[] deltas) {
+    public void applyOpponentStyleAdjustments(Style opponentStyle, double[] deltas, double phaseScale) {
         switch (opponentStyle) {
             case ATTACKING -> {
-                deltas[0] -= 0.03; // trim attack — cope with their high tempo
-                deltas[2] += 0.03; // shore up defence
+                deltas[0] -= 0.03 * phaseScale; // trim attack — cope with their high tempo
+                deltas[2] += 0.03 * phaseScale; // shore up defence
             }
             case DEFENSIVE -> {
-                deltas[0] += 0.03; // commit more forward — break down the low block
-                deltas[2] -= 0.03; // ease off defence
+                deltas[0] += 0.03 * phaseScale; // commit more forward — break down the low block
+                deltas[2] -= 0.03 * phaseScale; // ease off defence
             }
             case CONTROLLING -> {
-                deltas[0] += 0.03; // press high to disrupt their buildup
-                deltas[1] += 0.03; // contest possession
+                deltas[0] += 0.03 * phaseScale; // press high to disrupt their buildup
+                deltas[1] += 0.03 * phaseScale; // contest possession
             }
         }
     }

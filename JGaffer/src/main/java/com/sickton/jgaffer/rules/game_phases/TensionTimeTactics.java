@@ -96,7 +96,7 @@ public class TensionTimeTactics extends TacticalRule {
         // Opponent-aware counter-adjustment: applied before stamina/adaptability scaling
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_TENSION);
         dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> HIGH_STAMINA_FACTOR;
@@ -112,6 +112,7 @@ public class TensionTimeTactics extends TacticalRule {
             case LOW -> LOW_ADAPT_FACTOR;
         };
         dControl *= adaptFactor;
+        dAttack  *= adaptFactor;
         attack  += dAttack;
         control += dControl;
         defence += dDefence;
@@ -145,7 +146,7 @@ public class TensionTimeTactics extends TacticalRule {
         }
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_TENSION);
         dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> HIGH_STAMINA_FACTOR; case MEDIUM -> MEDIUM_STAMINA_FACTOR; case LOW -> LOW_STAMINA_FACTOR;
@@ -155,6 +156,7 @@ public class TensionTimeTactics extends TacticalRule {
             case HIGH -> HIGH_ADAPT_FACTOR; case MEDIUM -> MEDIUM_ADAPT_FACTOR; case LOW -> LOW_ADAPT_FACTOR;
         };
         dControl *= adaptFactor;
+        dAttack  *= adaptFactor;
         attack += dAttack; control += dControl; defence += dDefence;
         double ca = clamp(attack), cc = clamp(control), cd = clamp(defence);
         int confidence = computeConfidence(ca, cc, cd);

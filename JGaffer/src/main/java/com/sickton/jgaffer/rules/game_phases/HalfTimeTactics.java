@@ -91,7 +91,7 @@ public class HalfTimeTactics extends TacticalRule {
         // Opponent-aware counter-adjustment: halftime is the key tactical reset moment
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_HALFTIME);
         attack  += deltas[0];
         control += deltas[1];
         defence += deltas[2];
@@ -125,7 +125,7 @@ public class HalfTimeTactics extends TacticalRule {
         }
         Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
         double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_HALFTIME);
         attack += deltas[0]; control += deltas[1]; defence += deltas[2];
         double ca = clamp(attack), cc = clamp(control), cd = clamp(defence);
         int confidence = computeConfidence(ca, cc, cd);
