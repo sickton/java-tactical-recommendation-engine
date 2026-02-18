@@ -19,24 +19,24 @@ import java.util.*;
 public class Team {
     private final String name;
     private final Squad squad;
-    //private final Formation form;
+    private final Formation formation;
     protected final TeamIntent intent;
     private final StaminaLevel staminaLevel;
     private final TeamAdaptability adaptability;
 
     /**
      * Constructs a new Team from a squad, stamina level, and adaptability.
-     * The team name is derived from the squad, and the tactical intent is
+     * The team name and formation are derived from the squad, and the tactical intent is
      * automatically initialized based on the squad's playing style.
      *
-     * @param s            the squad providing team identity and style
+     * @param s            the squad providing team identity, style, and base formation
      * @param stamina      the stamina level of the team
      * @param adaptability the team's adaptability to tactical changes
      */
     public Team(Squad s, StaminaLevel stamina, TeamAdaptability adaptability) {
         this.squad = s;
         this.name = s.getTeam();
-        //this.form = form;
+        this.formation = s.getBaseFormation();
         this.intent = new TeamIntent(s);
         this.staminaLevel = stamina;
         this.adaptability = adaptability;
@@ -50,7 +50,7 @@ public class Team {
     public TeamIntent getIntent() {
         return intent;
     }
-    
+
     /**
      * Returns the name of the team.
      *
@@ -87,7 +87,12 @@ public class Team {
         return adaptability;
     }
 
-//    public Formation getForm() {
-//        return form;
-//    }
+    /**
+     * Returns the team's base formation derived from the squad.
+     *
+     * @return the {@link Formation} the team typically plays
+     */
+    public Formation getFormation() {
+        return formation;
+    }
 }

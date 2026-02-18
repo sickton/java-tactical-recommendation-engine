@@ -93,6 +93,11 @@ public class TensionTimeTactics extends TacticalRule {
                 dDefence -= ADJUST_ONE;
             }
         }
+        // Opponent-aware counter-adjustment: applied before stamina/adaptability scaling
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefence};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> HIGH_STAMINA_FACTOR;
             case MEDIUM -> MEDIUM_STAMINA_FACTOR;
@@ -117,5 +122,47 @@ public class TensionTimeTactics extends TacticalRule {
             throw new IllegalArgumentException("No tactic found for tension-time state");
         }
         return suggestion.getSuggestedTactic();
+    }
+
+    @Override
+    public TacticRecommendation recommendWithConfidence(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
+        TeamIntent intent = team.getIntent();
+        double attack = intent.getAttack(), control = intent.getControl(), defence = intent.getDefence();
+        double dAttack = 0.0, dControl = 0.0, dDefence = 0.0;
+        if (isTeamWinning(context, team)) {
+            dAttack -= ADJUST_TWO; dControl += ADJUST_TWO; dDefence += ADJUST_TWO;
+        } else if (isTeamDrawing(context, team)) {
+            dAttack += ADJUST_TWO; dControl += ADJUST_TWO; dDefence -= ADJUST_ONE;
+        } else if (isTeamLosing(context, team)) {
+            dAttack += ADJUST_THREE; dControl += ADJUST_THREE; dDefence -= ADJUST_TWO;
+        } else {
+            throw new IllegalArgumentException("Invalid match situation in tension time");
+        }
+        int goalDiff = getGoalDifference(context);
+        if (goalDiff >= 2) {
+            if (isTeamWinning(context, team)) { dAttack -= ADJUST_ONE; dDefence += ADJUST_ONE; }
+            else if (isTeamLosing(context, team)) { dAttack += ADJUST_ONE; dDefence -= ADJUST_ONE; }
+        }
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefence};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
+        double staminaFactor = switch (getTeamStamina(team)) {
+            case HIGH -> HIGH_STAMINA_FACTOR; case MEDIUM -> MEDIUM_STAMINA_FACTOR; case LOW -> LOW_STAMINA_FACTOR;
+        };
+        dAttack *= staminaFactor; dControl *= staminaFactor; dDefence *= staminaFactor;
+        double adaptFactor = switch (getTeamAdaptability(team)) {
+            case HIGH -> HIGH_ADAPT_FACTOR; case MEDIUM -> MEDIUM_ADAPT_FACTOR; case LOW -> LOW_ADAPT_FACTOR;
+        };
+        dControl *= adaptFactor;
+        attack += dAttack; control += dControl; defence += dDefence;
+        double ca = clamp(attack), cc = clamp(control), cd = clamp(defence);
+        int confidence = computeConfidence(ca, cc, cd);
+        TacticKey key = new TacticKey(team.getSquad().getTeamStyle(), adjustWeights(ca, cc, cd), GamePhase.TENSION_TIME);
+        TacticSuggestion suggestion = tacticMap.get(key);
+        if (suggestion == null)
+            throw new IllegalArgumentException("No tactic found for tension-time state");
+        Formation formation = suggestFormation(suggestion.getSuggestedTactic(), team.getFormation());
+        return new TacticRecommendation(suggestion.getSuggestedTactic(), confidence, formation);
     }
 }

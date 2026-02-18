@@ -1,12 +1,12 @@
 package com.sickton.jgaffer.utility;
 
+import com.sickton.jgaffer.domain.Formation;
 import com.sickton.jgaffer.domain.Squad;
 import com.sickton.jgaffer.domain.StaminaLevel;
 import com.sickton.jgaffer.domain.Style;
 import com.sickton.jgaffer.domain.TeamAdaptability;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -23,8 +23,8 @@ import java.util.Scanner;
  * @author sickton
  */
 public class ApplicationParser {
-    protected static final String PREMIER_LEAGUE_TITLES = "JGaffer/src/main/java/com/sickton/jgaffer/input/PremierLeagueMatches.csv";
-    protected static final String SQUAD_INFORMATION = "JGaffer/src/main/java/com/sickton/jgaffer/input/SquadInformation.csv";
+    protected static final String PREMIER_LEAGUE_TITLES = "/PremierLeagueMatches.csv";
+    protected static final String SQUAD_INFORMATION = "/SquadInformation.csv";
 
     /**
      * Parses the Premier League match titles CSV file into a map of match IDs to title strings.
@@ -36,7 +36,9 @@ public class ApplicationParser {
     {
         Map<Integer, String> titles = new HashMap<Integer, String>();
         try {
-            Scanner sc = new Scanner(new FileInputStream(PREMIER_LEAGUE_TITLES));
+            InputStream is = ApplicationParser.class.getResourceAsStream(PREMIER_LEAGUE_TITLES);
+            if (is == null) throw new RuntimeException("PremierLeagueMatches.csv not found on classpath");
+            Scanner sc = new Scanner(is);
             int lines = 0;
             while(sc.hasNextLine())
             {
@@ -49,7 +51,7 @@ public class ApplicationParser {
             }
             sc.close();
             return titles;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -58,7 +60,7 @@ public class ApplicationParser {
      * Parses the squad information CSV file into a map of squad names to {@link FileStorage} objects.
      *
      * @return a map where keys are squad names and values are {@link FileStorage} bundles
-     *         containing squad, adaptability, and stamina data
+     *         containing squad, adaptability, stamina, and formation data
      * @throws RuntimeException if the CSV file cannot be found or read
      */
     public static Map<String, FileStorage> parseSquadInformation()
@@ -66,7 +68,9 @@ public class ApplicationParser {
         Map<String, FileStorage> squads = new HashMap<>();
         try
         {
-            Scanner sc = new Scanner(new FileInputStream(SQUAD_INFORMATION));
+            InputStream is = ApplicationParser.class.getResourceAsStream(SQUAD_INFORMATION);
+            if (is == null) throw new RuntimeException("SquadInformation.csv not found on classpath");
+            Scanner sc = new Scanner(is);
             int lines = 0;
             while(sc.hasNextLine())
             {
@@ -79,13 +83,14 @@ public class ApplicationParser {
                 String manager = parts[3];
                 Style teamStyle = Style.valueOf(parts[4]);
                 TeamAdaptability adaptability = TeamAdaptability.valueOf(parts[5]);
-                StaminaLevel  staminaLevel = StaminaLevel.valueOf(parts[6]);
-                FileStorage file = new FileStorage(new Squad(squadName, manager, teamStyle), adaptability, staminaLevel);
+                StaminaLevel staminaLevel = StaminaLevel.valueOf(parts[6]);
+                Formation formation = Formation.valueOf(parts[7].trim());
+                FileStorage file = new FileStorage(new Squad(squadName, manager, teamStyle, formation), adaptability, staminaLevel, formation);
                 squads.put(squadName, file);
             }
             sc.close();
             return squads;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -132,7 +137,9 @@ public class ApplicationParser {
         Map<String, String> code = new HashMap<>();
         try
         {
-            Scanner sc = new Scanner(new FileInputStream(SQUAD_INFORMATION));
+            InputStream is = ApplicationParser.class.getResourceAsStream(SQUAD_INFORMATION);
+            if (is == null) throw new RuntimeException("SquadInformation.csv not found on classpath");
+            Scanner sc = new Scanner(is);
             int lines = 0;
             while(sc.hasNextLine())
             {
@@ -147,7 +154,7 @@ public class ApplicationParser {
             }
             sc.close();
             return code;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

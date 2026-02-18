@@ -54,6 +54,7 @@ public class EarlyMinuteTactics extends TacticalRule {
         double attack = teamIntent.getAttack();
         double control =  teamIntent.getControl();
         double defense = teamIntent.getDefence();
+        double dAttack = 0.0, dControl = 0.0, dDefense = 0.0;
         if(isTeamWinning(context,team)){
             //team is winning - it is early in the game
             //makes sense to slow down the pace of the game, grow more into the game
@@ -61,9 +62,9 @@ public class EarlyMinuteTactics extends TacticalRule {
             //Therefore, attack reduces by 0.03
             //team tries to control more, 0.08 addition in control
             //team becomes defensively better, therefore, 0.03 addition in defense
-            attack -= ADJUST_ONE;
-            control += ADJUST_THREE;
-            defense += ADJUST_ONE;
+            dAttack -= ADJUST_ONE;
+            dControl += ADJUST_THREE;
+            dDefense += ADJUST_ONE;
         }
         else if(isTeamDrawing(context,team)){
             //team is drawing - it is early in the game
@@ -71,9 +72,9 @@ public class EarlyMinuteTactics extends TacticalRule {
             //hence 0.05 added to control. To look like a team trying to win
             //midfield needs to be tight and fluid, therefore more focus on control
             //and a minor deduction of 0.03 from attack and defense
-            attack -= ADJUST_ONE;
-            control += ADJUST_TWO;
-            defense -= ADJUST_ONE;
+            dAttack -= ADJUST_ONE;
+            dControl += ADJUST_TWO;
+            dDefense -= ADJUST_ONE;
         }
         else if(isTeamLosing(context,team)){
             //team is in a losing position,
@@ -82,12 +83,19 @@ public class EarlyMinuteTactics extends TacticalRule {
             //0.08 addition to control, 0.05 addition to attack
             //and deduction of 0.05 from defence to be on the front foot
             //and accept defensive risk
-            attack += ADJUST_TWO;
-            control += ADJUST_THREE;
-            defense -= ADJUST_TWO;
+            dAttack += ADJUST_TWO;
+            dControl += ADJUST_THREE;
+            dDefense -= ADJUST_TWO;
         }
         else
             throw new IllegalArgumentException("Invalid match situation provided");
+        // Opponent-aware counter-adjustment
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefense};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        attack  += deltas[0];
+        control += deltas[1];
+        defense += deltas[2];
         WeightCombination combo = adjustWeights(clamp(attack),clamp(control), clamp(defense));
         Style teamStyle = team.getSquad().getTeamStyle();
         TacticKey key = new TacticKey(teamStyle, combo, GamePhase.EARLY_MINUTES);
@@ -95,5 +103,37 @@ public class EarlyMinuteTactics extends TacticalRule {
         if(suggestion == null)
             throw new IllegalArgumentException("Invalid tactic situation present");
         return suggestion.getSuggestedTactic();
+    }
+
+    @Override
+    public TacticRecommendation recommendWithConfidence(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
+        TeamIntent teamIntent = team.getIntent();
+        double attack = teamIntent.getAttack();
+        double control = teamIntent.getControl();
+        double defense = teamIntent.getDefence();
+        double dAttack = 0.0, dControl = 0.0, dDefense = 0.0;
+        if (isTeamWinning(context, team)) {
+            dAttack -= ADJUST_ONE; dControl += ADJUST_THREE; dDefense += ADJUST_ONE;
+        } else if (isTeamDrawing(context, team)) {
+            dAttack -= ADJUST_ONE; dControl += ADJUST_TWO; dDefense -= ADJUST_ONE;
+        } else if (isTeamLosing(context, team)) {
+            dAttack += ADJUST_TWO; dControl += ADJUST_THREE; dDefense -= ADJUST_TWO;
+        } else {
+            throw new IllegalArgumentException("Invalid match situation provided");
+        }
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefense};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        attack  += deltas[0];
+        control += deltas[1];
+        defense += deltas[2];
+        double ca = clamp(attack), cc = clamp(control), cd = clamp(defense);
+        int confidence = computeConfidence(ca, cc, cd);
+        TacticKey key = new TacticKey(team.getSquad().getTeamStyle(), adjustWeights(ca, cc, cd), GamePhase.EARLY_MINUTES);
+        TacticSuggestion suggestion = tacticMap.get(key);
+        if (suggestion == null)
+            throw new IllegalArgumentException("Invalid tactic situation present");
+        Formation formation = suggestFormation(suggestion.getSuggestedTactic(), team.getFormation());
+        return new TacticRecommendation(suggestion.getSuggestedTactic(), confidence, formation);
     }
 }

@@ -87,6 +87,11 @@ public class BuildPhaseTactics extends TacticalRule {
                 dDefence -= ADJUST_ONE;
             }
         }
+        // Opponent-aware counter-adjustment: applied before stamina/adaptability scaling
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefence};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> 1.05;
             case MEDIUM -> 1.00;
@@ -111,5 +116,47 @@ public class BuildPhaseTactics extends TacticalRule {
             throw new IllegalArgumentException("No tactic found for build-phase state");
         }
         return suggestion.getSuggestedTactic();
+    }
+
+    @Override
+    public TacticRecommendation recommendWithConfidence(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
+        TeamIntent intent = team.getIntent();
+        double attack = intent.getAttack(), control = intent.getControl(), defence = intent.getDefence();
+        double dAttack = 0.0, dControl = 0.0, dDefence = 0.0;
+        if (isTeamWinning(context, team)) {
+            dAttack -= ADJUST_ONE; dControl += ADJUST_TWO; dDefence += ADJUST_ONE;
+        } else if (isTeamDrawing(context, team)) {
+            dAttack += ADJUST_ONE; dControl += ADJUST_TWO; dDefence += ADJUST_ONE;
+        } else if (isTeamLosing(context, team)) {
+            dAttack += ADJUST_TWO; dControl += ADJUST_TWO; dDefence -= ADJUST_ONE;
+        } else {
+            throw new IllegalArgumentException("Invalid match situation in build phase");
+        }
+        int goalDiff = getGoalDifference(context);
+        if (goalDiff >= 2) {
+            if (isTeamWinning(context, team)) { dAttack -= ADJUST_ONE; dDefence += ADJUST_ONE; }
+            else if (isTeamLosing(context, team)) { dAttack += ADJUST_ONE; dDefence -= ADJUST_ONE; }
+        }
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefence};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
+        double staminaFactor = switch (getTeamStamina(team)) {
+            case HIGH -> 1.05; case MEDIUM -> 1.00; case LOW -> 0.85;
+        };
+        dAttack *= staminaFactor; dControl *= staminaFactor; dDefence *= staminaFactor;
+        double adaptabilityFactor = switch (getTeamAdaptability(team)) {
+            case HIGH -> 1.05; case MEDIUM -> 1.00; case LOW -> 0.90;
+        };
+        dControl *= adaptabilityFactor;
+        attack += dAttack; control += dControl; defence += dDefence;
+        double ca = clamp(attack), cc = clamp(control), cd = clamp(defence);
+        int confidence = computeConfidence(ca, cc, cd);
+        TacticKey key = new TacticKey(team.getSquad().getTeamStyle(), adjustWeights(ca, cc, cd), GamePhase.BUILD_PHASE);
+        TacticSuggestion suggestion = tacticMap.get(key);
+        if (suggestion == null)
+            throw new IllegalArgumentException("No tactic found for build-phase state");
+        Formation formation = suggestFormation(suggestion.getSuggestedTactic(), team.getFormation());
+        return new TacticRecommendation(suggestion.getSuggestedTactic(), confidence, formation);
     }
 }

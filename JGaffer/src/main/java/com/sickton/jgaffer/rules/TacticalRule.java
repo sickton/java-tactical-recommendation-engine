@@ -4,6 +4,7 @@ import com.sickton.jgaffer.domain.*;
 
 import java.util.Map;
 
+
 /**
  * Abstract base class for all game-phase-specific tactical rules.
  *
@@ -59,6 +60,17 @@ public abstract class TacticalRule {
      * @throws IllegalArgumentException if the match situation is invalid or no tactic is found
      */
     public abstract Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap);
+
+    /**
+     * Generates a tactic recommendation paired with a confidence score.
+     *
+     * @param context  the current match context containing minute, score, and participating teams
+     * @param team     the team for which a tactic is being recommended
+     * @param tacticMap the complete mapping of {@link TacticKey} to {@link TacticSuggestion}
+     * @return a {@link TacticRecommendation} containing the recommended tactic and confidence (0–100)
+     * @throws IllegalArgumentException if the match situation is invalid or no tactic is found
+     */
+    public abstract TacticRecommendation recommendWithConfidence(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap);
 
     /**
      * Converts raw attack, control, and defence weight values into discrete
@@ -206,5 +218,103 @@ public abstract class TacticalRule {
      */
     protected double clamp(double value) {
         return Math.max(0.0, Math.min(1.0, value));
+    }
+
+    /**
+     * Computes a confidence score (0–100) for the recommendation based on how far
+     * each final weight value sits from its nearest classification boundary (0.33, 0.66).
+     *
+     * <p>A weight near a boundary is ambiguous — a small change would flip it into a
+     * different {@link IntentRange}. The further all three weights are from any boundary,
+     * the more confident the recommendation is.</p>
+     *
+     * <p>Calculation: for each weight, find its distance to the nearest boundary.
+     * The maximum possible distance from a boundary within [0, 1] is 0.165 (midpoint
+     * of each zone: LOW centre=0.165, MEDIUM centre=0.495, HIGH centre=0.83).
+     * Average the three distances, normalize to [0, 1], then scale to 0–100.</p>
+     *
+     * @param attack  the final clamped attack weight
+     * @param control the final clamped control weight
+     * @param defence the final clamped defence weight
+     * @return an integer confidence score from 0 (boundary) to 100 (zone centre)
+     */
+    public int computeConfidence(double attack, double control, double defence) {
+        double maxDistFromBoundary = 0.165;
+        double avgDist = (distFromNearestBoundary(attack)
+                        + distFromNearestBoundary(control)
+                        + distFromNearestBoundary(defence)) / 3.0;
+        return (int) Math.round((avgDist / maxDistFromBoundary) * 100);
+    }
+
+    private double distFromNearestBoundary(double w) {
+        double d1 = Math.abs(w - LOW_INTENT_THRESHOLD);
+        double d2 = Math.abs(w - MEDIUM_INTENT_THRESHOLD);
+        return Math.min(d1, d2);
+    }
+
+    /**
+     * Returns the opponent team relative to the given team in this match context.
+     *
+     * @param context the current match context
+     * @param team    the team whose opponent to retrieve
+     * @return the opposing {@link Team} object
+     * @throws IllegalArgumentException if the team is not playing in this match
+     */
+    public Team getOpponent(MatchContext context, Team team) {
+        if (team.getName().equalsIgnoreCase(context.getHome().getName()))
+            return context.getAway();
+        else if (team.getName().equalsIgnoreCase(context.getAway().getName()))
+            return context.getHome();
+        else
+            throw new IllegalArgumentException("Team is not playing in this match");
+    }
+
+    /**
+     * Applies a small counter-adjustment to the weight deltas based on the opponent's playing style.
+     *
+     * <p>Models how a coaching staff adjusts their approach depending on who they face:</p>
+     * <ul>
+     *   <li><b>vs ATTACKING opponent</b>: reinforce defence (+0.03), trim attack (-0.03)</li>
+     *   <li><b>vs DEFENSIVE opponent</b>: push attack up (+0.03), ease off defence (-0.03)</li>
+     *   <li><b>vs CONTROLLING opponent</b>: boost both control (+0.03) and attack (+0.03)</li>
+     * </ul>
+     *
+     * @param opponentStyle the opponent team's playing style
+     * @param deltas        a double[3] array of {dAttack, dControl, dDefence} — modified in-place
+     */
+    public void applyOpponentStyleAdjustments(Style opponentStyle, double[] deltas) {
+        switch (opponentStyle) {
+            case ATTACKING -> {
+                deltas[0] -= 0.03; // trim attack — cope with their high tempo
+                deltas[2] += 0.03; // shore up defence
+            }
+            case DEFENSIVE -> {
+                deltas[0] += 0.03; // commit more forward — break down the low block
+                deltas[2] -= 0.03; // ease off defence
+            }
+            case CONTROLLING -> {
+                deltas[0] += 0.03; // press high to disrupt their buildup
+                deltas[1] += 0.03; // contest possession
+            }
+        }
+    }
+
+    /**
+     * Suggests the optimal formation for a given tactic.
+     *
+     * <p>Maps each tactic to the formation that best supports its execution.
+     * The team's base formation is available for future refinement.</p>
+     *
+     * @param tactic the recommended tactic
+     * @param base   the team's base formation (available for future use)
+     * @return the {@link Formation} most suited to executing the given tactic
+     */
+    public Formation suggestFormation(Tactic tactic, Formation base) {
+        return switch (tactic) {
+            case HIGH_PRESS, GEGENPRESSING, TIKI_TAKA -> Formation.F_4_3_3;
+            case CONTROL, COUNTER_ATTACK              -> Formation.F_4_2_3_1;
+            case DIRECT_PLAY                          -> Formation.F_3_5_2;
+            case LOW_BLOCK                            -> Formation.F_5_3_2;
+        };
     }
 }

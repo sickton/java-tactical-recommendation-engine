@@ -4,8 +4,7 @@ import com.sickton.jgaffer.domain.*;
 import com.sickton.jgaffer.utility.ApplicationParser;
 import com.sickton.jgaffer.utility.FileStorage;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -26,7 +25,7 @@ import java.util.Scanner;
  * @author sickton
  */
 public class PremierLeagueFactory {
-    protected static final String PREMIER_LEAGUE_MATCH_CONTEXT = "JGaffer/src/main/java/com/sickton/jgaffer/input/MatchMinuteContext.csv";
+    protected static final String PREMIER_LEAGUE_MATCH_CONTEXT = "/MatchMinuteContext.csv";
     protected static Map<Integer, String> titles = ApplicationParser.parseTitles();
     protected static Map<String, FileStorage> teamData = ApplicationParser.parseSquadInformation();
 
@@ -34,7 +33,9 @@ public class PremierLeagueFactory {
     {
         Map<String, MatchContext> map = new HashMap<String, MatchContext>();
         try {
-            Scanner sc = new Scanner(new FileInputStream(PREMIER_LEAGUE_MATCH_CONTEXT));
+            InputStream is = PremierLeagueFactory.class.getResourceAsStream(PREMIER_LEAGUE_MATCH_CONTEXT);
+            if (is == null) throw new RuntimeException("MatchMinuteContext.csv not found on classpath");
+            Scanner sc = new Scanner(is);
             int lines = 0;
             while(sc.hasNextLine())
             {
@@ -66,7 +67,7 @@ public class PremierLeagueFactory {
             }
             sc.close();
             return map;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

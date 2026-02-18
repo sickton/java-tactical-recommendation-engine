@@ -56,28 +56,28 @@ mvn test
                                         │
                                         ▼
                               ┌─────────────────┐
-                              │  Match Context   │
-                              │  (scoreline,     │
-                              │   minute, team   │
-                              │   attributes)    │
+                              │  Match Context  │
+                              │  (scoreline,    │
+                              │   minute, team  │
+                              │   attributes)   │
                               └────────┬────────┘
                                        │
                                        ▼
                               ┌─────────────────┐
-                              │  Rule Engine     │
-                              │  (7 game phase   │
-                              │   rules)         │
+                              │  Rule Engine    │
+                              │  (7 game phase  │
+                              │   rules)        │
                               └────────┬────────┘
                                        │
                                        ▼
                               ┌─────────────────┐
-                              │  Recommended     │
-                              │  Tactic          │
+                              │  Recommended    │
+                              │  Tactic         │
                               └────────┬────────┘
                                        │
                                        ▼
                               ┌─────────────────┐
-                              │  AI Explanation  │
+                              │  AI Explanation │
                               │  (GPT-4.1)      │
                               └─────────────────┘
 ```

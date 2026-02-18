@@ -54,22 +54,23 @@ public class HalfTimeTactics extends TacticalRule {
         double attack  = intent.getAttack();
         double control = intent.getControl();
         double defence = intent.getDefence();
+        double dAttack = 0.0, dControl = 0.0, dDefence = 0.0;
 
         // Base halftime adjustments (strategic reset)
         if (isTeamWinning(context, team)) {
-            attack  -= ADJUST_TWO;
-            control += ADJUST_TWO;
-            defence += ADJUST_TWO;
+            dAttack  -= ADJUST_TWO;
+            dControl += ADJUST_TWO;
+            dDefence += ADJUST_TWO;
         }
         else if (isTeamDrawing(context, team)) {
-            attack  += ADJUST_ONE;
-            control += ADJUST_ONE;
-            defence += ADJUST_ONE;
+            dAttack  += ADJUST_ONE;
+            dControl += ADJUST_ONE;
+            dDefence += ADJUST_ONE;
         }
         else if (isTeamLosing(context, team)) {
-            attack  += ADJUST_TWO;
-            control += ADJUST_TWO;
-            defence -= ADJUST_ONE;
+            dAttack  += ADJUST_TWO;
+            dControl += ADJUST_TWO;
+            dDefence -= ADJUST_ONE;
         }
         else {
             throw new IllegalArgumentException("Invalid match situation at halftime");
@@ -78,15 +79,22 @@ public class HalfTimeTactics extends TacticalRule {
         if (goalDiff >= 2) {
             if (isTeamLosing(context, team)) {
                 // Down by 2+ goals → come out more aggressive
-                attack  += GOAL_BIAS;
-                defence -= GOAL_BIAS;
+                dAttack  += GOAL_BIAS;
+                dDefence -= GOAL_BIAS;
             }
             else if (isTeamWinning(context, team)) {
                 // Up by 2+ goals → protect structure
-                attack  -= GOAL_BIAS;
-                defence += GOAL_BIAS;
+                dAttack  -= GOAL_BIAS;
+                dDefence += GOAL_BIAS;
             }
         }
+        // Opponent-aware counter-adjustment: halftime is the key tactical reset moment
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefence};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        attack  += deltas[0];
+        control += deltas[1];
+        defence += deltas[2];
         WeightCombination combo = adjustWeights(clamp(attack), clamp(control), clamp(defence));
         TacticKey key = new TacticKey(team.getSquad().getTeamStyle(), combo, GamePhase.HALF_TIME);
         TacticSuggestion suggestion = tacticMap.get(key);
@@ -94,5 +102,38 @@ public class HalfTimeTactics extends TacticalRule {
             throw new IllegalArgumentException("No tactic found for halftime state");
         }
         return suggestion.getSuggestedTactic();
+    }
+
+    @Override
+    public TacticRecommendation recommendWithConfidence(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
+        TeamIntent intent = team.getIntent();
+        double attack = intent.getAttack(), control = intent.getControl(), defence = intent.getDefence();
+        double dAttack = 0.0, dControl = 0.0, dDefence = 0.0;
+        if (isTeamWinning(context, team)) {
+            dAttack -= ADJUST_TWO; dControl += ADJUST_TWO; dDefence += ADJUST_TWO;
+        } else if (isTeamDrawing(context, team)) {
+            dAttack += ADJUST_ONE; dControl += ADJUST_ONE; dDefence += ADJUST_ONE;
+        } else if (isTeamLosing(context, team)) {
+            dAttack += ADJUST_TWO; dControl += ADJUST_TWO; dDefence -= ADJUST_ONE;
+        } else {
+            throw new IllegalArgumentException("Invalid match situation at halftime");
+        }
+        int goalDiff = getGoalDifference(context);
+        if (goalDiff >= 2) {
+            if (isTeamLosing(context, team)) { dAttack += GOAL_BIAS; dDefence -= GOAL_BIAS; }
+            else if (isTeamWinning(context, team)) { dAttack -= GOAL_BIAS; dDefence += GOAL_BIAS; }
+        }
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefence};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        attack += deltas[0]; control += deltas[1]; defence += deltas[2];
+        double ca = clamp(attack), cc = clamp(control), cd = clamp(defence);
+        int confidence = computeConfidence(ca, cc, cd);
+        TacticKey key = new TacticKey(team.getSquad().getTeamStyle(), adjustWeights(ca, cc, cd), GamePhase.HALF_TIME);
+        TacticSuggestion suggestion = tacticMap.get(key);
+        if (suggestion == null)
+            throw new IllegalArgumentException("No tactic found for halftime state");
+        Formation formation = suggestFormation(suggestion.getSuggestedTactic(), team.getFormation());
+        return new TacticRecommendation(suggestion.getSuggestedTactic(), confidence, formation);
     }
 }

@@ -95,6 +95,11 @@ public class StoppageTimeTactics extends TacticalRule {
                 dDefence -= ADJUST_ONE;
             }
         }
+        // Opponent-aware counter-adjustment: applied before stamina scaling
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefence};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
         double staminaFactor = switch (getTeamStamina(team)) {
             case HIGH -> HIGH_STAMINA_FACTOR;
             case MEDIUM -> MEDIUM_STAMINA_FACTOR;
@@ -113,5 +118,43 @@ public class StoppageTimeTactics extends TacticalRule {
             throw new IllegalArgumentException("No tactic found for stoppage-time state");
         }
         return suggestion.getSuggestedTactic();
+    }
+
+    @Override
+    public TacticRecommendation recommendWithConfidence(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
+        TeamIntent intent = team.getIntent();
+        double attack = intent.getAttack(), control = intent.getControl(), defence = intent.getDefence();
+        double dAttack = 0.0, dControl = 0.0, dDefence = 0.0;
+        if (isTeamWinning(context, team)) {
+            dAttack -= ADJUST_TWO; dControl += ADJUST_TWO; dDefence += ADJUST_THREE;
+        } else if (isTeamDrawing(context, team)) {
+            dAttack += ADJUST_THREE; dControl += ADJUST_ONE; dDefence -= ADJUST_TWO;
+        } else if (isTeamLosing(context, team)) {
+            dAttack += ADJUST_THREE; dControl -= ADJUST_ONE; dDefence -= ADJUST_THREE;
+        } else {
+            throw new IllegalArgumentException("Invalid match situation in stoppage time");
+        }
+        int goalDiff = getGoalDifference(context);
+        if (goalDiff >= 2) {
+            if (isTeamWinning(context, team)) { dAttack -= ADJUST_ONE; dDefence += ADJUST_ONE; }
+            else if (isTeamLosing(context, team)) { dAttack += ADJUST_ONE; dDefence -= ADJUST_ONE; }
+        }
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefence};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
+        double staminaFactor = switch (getTeamStamina(team)) {
+            case HIGH -> HIGH_STAMINA_FACTOR; case MEDIUM -> MEDIUM_STAMINA_FACTOR; case LOW -> LOW_STAMINA_FACTOR;
+        };
+        dAttack *= staminaFactor; dControl *= staminaFactor; dDefence *= staminaFactor;
+        attack += dAttack; control += dControl; defence += dDefence;
+        double ca = clamp(attack), cc = clamp(control), cd = clamp(defence);
+        int confidence = computeConfidence(ca, cc, cd);
+        TacticKey key2 = new TacticKey(team.getSquad().getTeamStyle(), adjustWeights(ca, cc, cd), GamePhase.STOPPAGE_TIME);
+        TacticSuggestion suggestion2 = tacticMap.get(key2);
+        if (suggestion2 == null)
+            throw new IllegalArgumentException("No tactic found for stoppage-time state");
+        Formation formation = suggestFormation(suggestion2.getSuggestedTactic(), team.getFormation());
+        return new TacticRecommendation(suggestion2.getSuggestedTactic(), confidence, formation);
     }
 }

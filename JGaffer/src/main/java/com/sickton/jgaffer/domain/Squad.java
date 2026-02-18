@@ -17,18 +17,21 @@ public class Squad {
     private final String team;
     private final String manager;
     private final Style teamStyle;
+    private final Formation baseFormation;
 
     /**
-     * Constructs a new Squad with a team name, manager name, and playing style.
+     * Constructs a new Squad with a team name, manager name, playing style, and base formation.
      *
      * @param t  the team name
      * @param m  the manager name
      * @param ts the team's playing style
+     * @param f  the team's base formation
      */
-    public Squad(String t, String m, Style ts) {
+    public Squad(String t, String m, Style ts, Formation f) {
         this.team = t;
         this.manager = m;
         this.teamStyle = ts;
+        this.baseFormation = f;
     }
 
     /**
@@ -56,5 +59,14 @@ public class Squad {
      */
     public Style getTeamStyle() {
         return this.teamStyle;
+    }
+
+    /**
+     * Returns the team's base formation.
+     *
+     * @return the {@link Formation} the team typically plays
+     */
+    public Formation getBaseFormation() {
+        return this.baseFormation;
     }
 }

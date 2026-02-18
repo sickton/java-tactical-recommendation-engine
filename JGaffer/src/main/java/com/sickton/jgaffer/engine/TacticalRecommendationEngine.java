@@ -1,6 +1,7 @@
 package com.sickton.jgaffer.engine;
 
 import com.sickton.jgaffer.domain.*;
+import com.sickton.jgaffer.domain.TacticRecommendation;
 import com.sickton.jgaffer.rules.TacticalRule;
 import com.sickton.jgaffer.rules.game_phases.*;
 import com.sickton.jgaffer.utility.TacticMapper;
@@ -77,5 +78,31 @@ public class TacticalRecommendationEngine {
             throw new IllegalArgumentException("Invalid match situation, belongs to more than one phase of the game");
         else
             return tacticRule.recommend(context, team, tacticMapping);
+    }
+
+    /**
+     * Evaluates the current match context and returns a {@link TacticRecommendation}
+     * containing both the recommended tactic and a confidence score (0–100).
+     *
+     * <p>Confidence reflects how far the final weight values sit from their nearest
+     * classification boundary — higher means the recommendation is unambiguous.</p>
+     *
+     * @param context the current match context including minute, score, and teams
+     * @param team    the team for which a tactic recommendation is requested
+     * @return a {@link TacticRecommendation} with the tactic and its confidence score
+     * @throws IllegalArgumentException if zero or more than one rule applies
+     */
+    public TacticRecommendation recommendWithDetails(MatchContext context, Team team) {
+        int rules = 0;
+        TacticalRule tacticRule = null;
+        for (TacticalRule tacticalRule : gamePhaseTactics) {
+            if (tacticalRule.applies(context, team)) {
+                rules++;
+                tacticRule = tacticalRule;
+            }
+        }
+        if (rules != 1)
+            throw new IllegalArgumentException("Invalid match situation, belongs to more than one phase of the game");
+        return tacticRule.recommendWithConfidence(context, team, tacticMapping);
     }
 }

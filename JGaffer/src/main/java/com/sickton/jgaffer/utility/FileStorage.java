@@ -1,5 +1,6 @@
 package com.sickton.jgaffer.utility;
 
+import com.sickton.jgaffer.domain.Formation;
 import com.sickton.jgaffer.domain.Squad;
 import com.sickton.jgaffer.domain.StaminaLevel;
 import com.sickton.jgaffer.domain.TeamAdaptability;
@@ -19,18 +20,21 @@ public class FileStorage {
     private final Squad squadData;
     private final TeamAdaptability adaptabilityData;
     private final StaminaLevel staminaData;
+    private final Formation formation;
 
     /**
-     * Constructs a new {@code FileStorage} bundling squad, adaptability, and stamina data.
+     * Constructs a new {@code FileStorage} bundling squad, adaptability, stamina, and formation data.
      *
      * @param s  the squad data parsed from CSV
      * @param a  the team adaptability level
      * @param st the team stamina level
+     * @param f  the team's base formation
      */
-    public FileStorage(Squad s, TeamAdaptability a, StaminaLevel st ) {
+    public FileStorage(Squad s, TeamAdaptability a, StaminaLevel st, Formation f) {
         this.squadData = s;
         this.adaptabilityData = a;
         this.staminaData = st;
+        this.formation = f;
     }
 
     /**
@@ -58,5 +62,14 @@ public class FileStorage {
      */
     public StaminaLevel getStaminaData() {
         return staminaData;
+    }
+
+    /**
+     * Returns the team's base formation.
+     *
+     * @return the {@link Formation} parsed from CSV
+     */
+    public Formation getFormation() {
+        return formation;
     }
 }

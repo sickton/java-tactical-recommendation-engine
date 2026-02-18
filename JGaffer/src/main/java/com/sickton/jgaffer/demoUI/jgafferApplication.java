@@ -1,7 +1,9 @@
 package com.sickton.jgaffer.demoUI;
 
+import com.sickton.jgaffer.domain.Formation;
 import com.sickton.jgaffer.domain.MatchContext;
 import com.sickton.jgaffer.domain.Tactic;
+import com.sickton.jgaffer.domain.TacticRecommendation;
 import com.sickton.jgaffer.domain.Team;
 import com.sickton.jgaffer.engine.TacticalRecommendationEngine;
 import com.sickton.jgaffer.openAIService.OpenAIClient;
@@ -142,21 +144,48 @@ public class jgafferApplication {
         System.out.println("Enter your tactical suggestion for " + teams.get(teamId));
         String tactic = sc.next();
         Tactic userTact = Tactic.valueOf(tactic.toUpperCase());
-        Tactic systemTact = engine.recommendTactic(matchContext, team);
+        TacticRecommendation recommendation = engine.recommendWithDetails(matchContext, team);
+        Tactic systemTact = recommendation.getTactic();
+        int confidence = recommendation.getConfidence();
+        Formation suggestedFormation = recommendation.getSuggestedFormation();
+        System.out.println("-------------------------------------------------------------------");
+        System.out.println("Engine recommendation: " + systemTact + " — " + suggestedFormation.getLabel() + " (Confidence: " + confidence + "%)");
+        System.out.println("-------------------------------------------------------------------");
+        Team opponent = matchContext.getHome().getName().equalsIgnoreCase(team.getName())
+                ? matchContext.getAway() : matchContext.getHome();
+        String teamStyle    = team.getSquad().getTeamStyle().name();
+        String oppStyle     = opponent.getSquad().getTeamStyle().name();
+        String teamStamina  = team.getStaminaLevel().name();
+        String teamAdapt    = team.getAdaptabilityLevel().name();
+        int goalDiff = Math.abs(matchContext.getHomeGoals() - matchContext.getAwayGoals());
+        String scoreline    = matchContext.getHomeGoals() + "-" + matchContext.getAwayGoals();
+        String gamePhase;
+        if      (minute <= 15)  gamePhase = "Early Minutes (0-15)";
+        else if (minute <= 44)  gamePhase = "Closing Half (16-44)";
+        else if (minute <= 50)  gamePhase = "Half Time (45-50)";
+        else if (minute <= 60)  gamePhase = "Build Phase (51-60)";
+        else if (minute <= 70)  gamePhase = "Tension Time (61-70)";
+        else if (minute <= 87)  gamePhase = "Late Game (71-87)";
+        else                    gamePhase = "Stoppage Time (88+)";
         String prompt = """
-You are a football manager explaining a tactical decision to your players.
-Explain why the %s tactic is right for %s in this match.
-Use simple language, plain ASCII characters only, and no markdown or formatting symbols.
-Do not use bold text, emojis, smart quotes, or headings.
+You are a tactical analyst and football manager giving your squad a focused pre-play briefing.
+Recommended tactic: %s | Suggested formation: %s
+Team: %s | Opponent: %s
+Your style: %s | Opponent style: %s
+Stamina: %s | Adaptability: %s
+Game phase: %s | Minute: %d | Score: %s | Goal difference: %d
+Recommendation confidence: %d%%
 
-Match context:
-%s
-
+Use plain ASCII only. No markdown, no bold, no emojis, no headings, no smart quotes.
 Give exactly 5 bullet points using a dash (-).
-The first 4 explain the reasoning.
-The 5th is a short passionate spoken instruction from the manager to the team.
+- Points 1-3: explain the tactical reasoning using the context above (style matchup, game phase, score, stamina, formation).
+- Point 4: explain what risk the chosen tactic manages or accepts.
+- Point 5: a short, direct spoken instruction from the manager to the team (imperative, motivational).
 """
-                .formatted(systemTact, teams.get(teamId), matchContext.toString());
+                .formatted(systemTact, suggestedFormation.getLabel(),
+                           team.getName(), opponent.getName(),
+                           teamStyle, oppStyle, teamStamina, teamAdapt,
+                           gamePhase, minute, scoreline, goalDiff, confidence);
 
         OpenAIClient openAIClient = new OpenAIClient(System.getenv("OPENAI_API_KEY"));
         TacticalExplanationService aiexp = new TacticalExplanationService(openAIClient);
@@ -172,7 +201,7 @@ The 5th is a short passionate spoken instruction from the manager to the team.
         }
         else
         {
-            System.out.println("Gaffer, I think we could try out the - " + systemTact + " tactic ! I think that might help us since: ");
+            System.out.println("Gaffer, I think we could try out the - " + systemTact + " (" + suggestedFormation.getLabel() + ") tactic ! I think that might help us since: ");
             String exp = aiexp.generateExplanation(prompt);
             exp = exp.replace("\\u2019", "'")
                     .replace("\\u2018", "'")

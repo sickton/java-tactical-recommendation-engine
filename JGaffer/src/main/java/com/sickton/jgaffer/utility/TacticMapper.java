@@ -2,8 +2,7 @@ package com.sickton.jgaffer.utility;
 
 import com.sickton.jgaffer.domain.*;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -25,7 +24,7 @@ import java.util.*;
 public class TacticMapper {
 
     protected static final int EXPECTED_FIELDS = 11;
-    protected static final String FILE_NAME = "JGaffer/src/main/java/com/sickton/jgaffer/input/tactics.csv";
+    protected static final String FILE_NAME = "/tactics.csv";
 
     /**
      * Parses the tactics CSV file and builds the complete tactic lookup map.
@@ -40,7 +39,9 @@ public class TacticMapper {
      */
     public static Map<TacticKey, TacticSuggestion> mapTacticsAndWeights() {
         try {
-            Scanner sc = new Scanner(new FileInputStream(FILE_NAME));
+            InputStream is = TacticMapper.class.getResourceAsStream(FILE_NAME);
+            if (is == null) throw new RuntimeException("tactics.csv not found on classpath");
+            Scanner sc = new Scanner(is);
             Map<TacticKey, TacticSuggestion> map = new HashMap<>();
             int lineNumber = 0;
             while (sc.hasNextLine()) {
@@ -86,7 +87,7 @@ public class TacticMapper {
             }
             sc.close();
             return map;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

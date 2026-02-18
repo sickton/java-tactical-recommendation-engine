@@ -98,6 +98,11 @@ public class ClosingHalfTactics extends TacticalRule {
         }
         else
             throw new IllegalArgumentException("Invalid match situation provided");
+        // Opponent-aware counter-adjustment: nudge deltas before applying stamina
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefense};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        dAttack = deltas[0]; dControl = deltas[1]; dDefense = deltas[2];
         attack += (dAttack * staminaFactor);
         control += (dControl * staminaFactor);
         defense += (dDefense * staminaFactor);
@@ -108,5 +113,43 @@ public class ClosingHalfTactics extends TacticalRule {
         if(suggestion == null)
             throw new IllegalArgumentException("Invalid tactical situation provided");
         return suggestion.getSuggestedTactic();
+    }
+
+    @Override
+    public TacticRecommendation recommendWithConfidence(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
+        TeamIntent intent = team.getIntent();
+        double attack = intent.getAttack(), control = intent.getControl(), defense = intent.getDefence();
+        double dAttack = 0.0, dControl = 0.0, dDefense = 0.0;
+        double staminaFactor;
+        switch (getTeamStamina(team)) {
+            case HIGH -> staminaFactor = HIGH_STAMINA_FACTOR;
+            case MEDIUM -> staminaFactor = MEDIUM_STAMINA_FACTOR;
+            case LOW -> staminaFactor = LOW_STAMINA_FACTOR;
+            default -> staminaFactor = 1.0;
+        }
+        if (isTeamWinning(context, team)) {
+            dAttack -= ADJUST_ONE; dDefense += ADJUST_TWO; dControl += ADJUST_THREE;
+        } else if (isTeamDrawing(context, team)) {
+            dAttack -= ADJUST_ONE; dControl += ADJUST_TWO; dDefense += ADJUST_ONE;
+        } else if (isTeamLosing(context, team)) {
+            dAttack += ADJUST_THREE; dControl += ADJUST_TWO; dDefense -= ADJUST_TWO;
+        } else {
+            throw new IllegalArgumentException("Invalid match situation provided");
+        }
+        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
+        double[] deltas = {dAttack, dControl, dDefense};
+        applyOpponentStyleAdjustments(opponentStyle, deltas);
+        dAttack = deltas[0]; dControl = deltas[1]; dDefense = deltas[2];
+        attack += (dAttack * staminaFactor);
+        control += (dControl * staminaFactor);
+        defense += (dDefense * staminaFactor);
+        double ca = clamp(attack), cc = clamp(control), cd = clamp(defense);
+        int confidence = computeConfidence(ca, cc, cd);
+        TacticKey key = new TacticKey(team.getSquad().getTeamStyle(), adjustWeights(ca, cc, cd), GamePhase.CLOSING_HALF);
+        TacticSuggestion suggestion = tacticMap.get(key);
+        if (suggestion == null)
+            throw new IllegalArgumentException("Invalid tactical situation provided");
+        Formation formation = suggestFormation(suggestion.getSuggestedTactic(), team.getFormation());
+        return new TacticRecommendation(suggestion.getSuggestedTactic(), confidence, formation);
     }
 }

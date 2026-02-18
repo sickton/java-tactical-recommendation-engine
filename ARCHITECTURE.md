@@ -19,7 +19,7 @@ The system is designed around the principle that tactical decisions should be **
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   PremierLeagueFactory                          │
-│          Builds MatchContext & Team objects from CSV             │
+│          Builds MatchContext & Team objects from CSV            │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                            ▼
@@ -28,14 +28,14 @@ The system is designed around the principle that tactical decisions should be **
 │      Selects applicable rule → delegates recommendation         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│   ┌─────────────┐  ┌──────────────┐  ┌───────────────────┐     │
-│   │ EarlyMinute │  │ ClosingHalf  │  │    HalfTime       │     │
-│   │  Tactics    │  │   Tactics    │  │    Tactics        │     │
-│   └─────────────┘  └──────────────┘  └───────────────────┘     │
-│   ┌─────────────┐  ┌──────────────┐  ┌───────────────────┐     │
-│   │ BuildPhase  │  │ TensionTime  │  │    LateGame       │     │
-│   │  Tactics    │  │   Tactics    │  │    Tactics        │     │
-│   └─────────────┘  └──────────────┘  └───────────────────┘     │
+│   ┌─────────────┐  ┌──────────────┐  ┌───────────────────┐      │
+│   │ EarlyMinute │  │ ClosingHalf  │  │    HalfTime       │      │
+│   │  Tactics    │  │   Tactics    │  │    Tactics        │      │
+│   └─────────────┘  └──────────────┘  └───────────────────┘      │
+│   ┌─────────────┐  ┌──────────────┐  ┌───────────────────┐      │
+│   │ BuildPhase  │  │ TensionTime  │  │    LateGame       │      │
+│   │  Tactics    │  │   Tactics    │  │    Tactics        │      │
+│   └─────────────┘  └──────────────┘  └───────────────────┘      │
 │   ┌───────────────────┐                                         │
 │   │  StoppageTime     │                                         │
 │   │    Tactics        │                                         │
