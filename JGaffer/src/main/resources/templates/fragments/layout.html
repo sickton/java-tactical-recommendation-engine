@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:replace="${title} ?: 'JGaffer'">JGaffer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+
+<header th:fragment="header">
+    <div class="header-bar">
+        <a th:href="@{/}" class="logo-group">
+            <span class="logo-icon">
+                <!-- Tactical pitch icon -->
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="4" width="26" height="20" rx="2" stroke="#7B5EA7" stroke-width="1.6" fill="none"/>
+                    <line x1="14" y1="4" x2="14" y2="24" stroke="#7B5EA7" stroke-width="1.2"/>
+                    <circle cx="14" cy="14" r="3.5" stroke="#7B5EA7" stroke-width="1.2" fill="none"/>
+                    <rect x="1" y="10" width="4" height="8" stroke="#7B5EA7" stroke-width="1.1" fill="none"/>
+                    <rect x="23" y="10" width="4" height="8" stroke="#7B5EA7" stroke-width="1.1" fill="none"/>
+                </svg>
+            </span>
+            <span class="logo-text">JGaffer</span>
+        </a>
+        <span class="header-divider"></span>
+        <span class="header-sub">Tactical Recommendation Engine</span>
+    </div>
+</header>
+
+<footer th:fragment="footer">
+    <div class="footer-bar">
+        <span>JGaffer &mdash; Premier League Tactical Engine &mdash; 2024/25</span>
+    </div>
+</footer>
+
+</body>
+</html>

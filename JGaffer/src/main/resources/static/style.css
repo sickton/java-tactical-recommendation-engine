@@ -1,0 +1,1345 @@
+/* ========== Reset & Base ========== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    background-color: #0d1117;
+    color: #e6edf3;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ========== Header ========== */
+.header-bar {
+    background: linear-gradient(90deg, #130a1e, #0d1117);
+    border-bottom: 1px solid #3D195B60;
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo-group {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+}
+
+.logo-icon {
+    display: flex;
+    align-items: center;
+    opacity: 0.92;
+    transition: opacity 0.2s;
+}
+
+.logo-group:hover .logo-icon { opacity: 1; }
+
+.logo-text {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #7B5EA7;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+}
+
+.logo-group:hover .logo-text { color: #a07dd6; }
+
+.header-divider {
+    width: 1px;
+    height: 20px;
+    background: #30363d;
+    display: inline-block;
+    margin: 0 4px;
+}
+
+.header-sub {
+    font-size: 0.82rem;
+    color: #6e7681;
+    letter-spacing: 0.2px;
+}
+
+/* ========== Page Hero ========== */
+.page-hero {
+    text-align: center;
+    padding: 36px 0 28px;
+}
+
+.hero-title {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #e6edf3;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+}
+
+.hero-sub {
+    font-size: 0.97rem;
+    color: #8b949e;
+}
+
+/* ========== Club Grid ========== */
+.club-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.club-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 18px 12px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    text-align: center;
+}
+
+.club-card:hover {
+    border-color: #7B5EA7;
+    background: #1a0d29;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px #3D195B30;
+}
+
+.club-card:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px #3D195B20;
+}
+
+.club-crest {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px #00000066);
+    transition: transform 0.2s ease;
+}
+
+.club-card:hover .club-crest {
+    transform: scale(1.08);
+}
+
+.club-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #c9d1d9;
+    line-height: 1.3;
+    transition: color 0.2s;
+}
+
+.club-card:hover .club-name {
+    color: #a07dd6;
+}
+
+/* ========== Footer ========== */
+.footer-bar {
+    background: #161b22;
+    border-top: 1px solid #30363d;
+    padding: 10px 32px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #8b949e;
+    margin-top: auto;
+}
+
+/* ========== Container ========== */
+.container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+    flex: 1;
+}
+
+h1 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.8rem;
+    color: #e6edf3;
+    margin-bottom: 6px;
+}
+
+h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.2rem;
+    color: #c9d1d9;
+    margin-bottom: 12px;
+}
+
+.subtitle {
+    color: #8b949e;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+}
+
+/* ========== Data Table ========== */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+}
+
+.data-table th {
+    background: #161b22;
+    color: #8b949e;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid #30363d;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #21262d;
+    font-size: 0.95rem;
+}
+
+.data-table tr:hover td {
+    background: #161b22;
+}
+
+/* ========== Buttons ========== */
+.btn-primary {
+    display: inline-block;
+    background: #3D195B;
+    color: #fff;
+    border: none;
+    padding: 10px 28px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 8px;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover { background: #5a2080; }
+
+.btn-small {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 5px 14px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-small:hover {
+    background: #3D195B;
+    color: #fff;
+    border-color: #3D195B;
+}
+
+.btn-back {
+    display: inline-block;
+    color: #8b949e;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-top: 20px;
+    transition: color 0.2s;
+}
+
+.btn-back:hover { color: #e6edf3; }
+
+/* ========== Fixtures ========== */
+.fixtures-page {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 32px;
+    width: 100%;
+}
+
+.fixtures-page-hero {
+    padding: 28px 0 20px;
+}
+
+.fixtures-team-title {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #e6edf3;
+    margin-bottom: 4px;
+}
+
+.fixtures-panels {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    gap: 0 32px;
+    flex: 1;
+}
+
+.fixtures-panel {
+    min-width: 0;
+}
+
+.fixtures-panel-divider {
+    background: #3D195B40;
+    align-self: stretch;
+}
+
+.fixtures-back {
+    padding: 20px 0 28px;
+}
+
+.fixtures-section-header {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #7B5EA7;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #3D195B60;
+    margin-bottom: 6px;
+}
+
+.fixture-list {
+    list-style: none;
+    margin-bottom: 28px;
+}
+
+.fixture-2col {
+    columns: 2;
+    column-gap: 20px;
+}
+
+.fixture-list li {
+    border-bottom: 1px solid #1e1e2e;
+    break-inside: avoid;
+}
+
+.fixture-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 10px;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+    gap: 10px;
+}
+
+.fixture-row:hover {
+    background: #1a0d29;
+}
+
+.fixture-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pill {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.pill-home {
+    background: #3D195B;
+    color: #e2d4f0;
+}
+
+.pill-away {
+    background: #21262d;
+    color: #8b949e;
+}
+
+.fixture-row:hover .pill-home {
+    background: #5a2080;
+    color: #fff;
+}
+
+.fixture-row:hover .pill-away {
+    background: #2d1f3d;
+    color: #c9b8e0;
+}
+
+.fixture-vs {
+    font-size: 0.7rem;
+    color: #484f58;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.fixture-arrow {
+    font-size: 0.8rem;
+    color: #7B5EA7;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.fixture-row:hover .fixture-arrow {
+    opacity: 1;
+}
+
+/* ========== Match Breadcrumb ========== */
+.match-breadcrumb {
+    flex-shrink: 0;
+    padding: 6px 0 0;
+}
+
+.match-breadcrumb-link {
+    font-size: 0.78rem;
+    color: #484f58;
+    text-decoration: none;
+    transition: color 0.2s;
+    letter-spacing: 0.2px;
+}
+
+.match-breadcrumb-link:hover {
+    color: #a07dd6;
+}
+
+/* ========== Match Page ========== */
+.match-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 32px 16px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Split layout below the hero */
+.match-split {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 20px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;  /* critical: allows flex child to shrink below content height */
+}
+
+.match-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.match-left::-webkit-scrollbar { display: none; }
+
+/* Make the tactic section fill the remaining height of the left column */
+.match-left .tactic-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.match-hero {
+    background: linear-gradient(160deg, #161b22 70%, #1a0d29 100%);
+    border: 1px solid #3D195B80;
+    border-radius: 14px;
+    padding: 18px 32px 16px;
+    margin: 14px 0 12px;
+    box-shadow: 0 4px 32px #3D195B22;
+    flex-shrink: 0;
+}
+
+.match-hero-code {
+    text-align: center;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #7B5EA7;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+}
+
+.match-hero-board {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 10px;
+}
+
+.match-hero-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    flex: 1;
+}
+
+.hero-crest {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px #00000066);
+}
+
+.match-hero-name {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #e6edf3;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.match-hero-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+}
+
+.stat-pill {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #a07dd6;
+    background: #3D195B30;
+    border: 1px solid #7B5EA750;
+    border-radius: 20px;
+    padding: 2px 8px;
+    white-space: nowrap;
+}
+
+.match-hero-centre {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.match-hero-score {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #e6edf3;
+    letter-spacing: 6px;
+    line-height: 1;
+    text-shadow: 0 0 30px #7B5EA740;
+}
+
+.match-hero-score-sep {
+    color: #7B5EA7;
+    margin: 0 4px;
+}
+
+.match-hero-minute-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #3D195B;
+    color: #e2d4f0;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+}
+
+.match-phase-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.match-phase-track {
+    width: 100%;
+    height: 4px;
+    background: #21262d;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.match-phase-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3D195B, #7B5EA7);
+    border-radius: 3px;
+}
+
+.match-phase-label {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.dugout-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    /* now lives inside .tactic-section — use a bottom border as divider, no box of its own */
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #21262d;
+    border-radius: 0;
+    padding: 0 2px 12px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.dugout-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.dugout-team {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #a07dd6;
+}
+
+.dugout-prompt {
+    font-size: 0.85rem;
+    color: #6e7681;
+    margin-left: auto;
+}
+
+.match-page-back {
+    padding: 4px 0 12px;
+}
+
+/* ========== Tactic Guide Panel ========== */
+.tactic-guide-panel {
+    background: linear-gradient(160deg, #161b22 60%, #130a1e 100%);
+    border: 1px solid #3D195B60;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+.tactic-guide-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid #3D195B50;
+    background: #0d1117;
+    flex-shrink: 0;
+}
+
+.tactic-guide-icon {
+    font-size: 0.9rem;
+    color: #7B5EA7;
+}
+
+.tactic-guide-title {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #7B5EA7;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.tactic-guide-hint {
+    font-size: 0.72rem;
+    color: #484f58;
+    margin-left: auto;
+    font-style: italic;
+}
+
+.tactic-guide-body {
+    padding: 18px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: #3D195B #161b22;
+}
+
+.tactic-guide-body::-webkit-scrollbar { width: 4px; }
+.tactic-guide-body::-webkit-scrollbar-track { background: #161b22; }
+.tactic-guide-body::-webkit-scrollbar-thumb { background: #3D195B; border-radius: 4px; }
+
+.tactic-guide-default {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 0;
+}
+
+.tactic-guide-default p {
+    color: #484f58;
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+.tactic-guide-default p:first-child {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6e7681;
+}
+
+/* Guide content sections */
+.guide-tactic-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #e6edf3;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.guide-emoji {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.guide-tagline {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #a07dd6;
+    margin-bottom: 16px;
+    font-style: italic;
+}
+
+.guide-section {
+    margin-bottom: 14px;
+}
+
+.guide-section-label {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #7B5EA7;
+    margin-bottom: 5px;
+}
+
+.guide-section p {
+    font-size: 0.86rem;
+    color: #c9d1d9;
+    line-height: 1.65;
+}
+
+.guide-positive {
+    color: #7ee8a2 !important;
+}
+
+.guide-negative {
+    color: #f0826d !important;
+}
+
+.guide-analogy {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: #3D195B20;
+    border: 1px solid #7B5EA730;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 6px;
+    font-size: 0.84rem;
+    color: #c9b8e0;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+.guide-analogy-emoji {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    line-height: 1.3;
+}
+
+/* ========== Match Card (result page) ========== */
+.match-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 28px;
+}
+
+.match-card.compact { padding: 16px 24px; }
+
+.match-title {
+    text-align: center;
+    font-size: 1rem;
+    color: #8b949e;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.scoreboard {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+
+.team-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e6edf3;
+    min-width: 140px;
+    text-align: center;
+}
+
+.score-box {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #7B5EA7;
+    letter-spacing: 4px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.match-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 16px;
+    min-width: 110px;
+}
+
+.meta-label {
+    font-size: 0.72rem;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+}
+
+.meta-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e6edf3;
+}
+
+/* ========== Tactic Selection ========== */
+.tactic-section {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.tactic-section h2 { margin-bottom: 8px; }
+.tactic-section p { color: #8b949e; margin-bottom: 16px; }
+
+/* Form fills the tactic section height, button stays at bottom */
+.tactic-section form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.tactic-section form .tactic-grid {
+    flex: 1;
+    justify-content: space-evenly;
+}
+
+.tactic-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.tactic-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 9px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, color 0.18s, box-shadow 0.18s;
+    user-select: none;
+    position: relative;
+}
+
+.tactic-option:hover {
+    border-color: #7B5EA7;
+    background: #1a0d29;
+    box-shadow: 0 0 0 1px #7B5EA740;
+}
+
+.tactic-option input[type="radio"] {
+    display: none;
+}
+
+/* Radio indicator dot */
+.tactic-option::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #30363d;
+    background: transparent;
+    flex-shrink: 0;
+    transition: border-color 0.18s, background 0.18s;
+}
+
+.tactic-option:hover::before {
+    border-color: #7B5EA7;
+}
+
+.tactic-option:has(input[type="radio"]:checked)::before {
+    border-color: #a07dd6;
+    background: #a07dd6;
+    box-shadow: 0 0 6px #a07dd660;
+}
+
+.tactic-name {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: #c9d1d9;
+    transition: color 0.18s;
+    text-transform: uppercase;
+}
+
+.tactic-option:hover .tactic-name {
+    color: #e6edf3;
+}
+
+.tactic-option:has(input[type="radio"]:checked) .tactic-name {
+    color: #a07dd6;
+}
+
+/* ========== Result Card ========== */
+.result-card {
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 2px solid;
+}
+
+.result-agree {
+    background: #1a0d29;
+    border-color: #3D195B;
+}
+
+.result-disagree {
+    background: #1a1a2e;
+    border-color: #58a6ff;
+}
+
+.result-header {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-bottom: 10px;
+}
+
+.result-tactic {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #e6edf3;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.result-confidence {
+    font-size: 0.9rem;
+    color: #8b949e;
+}
+
+.result-confidence strong { color: #7B5EA7; }
+
+/* ========== Explanation Card ========== */
+.explanation-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.explanation-card h2 {
+    margin-bottom: 16px;
+    color: #e6edf3;
+}
+
+.explanation-text p {
+    color: #c9d1d9;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 8px;
+    padding-left: 4px;
+}
+
+/* ========== Result Page ========== */
+.result-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 32px 16px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Make explanation the dominant panel */
+.result-split {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 20px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Ensure left card never stretches awkwardly */
+.result-verdict {
+    max-width: 520px;
+}
+
+/* Explanation panel now acts like primary reading column */
+.result-explanation-panel {
+    min-width: 0;
+}
+
+/* ── Verdict card (left) ── */
+.result-verdict {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+}
+
+.verdict-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.verdict-agree {
+    background: #0f2e18;
+    border: 1px solid #3fb95050;
+    color: #7ee8a2;
+}
+
+.verdict-disagree {
+    background: #1a0d29;
+    border: 1px solid #7B5EA760;
+    color: #a07dd6;
+}
+
+.verdict-banner-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.verdict-tactic-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.verdict-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #484f58;
+}
+
+.verdict-tactic-name {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #e6edf3;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1.1;
+}
+
+.verdict-formation-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #3D195B;
+    color: #e2d4f0;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    align-self: flex-start;
+}
+
+.verdict-confidence-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+.verdict-confidence-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6e7681;
+}
+
+.verdict-confidence-pct {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #a07dd6;
+}
+
+.verdict-confidence-track {
+    width: 100%;
+    height: 6px;
+    background: #21262d;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.verdict-confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3D195B, #a07dd6);
+    border-radius: 4px;
+}
+
+.verdict-user-tactic {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.verdict-user-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6e7681;
+}
+
+.verdict-user-name {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.result-play-again {
+    display: block;
+    text-align: center;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+/* ── Explanation panel (right) ── */
+.result-explanation-panel {
+    background: linear-gradient(160deg, #161b22 60%, #130a1e 100%);
+    border: 1px solid #3D195B60;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+.result-explanation-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid #3D195B50;
+    background: #0d1117;
+    flex-shrink: 0;
+}
+
+.result-explanation-body {
+    padding: 18px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: #3D195B #161b22;
+}
+
+.result-explanation-body::-webkit-scrollbar { width: 4px; }
+.result-explanation-body::-webkit-scrollbar-track { background: #161b22; }
+.result-explanation-body::-webkit-scrollbar-thumb { background: #3D195B; border-radius: 4px; }
+
+.briefing-bullet {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.briefing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7B5EA7;
+    flex-shrink: 0;
+    margin-top: 7px;
+}
+
+.briefing-bullet span:last-child {
+    font-size: 0.88rem;
+    color: #c9d1d9;
+    line-height: 1.65;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 1100px) {
+    .match-split { grid-template-columns: 1fr; }
+    .tactic-guide-panel { height: 360px; }
+}
+
+@media (max-width: 1100px) {
+    .result-split { grid-template-columns: 1fr; }
+    .result-explanation-panel { height: 420px; }
+}
+
+@media (max-width: 900px) {
+    .fixtures-panels { grid-template-columns: 1fr; }
+    .fixtures-panel-divider { display: none; }
+    .fixture-2col { columns: 1; }
+}
+
+@media (max-width: 640px) {
+    .scoreboard { gap: 12px; }
+    .team-name { min-width: 90px; font-size: 0.95rem; }
+    .score-box { font-size: 1.6rem; }
+    .club-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .hero-title { font-size: 1.7rem; }
+    .header-bar { padding: 10px 16px; }
+    .fixtures-page { padding: 0 16px; }
+    .match-page { padding: 0 16px 32px; }
+    .match-hero { padding: 24px 16px 20px; }
+    .match-hero-name { font-size: 1.1rem; }
+    .match-hero-score { font-size: 2.4rem; letter-spacing: 3px; }
+    .match-hero-board { gap: 12px; }
+}
+
+/* ================= Tactical Briefing Typography ================= */
+
+.briefing-text {
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: #c9d1d9;
+    letter-spacing: 0.2px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Each line becomes a readable coaching note */
+.briefing-text br {
+    display: block;
+    content: "";
+    margin-bottom: 10px;
+}
+
+/* Style dash-prefixed lines as real bullets */
+.briefing-text {
+    white-space: pre-line;
+}
+
+/* Subtle reading column width control */
+.result-explanation-body {
+    max-width: 760px;
+}
+
+/* Improve readability inside dark UI */
+.briefing-text {
+    text-wrap: pretty;
+}
+
+/* Slight emphasis on tactical keywords */
+.briefing-text strong,
+.briefing-text b {
+    color: #a07dd6;
+    font-weight: 600;
+}
+
+/* Optional: visually soften hyphen bullets */
+.briefing-text {
+    padding-right: 8px;
+}
+
+/* Better paragraph breathing */
+.briefing-text {
+    margin-top: 2px;
+}
+

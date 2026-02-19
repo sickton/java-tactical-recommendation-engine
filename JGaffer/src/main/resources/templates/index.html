@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>JGaffer &mdash; Select Your Club</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container">
+
+    <div class="page-hero">
+        <h1 class="hero-title">Pick Your Club</h1>
+        <p class="hero-sub">Select a Premier League team to start your tactical session.</p>
+    </div>
+
+    <form action="/fixtures" method="get" id="team-form">
+        <div class="club-grid">
+
+            <!-- Arsenal -->
+            <button type="submit" name="teamId" value="1" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Arsenal</span>
+            </button>
+
+            <!-- Aston Villa -->
+            <button type="submit" name="teamId" value="2" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/9/9a/Aston_Villa_FC_new_crest.svg/960px-Aston_Villa_FC_new_crest.svg.png" alt="Aston Villa" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Aston Villa</span>
+            </button>
+
+            <!-- Bournemouth -->
+            <button type="submit" name="teamId" value="3" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg" alt="Bournemouth" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Bournemouth</span>
+            </button>
+
+            <!-- Brentford -->
+            <button type="submit" name="teamId" value="4" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/2/2a/Brentford_FC_crest.svg" alt="Brentford" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Brentford</span>
+            </button>
+
+            <!-- Brighton -->
+            <button type="submit" name="teamId" value="5" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/d0/Brighton_and_Hove_Albion_FC_crest.svg/330px-Brighton_and_Hove_Albion_FC_crest.svg.png" alt="Brighton" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Brighton</span>
+            </button>
+
+            <!-- Chelsea -->
+            <button type="submit" name="teamId" value="6" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg" alt="Chelsea" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Chelsea</span>
+            </button>
+
+            <!-- Crystal Palace -->
+            <button type="submit" name="teamId" value="7" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/a/a2/Crystal_Palace_FC_logo_%282022%29.svg" alt="Crystal Palace" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Crystal Palace</span>
+            </button>
+
+            <!-- Everton -->
+            <button type="submit" name="teamId" value="8" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/7/7c/Everton_FC_logo.svg" alt="Everton" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Everton</span>
+            </button>
+
+            <!-- Fulham -->
+            <button type="submit" name="teamId" value="9" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/e/eb/Fulham_FC_%28shield%29.svg" alt="Fulham" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Fulham</span>
+            </button>
+
+            <!-- Liverpool -->
+            <button type="submit" name="teamId" value="10" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg" alt="Liverpool" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Liverpool</span>
+            </button>
+
+            <!-- Manchester City -->
+            <button type="submit" name="teamId" value="11" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg" alt="Manchester City" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Man City</span>
+            </button>
+
+            <!-- Manchester United -->
+            <button type="submit" name="teamId" value="12" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg" alt="Manchester United" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Man United</span>
+            </button>
+
+            <!-- Newcastle United -->
+            <button type="submit" name="teamId" value="13" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg" alt="Newcastle United" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Newcastle</span>
+            </button>
+
+            <!-- Nottingham Forest -->
+            <button type="submit" name="teamId" value="14" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/e/e5/Nottingham_Forest_F.C._logo.svg" alt="Nottingham Forest" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Nott'm Forest</span>
+            </button>
+
+            <!-- Tottenham Hotspur -->
+            <button type="submit" name="teamId" value="15" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg" alt="Tottenham Hotspur" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Tottenham</span>
+            </button>
+
+            <!-- West Ham United -->
+            <button type="submit" name="teamId" value="16" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/c/c2/West_Ham_United_FC_logo.svg" alt="West Ham United" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">West Ham</span>
+            </button>
+
+            <!-- Wolves -->
+            <button type="submit" name="teamId" value="17" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg" alt="Wolves" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Wolves</span>
+            </button>
+
+            <!-- Leicester City -->
+            <button type="submit" name="teamId" value="18" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/2/2d/Leicester_City_crest.svg" alt="Leicester City" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Leicester</span>
+            </button>
+
+            <!-- Ipswich Town -->
+            <button type="submit" name="teamId" value="19" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/4/43/Ipswich_Town.svg" alt="Ipswich Town" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Ipswich</span>
+            </button>
+
+            <!-- Southampton -->
+            <button type="submit" name="teamId" value="20" class="club-card">
+                <img src="https://upload.wikimedia.org/wikipedia/en/c/c9/FC_Southampton.svg" alt="Southampton" class="club-crest" onerror="this.style.display='none'"/>
+                <span class="club-name">Southampton</span>
+            </button>
+
+        </div>
+    </form>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>

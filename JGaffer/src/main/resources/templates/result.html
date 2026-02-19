@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>JGaffer &mdash; Recommendation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="result-page">
+
+    <!-- Breadcrumb -->
+    <div class="match-breadcrumb">
+        <a href="/" class="match-breadcrumb-link">&#8592; Play Again</a>
+    </div>
+
+    <!-- Hero Scoreboard -->
+    <div class="match-hero">
+
+        <div class="match-hero-code">Tactical Recommendation</div>
+
+        <div class="match-hero-board">
+
+            <!-- Your team -->
+            <div class="match-hero-team">
+                <img class="hero-crest" th:attr="data-team=${teamName}" src="" alt="" onerror="this.style.display='none'"/>
+                <span class="match-hero-name" th:text="${teamName}"></span>
+                <div class="match-hero-pills">
+                    <span class="stat-pill" th:text="|Your pick: ${userTactic}|"></span>
+                </div>
+            </div>
+
+            <!-- Score + minute -->
+            <div class="match-hero-centre">
+                <div class="match-hero-score">
+                    <span th:text="${teamGoals}">0</span>
+                    <span class="match-hero-score-sep">&ndash;</span>
+                    <span th:text="${opponentGoals}">0</span>
+                </div>
+                <div class="match-hero-minute-badge" th:text="|${minute}'|"></div>
+            </div>
+
+            <!-- Opponent -->
+            <div class="match-hero-team">
+                <img class="hero-crest" th:attr="data-team=${opponentName}" src="" alt="" onerror="this.style.display='none'"/>
+                <span class="match-hero-name" th:text="${opponentName}"></span>
+                <div class="match-hero-pills">
+                    <span class="stat-pill">Opponent</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Progress bar -->
+        <div class="match-phase-bar">
+            <div class="match-phase-track">
+                <div class="match-phase-fill" th:style="|width: ${minute}%;|"></div>
+            </div>
+            <div class="match-phase-label" th:text="|${minute} minutes played|"></div>
+        </div>
+
+    </div>
+
+    <!-- Split layout -->
+    <div class="result-split">
+
+        <!-- LEFT: Verdict card -->
+        <div class="result-verdict">
+
+            <!-- Agreement banner -->
+            <div class="verdict-banner" th:classappend="${agrees} ? ' verdict-agree' : ' verdict-disagree'">
+                <span class="verdict-banner-icon" th:text="${agrees} ? '✓' : '→'"></span>
+                <span th:if="${agrees}">Yes Gaffer! Spot on &mdash; I agree with you.</span>
+                <span th:unless="${agrees}">Gaffer, I think we should try something different.</span>
+            </div>
+
+            <!-- Engine recommendation -->
+            <div class="verdict-tactic-block">
+                <div class="verdict-label">Engine Recommends</div>
+                <div class="verdict-tactic-name" th:text="${recommendation.tactic}"></div>
+                <div class="verdict-formation-badge" th:text="${recommendation.suggestedFormation.label}"></div>
+
+                <div class="verdict-confidence-row">
+                    <span class="verdict-confidence-label">Engine Confidence</span>
+                    <span class="verdict-confidence-pct" th:text="|${recommendation.confidence}%|"></span>
+                </div>
+                <div class="verdict-confidence-track">
+                    <div class="verdict-confidence-fill" th:style="|width: ${recommendation.confidence}%;|"></div>
+                </div>
+            </div>
+
+            <!-- User tactic shown only when engine disagrees -->
+            <div class="verdict-user-tactic" th:unless="${agrees}">
+                <span class="verdict-user-label">You picked</span>
+                <span class="verdict-user-name" th:text="${userTactic}"></span>
+            </div>
+
+            <!-- Play again -->
+            <a href="/" class="btn-primary result-play-again">Play Again &#8594;</a>
+
+        </div>
+
+        <!-- RIGHT: Explanation panel -->
+        <div class="result-explanation-panel">
+            <div class="result-explanation-header">
+                <span class="tactic-guide-icon">&#9654;</span>
+                <span class="tactic-guide-title">Tactical Briefing</span>
+            </div>
+            <div class="result-explanation-body">
+                <div class="briefing-text"
+                     th:utext="${#strings.replace(explanation, '- ', '<div class=&quot;briefing-line&quot;>• ')}"
+                     style="white-space: pre-line;">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<script>
+const CRESTS = {
+    "Arsenal": "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
+    "Aston Villa": "https://upload.wikimedia.org/wikipedia/en/thumb/9/9a/Aston_Villa_FC_new_crest.svg/960px-Aston_Villa_FC_new_crest.svg.png",
+    "Bournemouth": "https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg",
+    "Brentford": "https://upload.wikimedia.org/wikipedia/en/2/2a/Brentford_FC_crest.svg",
+    "Brighton": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d0/Brighton_and_Hove_Albion_FC_crest.svg/330px-Brighton_and_Hove_Albion_FC_crest.svg.png",
+    "Chelsea": "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg",
+    "Crystal Palace": "https://upload.wikimedia.org/wikipedia/en/a/a2/Crystal_Palace_FC_logo_%282022%29.svg",
+    "Everton": "https://upload.wikimedia.org/wikipedia/en/7/7c/Everton_FC_logo.svg",
+    "Fulham": "https://upload.wikimedia.org/wikipedia/en/e/eb/Fulham_FC_%28shield%29.svg",
+    "Liverpool": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
+    "Manchester City": "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg",
+    "Manchester United": "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg",
+    "Newcastle United": "https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg",
+    "Nottingham Forest": "https://upload.wikimedia.org/wikipedia/en/e/e5/Nottingham_Forest_F.C._logo.svg",
+    "Tottenham Hotspur": "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg",
+    "West Ham United": "https://upload.wikimedia.org/wikipedia/en/c/c2/West_Ham_United_FC_logo.svg",
+    "Wolverhampton Wanderers": "https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg",
+    "Leicester City": "https://upload.wikimedia.org/wikipedia/en/2/2d/Leicester_City_crest.svg",
+    "Ipswich Town": "https://upload.wikimedia.org/wikipedia/en/4/43/Ipswich_Town.svg",
+    "Southampton": "https://upload.wikimedia.org/wikipedia/en/c/c9/FC_Southampton.svg"
+};
+document.querySelectorAll('.hero-crest').forEach(img => {
+    const team = img.dataset.team;
+    if (CRESTS[team]) img.src = CRESTS[team];
+});
+</script>
+</body>
+</html>
