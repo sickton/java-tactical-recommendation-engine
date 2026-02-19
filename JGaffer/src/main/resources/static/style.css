@@ -1032,24 +1032,14 @@ h2 {
     overflow: hidden;
 }
 
-/* Make explanation the dominant panel */
+/* Explanation is dominant — left card is a compact sidebar */
 .result-split {
     display: grid;
-    grid-template-columns: 420px 1fr;
+    grid-template-columns: 320px 1fr;
     gap: 20px;
     align-items: stretch;
     flex: 1;
     min-height: 0;
-}
-
-/* Ensure left card never stretches awkwardly */
-.result-verdict {
-    max-width: 520px;
-}
-
-/* Explanation panel now acts like primary reading column */
-.result-explanation-panel {
-    min-width: 0;
 }
 
 /* ── Verdict card (left) ── */
@@ -1057,21 +1047,23 @@ h2 {
     background: #161b22;
     border: 1px solid #30363d;
     border-radius: 14px;
-    padding: 20px 24px;
+    padding: 18px 20px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     min-height: 0;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .verdict-banner {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border-radius: 10px;
-    padding: 14px 18px;
+    padding: 10px 14px;
     font-family: 'Space Grotesk', 'Inter', sans-serif;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 700;
     flex-shrink: 0;
 }
@@ -1110,12 +1102,14 @@ h2 {
 
 .verdict-tactic-name {
     font-family: 'Space Grotesk', 'Inter', sans-serif;
-    font-size: 2.2rem;
+    font-size: clamp(1.1rem, 3.5vw, 1.7rem);
     font-weight: 700;
     color: #e6edf3;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
-    line-height: 1.1;
+    line-height: 1.15;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .verdict-formation-badge {
@@ -1134,9 +1128,11 @@ h2 {
 
 .verdict-confidence-row {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
+    gap: 6px;
     margin-top: 8px;
+    flex-wrap: wrap;
 }
 
 .verdict-confidence-label {
@@ -1203,15 +1199,17 @@ h2 {
     flex-shrink: 0;
 }
 
-/* ── Explanation panel (right) ── */
+/* ── Explanation panel (right) — primary content ── */
 .result-explanation-panel {
     background: linear-gradient(160deg, #161b22 60%, #130a1e 100%);
-    border: 1px solid #3D195B60;
+    border: 1px solid #3D195B80;
     border-radius: 14px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     height: 100%;
+    box-shadow: 0 4px 32px #3D195B22;
+    min-width: 0;
 }
 
 .result-explanation-header {
@@ -1299,47 +1297,23 @@ h2 {
     line-height: 1.8;
     color: #c9d1d9;
     letter-spacing: 0.2px;
+    white-space: pre-line;
+    text-wrap: pretty;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
 }
 
-/* Each line becomes a readable coaching note */
-.briefing-text br {
+/* Each injected .briefing-line div is one bullet point */
+.briefing-line {
     display: block;
-    content: "";
-    margin-bottom: 10px;
-}
-
-/* Style dash-prefixed lines as real bullets */
-.briefing-text {
-    white-space: pre-line;
-}
-
-/* Subtle reading column width control */
-.result-explanation-body {
-    max-width: 760px;
-}
-
-/* Improve readability inside dark UI */
-.briefing-text {
-    text-wrap: pretty;
-}
-
-/* Slight emphasis on tactical keywords */
-.briefing-text strong,
-.briefing-text b {
-    color: #a07dd6;
-    font-weight: 600;
-}
-
-/* Optional: visually soften hyphen bullets */
-.briefing-text {
-    padding-right: 8px;
-}
-
-/* Better paragraph breathing */
-.briefing-text {
-    margin-top: 2px;
+    padding: 11px 16px;
+    background: #0d111750;
+    border-left: 2px solid #3D195B;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+    color: #c9d1d9;
+    line-height: 1.7;
+    white-space: normal;
 }
 

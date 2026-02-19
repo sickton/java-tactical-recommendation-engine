@@ -13,8 +13,9 @@ java-tactical-recommendation-engine/
 │   │   ├── demoUI/          CLI (jgafferApplication) + PremierLeagueFactory
 │   │   ├── openAIService/   OpenAIClient + TacticalExplanationService
 │   │   ├── utility/         TacticMapper, ApplicationParser
-│   │   └── input/           CSV data files
-│   └── src/main/resources/  tactics.csv (classpath resource)
+│   │   |── input/           CSV data files
+|   |   |-- web/             Spring boot application and controller
+│   └── src/main/resources/  tactics.csv (classpath resource), resources/static - style.css, resources/templates - thymeleaf frontend pages
 └── src/test/java/...        TacticalRecommendationTest (3 tests)
 ```
 
@@ -32,6 +33,8 @@ Run from: `java-tactical-recommendation-engine/` (project root, parent of JGaffe
 - **TacticMapper**: loads `/tactics.csv` via `getResourceAsStream` (classpath, not filesystem path)
 - **Opponent awareness**: `applyOpponentStyleAdjustments()` in TacticalRule base class, called in all 7 rules before stamina scaling
 - **Confidence**: `computeConfidence(attack, control, defence)` in TacticalRule — distance from nearest boundary (0.33, 0.66), scaled 0-100
+- **Backend Architecture**: Engine converted to a REST API, with 4 endpoints
+- **Frontend Architecture**: Engine has 4 html pages, with dedicated landing page, with club crests, fixtures with home and away segments, match context page, and tactic explanation page
 
 ## Team Base Weights (TeamIntent.java)
 | Style | Attack | Control | Defence |
@@ -71,11 +74,10 @@ Run from: `java-tactical-recommendation-engine/` (project root, parent of JGaffe
 2. Confidence score — TacticRecommendation wraps Tactic + int confidence
 3. Enriched OpenAI prompt — phase, both styles, stamina, score, confidence
 4. Classpath CSV loading — TacticMapper uses getResourceAsStream (not file path)
+5. Activated Formation in Team, added column to SquadInformation.csv, added tactic→formation lookup
 
-## Next on Roadmap (Feature #2)
-Formations as Tactical Context:
-- Formation.java and Position.java exist in domain/ but commented out in Team.java
-- Plan: activate Formation in Team, add column to SquadInformation.csv, add tactic→formation lookup
+## Next on Roadmap
+To be decided:
 
 ## User Preferences
 - Edit files in the MAIN branch (`main`), not the worktree branch
