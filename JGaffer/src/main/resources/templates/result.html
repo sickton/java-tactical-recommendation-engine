@@ -90,7 +90,7 @@
                     <span class="verdict-confidence-pct" th:text="|${recommendation.confidence}%|"></span>
                 </div>
                 <div class="verdict-confidence-track">
-                    <div class="verdict-confidence-fill" th:style="|width: ${recommendation.confidence}%;|"></div>
+                    <div class="verdict-confidence-fill" id="confidenceFill" style="width: 0%;" th:attr="data-pct=${recommendation.confidence}"></div>
                 </div>
             </div>
 
@@ -112,9 +112,12 @@
                 <span class="tactic-guide-title">Tactical Briefing</span>
             </div>
             <div class="result-explanation-body">
-                <div class="briefing-text"
-                     th:utext="${#strings.replace(explanation, '- ', '<div class=&quot;briefing-line&quot;>• ')}"
-                     style="white-space: pre-line;">
+                <div class="briefing-text">
+                    <div th:each="line : ${#strings.arraySplit(explanation, '\n')}"
+                         th:if="${!#strings.isEmpty(#strings.trim(line))}"
+                         class="briefing-line"
+                         th:text="${#strings.startsWith(#strings.trim(line), '- ') ? '• ' + #strings.trim(#strings.substringAfter(line, '- ')) : #strings.trim(line)}">
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,6 +154,38 @@ const CRESTS = {
 document.querySelectorAll('.hero-crest').forEach(img => {
     const team = img.dataset.team;
     if (CRESTS[team]) img.src = CRESTS[team];
+});
+
+// ── Confidence bar animation ──────────────────────────────────────────────
+const confidenceFill = document.getElementById('confidenceFill');
+if (confidenceFill) {
+    const targetPct = parseInt(confidenceFill.dataset.pct, 10) || 0;
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            confidenceFill.style.transition = 'width 1.1s cubic-bezier(0.4, 0, 0.2, 1)';
+            confidenceFill.style.width = targetPct + '%';
+        });
+    });
+}
+
+// ── Score entrance counter-roll ───────────────────────────────────────────
+function animateCount(el, target, duration) {
+    const start = performance.now();
+    const step = (now) => {
+        const t = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3); // cubic ease-out
+        el.textContent = Math.round(ease * target);
+        if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+
+document.querySelectorAll('.match-hero-score > span:not(.match-hero-score-sep)').forEach(span => {
+    const val = parseInt(span.textContent, 10);
+    if (!isNaN(val) && val > 0) {
+        span.textContent = '0';
+        setTimeout(() => animateCount(span, val, 700), 300);
+    }
 });
 </script>
 </body>

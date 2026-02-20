@@ -1,18 +1,24 @@
 package com.sickton.jgaffer.web;
 
 import com.sickton.jgaffer.domain.MatchContext;
+import com.sickton.jgaffer.domain.SimulationResult;
 import com.sickton.jgaffer.domain.Tactic;
 import com.sickton.jgaffer.domain.TacticRecommendation;
 import com.sickton.jgaffer.domain.Team;
 import com.sickton.jgaffer.service.MatchService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -103,6 +109,146 @@ public class TacticsController {
         model.addAttribute("gamePhase", gamePhase);
         model.addAttribute("tactics", matchService.getAllTactics());
         return "match";
+    }
+
+    /**
+     * POST /simulate — Starts a full match simulation.
+     * The starting tactic is applied to all phases initially; the frontend JS
+     * will send AJAX calls to /simulate/phase when the user picks different tactics.
+     */
+    @PostMapping("/simulate")
+    public String simulate(@RequestParam int teamId,
+                           @RequestParam int matchId,
+                           @RequestParam int minute,
+                           @RequestParam String userTactic,
+                           Model model) {
+        String teamName = matchService.getTeamName(teamId);
+        if (teamName == null) return "redirect:/";
+
+        MatchContext context = matchService.getMatchContext(matchId, minute);
+        if (context == null) return "redirect:/";
+
+        Team team = matchService.getTeam(teamName);
+        Team opponent = context.getHome().getName().equalsIgnoreCase(teamName)
+                ? context.getAway() : context.getHome();
+
+        Tactic startTactic = Tactic.valueOf(userTactic.toUpperCase());
+
+        // Build initial tactic map: same tactic for every phase
+        Map<Integer, Tactic> tacticPerPhase = new HashMap<>();
+        for (int i = 0; i < 7; i++) tacticPerPhase.put(i, startTactic);
+
+        SimulationResult result = matchService.simulate(context, team, tacticPerPhase);
+
+        boolean isHome = context.getHome().getName().equalsIgnoreCase(teamName);
+        int teamGoals     = isHome ? result.getFinalHomeGoals() : result.getFinalAwayGoals();
+        int opponentGoals = isHome ? result.getFinalAwayGoals() : result.getFinalHomeGoals();
+
+        // Serialize result to JSON so Thymeleaf can embed it safely in a <script> block
+        String resultJson;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            // Build a plain map so we don't need @JsonProperty on domain classes
+            Map<String, Object> resultMap = new LinkedHashMap<>();
+            resultMap.put("tacticFidelityScore", result.getTacticFidelityScore());
+            resultMap.put("managerRating",       result.getManagerRating());
+            resultMap.put("matchingPhases",      result.getMatchingPhases());
+            resultMap.put("totalPhases",         result.getTotalPhases());
+            resultMap.put("finalHomeGoals",      result.getFinalHomeGoals());
+            resultMap.put("finalAwayGoals",      result.getFinalAwayGoals());
+            resultMap.put("events", result.getEvents().stream().map(ev -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("minute", ev.getMinute());
+                m.put("type",   ev.getType().name());
+                m.put("label",  ev.getLabel());
+                return m;
+            }).toList());
+            resultJson = mapper.writeValueAsString(resultMap);
+        } catch (Exception e) {
+            resultJson = "{\"events\":[],\"tacticFidelityScore\":0,\"managerRating\":\"—\",\"finalHomeGoals\":0,\"finalAwayGoals\":0}";
+        }
+
+        model.addAttribute("teamName",       teamName);
+        model.addAttribute("opponentName",   opponent.getName());
+        model.addAttribute("teamId",         teamId);
+        model.addAttribute("matchId",        matchId);
+        model.addAttribute("startMinute",    minute);
+        model.addAttribute("startTactic",    startTactic);
+        model.addAttribute("startHomeGoals", context.getHomeGoals());
+        model.addAttribute("startAwayGoals", context.getAwayGoals());
+        model.addAttribute("isHome",         isHome);
+        model.addAttribute("resultJson",     resultJson);
+        model.addAttribute("teamGoals",      teamGoals);
+        model.addAttribute("opponentGoals",  opponentGoals);
+        model.addAttribute("tactics",        matchService.getAllTactics());
+        return "simulation";
+    }
+
+    /**
+     * POST /simulate/phase — AJAX endpoint called when the user picks a new tactic
+     * at a phase boundary. Re-runs the simulation from the given phase onwards and
+     * returns updated events as JSON.
+     */
+    @PostMapping("/simulate/phase")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> simulatePhase(
+            @RequestParam int teamId,
+            @RequestParam int matchId,
+            @RequestParam int fromMinute,
+            @RequestParam int fromHomeGoals,
+            @RequestParam int fromAwayGoals,
+            @RequestParam String tacticsJson) {
+        String teamName = matchService.getTeamName(teamId);
+        if (teamName == null) return ResponseEntity.badRequest().build();
+
+        MatchContext baseContext = matchService.getMatchContext(matchId, 1);
+        if (baseContext == null) return ResponseEntity.badRequest().build();
+
+        // Build a context at fromMinute with the current score
+        MatchContext phaseContext = new MatchContext(
+                baseContext.getTitle(),
+                baseContext.getHome(),
+                baseContext.getAway(),
+                fromHomeGoals,
+                fromAwayGoals,
+                fromMinute
+        );
+
+        Team team = matchService.getTeam(teamName);
+
+        // Parse tactic-per-phase map from JSON string, e.g. {"2":"HIGH_PRESS","3":"LOW_BLOCK"}
+        Map<Integer, Tactic> tacticPerPhase = new HashMap<>();
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            @SuppressWarnings("unchecked")
+            Map<String, String> raw = mapper.readValue(tacticsJson, Map.class);
+            raw.forEach((k, v) -> tacticPerPhase.put(Integer.parseInt(k), Tactic.valueOf(v)));
+        } catch (Exception e) {
+            log.error("Failed to parse tacticsJson: {}", tacticsJson, e);
+            return ResponseEntity.badRequest().build();
+        }
+
+        SimulationResult result = matchService.simulate(phaseContext, team, tacticPerPhase);
+
+        boolean isHome = baseContext.getHome().getName().equalsIgnoreCase(teamName);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("events", result.getEvents().stream().map(ev -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("minute", ev.getMinute());
+            m.put("type",   ev.getType().name());
+            m.put("label",  ev.getLabel());
+            return m;
+        }).toList());
+        response.put("finalHomeGoals",     result.getFinalHomeGoals());
+        response.put("finalAwayGoals",     result.getFinalAwayGoals());
+        response.put("finalTeamGoals",     isHome ? result.getFinalHomeGoals() : result.getFinalAwayGoals());
+        response.put("finalOpponentGoals", isHome ? result.getFinalAwayGoals() : result.getFinalHomeGoals());
+        response.put("tacticFidelityScore",result.getTacticFidelityScore());
+        response.put("managerRating",      result.getManagerRating());
+        response.put("matchingPhases",     result.getMatchingPhases());
+        response.put("totalPhases",        result.getTotalPhases());
+
+        return ResponseEntity.ok(response);
     }
 
     /** POST /recommend — Engine recommendation + AI explanation. */

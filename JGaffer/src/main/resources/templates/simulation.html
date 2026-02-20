@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>JGaffer &mdash; Match Simulation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="sim-page">
+
+    <!-- Breadcrumb -->
+    <div class="match-breadcrumb">
+        <a href="/" class="match-breadcrumb-link">&#8592; Play Again</a>
+    </div>
+
+    <!-- Scoreboard hero (updates live) -->
+    <div class="sim-hero">
+        <div class="sim-hero-inner">
+            <!-- Managed team -->
+            <div class="sim-hero-team">
+                <img class="hero-crest sim-crest-managed" th:attr="data-team=${teamName}" src="" alt="" onerror="this.style.display='none'"/>
+                <span class="sim-hero-name" th:text="${teamName}"></span>
+            </div>
+
+            <!-- Live score -->
+            <div class="sim-hero-score-block">
+                <div class="sim-live-badge" id="simLiveBadge">LIVE</div>
+                <div class="sim-score-display">
+                    <span class="sim-score-val" id="simTeamGoals" th:text="${isHome ? startHomeGoals : startAwayGoals}">0</span>
+                    <span class="sim-score-sep">&ndash;</span>
+                    <span class="sim-score-val" id="simOpponentGoals" th:text="${isHome ? startAwayGoals : startHomeGoals}">0</span>
+                </div>
+                <div class="sim-minute-badge" id="simMinuteBadge" th:text="|${startMinute}'|">0'</div>
+                <div class="sim-tactic-live">
+                    Tactic: <span id="simCurrentTactic" th:text="${startTactic}">—</span>
+                </div>
+            </div>
+
+            <!-- Opponent -->
+            <div class="sim-hero-team">
+                <img class="hero-crest sim-crest-opponent" th:attr="data-team=${opponentName}" src="" alt="" onerror="this.style.display='none'"/>
+                <span class="sim-hero-name" th:text="${opponentName}"></span>
+            </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="match-phase-bar" style="margin-top:10px;">
+            <div class="match-phase-track">
+                <div class="match-phase-fill" id="simProgressFill" th:style="|width: ${startMinute / 90.0 * 100}%;|"></div>
+            </div>
+            <div class="match-phase-label" id="simPhaseLabel">Simulating...</div>
+        </div>
+    </div>
+
+    <!-- Split layout: timeline left, phase picker right -->
+    <div class="sim-split">
+
+        <!-- LEFT: Event timeline feed -->
+        <div class="sim-timeline-panel">
+            <div class="sim-panel-header">
+                <span>&#9654; Match Timeline</span>
+            </div>
+            <div class="sim-timeline-feed" id="simFeed">
+                <div class="sim-kickoff-event">&#9654; Simulation starts at <span th:text="${startMinute}">0</span>'</div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Tactic picker + final result -->
+        <div class="sim-picker-panel" id="simPickerPanel">
+            <!-- Phase tactic picker (shown at each phase boundary) -->
+            <div id="simPickerCard" class="sim-picker-card" style="display:none;">
+                <div class="sim-picker-header">
+                    <span class="sim-picker-phase-name" id="simPickerPhaseName">Build Phase</span>
+                    <span class="sim-picker-subtitle">What's your call, Gaffer?</span>
+                </div>
+                <div class="sim-picker-tactics" id="simPickerTactics">
+                    <!-- Injected by JS -->
+                </div>
+                <button class="btn-simulate sim-picker-confirm" id="simPickerConfirm" disabled>
+                    Continue &#9654;
+                </button>
+            </div>
+
+            <!-- Final result card (shown at full-time) -->
+            <div id="simResultCard" class="sim-result-card" style="display:none;">
+                <div class="sim-result-ft-badge">FULL TIME</div>
+                <div class="sim-result-score-big">
+                    <span id="finalTeamGoals">0</span>
+                    <span class="sim-score-sep">&ndash;</span>
+                    <span id="finalOpponentGoals">0</span>
+                </div>
+                <div class="sim-result-team-labels">
+                    <span th:text="${teamName}">Team</span>
+                    <span th:text="${opponentName}">Opponent</span>
+                </div>
+
+                <div class="sim-fidelity-block">
+                    <span class="sim-fidelity-label">Tactical IQ</span>
+                    <div class="sim-fidelity-bar-track">
+                        <div class="sim-fidelity-bar-fill" id="simFidelityFill" style="width:0%"></div>
+                    </div>
+                    <span class="sim-fidelity-pct" id="simFidelityPct">0%</span>
+                </div>
+
+                <div class="sim-rating-badge" id="simRatingBadge">—</div>
+                <div class="sim-iq-detail" id="simIQDetail"></div>
+
+                <a href="/" class="btn-primary sim-play-again">Play Again &#8594;</a>
+            </div>
+
+            <!-- Waiting state -->
+            <div id="simWaiting" class="sim-waiting">
+                <div class="sim-waiting-spinner"></div>
+                <p>Match in progress...</p>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+// ── Server-injected data ─────────────────────────────────────────────────────
+const TEAM_ID      = /*[[${teamId}]]*/ 0;
+const MATCH_ID     = /*[[${matchId}]]*/ 0;
+const START_MINUTE = /*[[${startMinute}]]*/ 1;
+const START_TACTIC = /*[[${startTactic}]]*/ 'CONTROL';
+const IS_HOME      = /*[[${isHome}]]*/ true;
+const TEAM_NAME    = /*[[${teamName}]]*/ '';
+const OPP_NAME     = /*[[${opponentName}]]*/ '';
+
+// resultJson is a proper JSON string serialized by Jackson in the controller
+const INIT_RESULT  = JSON.parse(/*[[${resultJson}]]*/ '{"events":[],"tacticFidelityScore":0,"managerRating":"—","finalHomeGoals":0,"finalAwayGoals":0}');
+
+const ALL_TACTICS = ['GEGENPRESSING','HIGH_PRESS','TIKI_TAKA','CONTROL','COUNTER_ATTACK','DIRECT_PLAY','LOW_BLOCK'];
+
+// Phase: [startMin, endMin, label]
+const PHASES = [
+    [0,  15, 'Early Minutes'],
+    [16, 44, 'Closing Half'],
+    [45, 50, 'Half Time'],
+    [51, 60, 'Build Phase'],
+    [61, 70, 'Tension Time'],
+    [71, 87, 'Late Game'],
+    [88, 90, 'Stoppage Time'],
+];
+
+// ── Crests ───────────────────────────────────────────────────────────────────
+const CRESTS = {
+    "Arsenal":"https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
+    "Aston Villa":"https://upload.wikimedia.org/wikipedia/en/thumb/9/9a/Aston_Villa_FC_new_crest.svg/960px-Aston_Villa_FC_new_crest.svg.png",
+    "Bournemouth":"https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg",
+    "Brentford":"https://upload.wikimedia.org/wikipedia/en/2/2a/Brentford_FC_crest.svg",
+    "Brighton":"https://upload.wikimedia.org/wikipedia/en/thumb/d/d0/Brighton_and_Hove_Albion_FC_crest.svg/330px-Brighton_and_Hove_Albion_FC_crest.svg.png",
+    "Chelsea":"https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg",
+    "Crystal Palace":"https://upload.wikimedia.org/wikipedia/en/a/a2/Crystal_Palace_FC_logo_%282022%29.svg",
+    "Everton":"https://upload.wikimedia.org/wikipedia/en/7/7c/Everton_FC_logo.svg",
+    "Fulham":"https://upload.wikimedia.org/wikipedia/en/e/eb/Fulham_FC_%28shield%29.svg",
+    "Liverpool":"https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
+    "Manchester City":"https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg",
+    "Manchester United":"https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg",
+    "Newcastle United":"https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg",
+    "Nottingham Forest":"https://upload.wikimedia.org/wikipedia/en/e/e5/Nottingham_Forest_F.C._logo.svg",
+    "Tottenham Hotspur":"https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg",
+    "West Ham United":"https://upload.wikimedia.org/wikipedia/en/c/c2/West_Ham_United_FC_logo.svg",
+    "Wolverhampton Wanderers":"https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg",
+    "Leicester City":"https://upload.wikimedia.org/wikipedia/en/2/2d/Leicester_City_crest.svg",
+    "Ipswich Town":"https://upload.wikimedia.org/wikipedia/en/4/43/Ipswich_Town.svg",
+    "Southampton":"https://upload.wikimedia.org/wikipedia/en/c/c9/FC_Southampton.svg"
+};
+document.querySelectorAll('.hero-crest').forEach(img => {
+    if (CRESTS[img.dataset.team]) img.src = CRESTS[img.dataset.team];
+});
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let tacticPerPhase = {};
+for (let i = 0; i < 7; i++) tacticPerPhase[i] = START_TACTIC;
+
+let simEvents      = [];   // current event list from server
+let eventCursor    = 0;    // next event to process
+let paused         = false;// true while phase picker is shown
+let currentMinute  = START_MINUTE;
+let tickInterval   = null; // setInterval handle for the clock ticker
+
+// Cumulative Tactical IQ counters — accumulated only from picker choices (/simulate/phase calls).
+// Start at zero: the initial simulation uses the user's default tactic for all phases,
+// not an explicit deliberate choice, so we don't grade it. Only picker confirmations count.
+let cumulativeMatching = 0;
+let cumulativeTotal    = 0;
+
+// Live score: always track home/away independently, display per IS_HOME
+let liveHomeGoals  = IS_HOME
+    ? parseInt(document.getElementById('simTeamGoals').textContent, 10)
+    : parseInt(document.getElementById('simOpponentGoals').textContent, 10);
+let liveAwayGoals  = IS_HOME
+    ? parseInt(document.getElementById('simOpponentGoals').textContent, 10)
+    : parseInt(document.getElementById('simTeamGoals').textContent, 10);
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const feed          = document.getElementById('simFeed');
+const pickerCard    = document.getElementById('simPickerCard');
+const resultCard    = document.getElementById('simResultCard');
+const waitingEl     = document.getElementById('simWaiting');
+const pickerTactics = document.getElementById('simPickerTactics');
+const pickerConfirm = document.getElementById('simPickerConfirm');
+const pickerPhName  = document.getElementById('simPickerPhaseName');
+const progressFill  = document.getElementById('simProgressFill');
+const phaseLabel    = document.getElementById('simPhaseLabel');
+const minuteBadge   = document.getElementById('simMinuteBadge');
+const curTacticEl   = document.getElementById('simCurrentTactic');
+const liveBadge     = document.getElementById('simLiveBadge');
+
+// ── Clock ticker ─────────────────────────────────────────────────────────────
+// 1 real second = 1 match minute. Full 90-minute match plays out over ~90 seconds.
+const TICK_MS = 1000;
+
+function startClock(fromMinute) {
+    stopClock();
+    currentMinute = fromMinute;
+    setMinuteDisplay(currentMinute);
+    tickInterval = setInterval(() => {
+        if (paused) return;
+        if (currentMinute < 90) {
+            currentMinute++;
+            setMinuteDisplay(currentMinute);
+            // Fire any events scheduled at this exact minute
+            fireEventsAtMinute(currentMinute);
+            // Drop atmosphere commentary during quiet minutes
+            maybeAtmosphere(currentMinute);
+        } else {
+            stopClock();
+            // All events should have fired by now — show result
+            setTimeout(showFinalResult, 800);
+        }
+    }, TICK_MS);
+}
+
+function stopClock() {
+    if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+}
+
+function setMinuteDisplay(min) {
+    const clamped = Math.min(90, min);
+    // Map minute 0→90 to bar width 0→100%
+    progressFill.style.width = (clamped / 90 * 100) + '%';
+    minuteBadge.textContent  = clamped + "'";
+    for (const [s, e, name] of PHASES) {
+        if (clamped >= s && clamped <= e) { phaseLabel.textContent = name; break; }
+    }
+}
+
+// Fire all events whose minute matches the current clock minute
+function fireEventsAtMinute(minute) {
+    while (eventCursor < simEvents.length && simEvents[eventCursor].minute <= minute) {
+        const ev = simEvents[eventCursor++];
+        handleEvent(ev);
+    }
+}
+
+// ── Atmosphere messages ───────────────────────────────────────────────────────
+// Drip commentary into the feed during quiet minutes to keep the timeline alive.
+const ATMOSPHERE = [
+    'Ball worked across the midfield...',
+    'Keeper claims the cross comfortably.',
+    'Free kick won in a dangerous position.',
+    'Corner cleared to the edge of the box.',
+    'Referee waves play on.',
+    'Great touch to control — but the shot goes wide.',
+    'Long ball forward, keeper off his line to collect.',
+    'Midfielder slots a through ball — flagged offside.',
+    'Set piece rehearsed in training... doesn\'t quite come off.',
+    'Foul given. Tempers rising slightly.',
+    'The fans are getting restless.',
+    'Substitution being considered on the touchline.',
+    'Good pressing from the front forces a mistake.',
+    'Counter-attack snuffed out by a last-ditch tackle.',
+    'The wall is set. Free kick tipped over the bar!',
+    'End to end. Intensity picking up.',
+    'The manager is pacing the technical area.',
+    'Brilliant save to keep the score level!',
+    'Nerves starting to show in the final third.',
+    'Yellow card. Players crowd the referee.',
+    'They\'re sitting deep now, hard to break down.',
+    'Brilliant through ball — but the flag goes up.',
+    'The clock is ticking...',
+    'Chance! Just over the bar.',
+    'Crowd roars as the chance goes begging.',
+];
+
+// Emit at most one atmosphere message per ATMO_EVERY minutes, only when no real event fired
+const ATMO_EVERY = 4; // every 4 quiet minutes
+let lastAtmoMinute = -ATMO_EVERY; // initialise so first message can fire early
+
+function maybeAtmosphere(minute) {
+    // Check if a real event fired this minute — if so skip commentary
+    const hasRealEvent = simEvents.some(ev => ev.minute === minute);
+    if (hasRealEvent) return;
+    if (minute - lastAtmoMinute < ATMO_EVERY) return;
+    lastAtmoMinute = minute;
+    const text = ATMOSPHERE[Math.floor(Math.random() * ATMOSPHERE.length)];
+    appendFeedEvent({ type: 'atmosphere', label: minute + "' \u2014 " + text });
+}
+
+// ── Score display ─────────────────────────────────────────────────────────────
+// Renders the live home/away counters onto the scoreboard. The caller is
+// responsible for mutating liveHomeGoals/liveAwayGoals before calling this.
+function refreshScore(homeG, awayG) {
+    const tg = IS_HOME ? homeG : awayG;
+    const og = IS_HOME ? awayG : homeG;
+    document.getElementById('simTeamGoals').textContent     = tg;
+    document.getElementById('simOpponentGoals').textContent = og;
+}
+
+// Goal flash: briefly highlight the score digit
+function flashGoal(isTeamGoal) {
+    const el = document.getElementById(isTeamGoal ? 'simTeamGoals' : 'simOpponentGoals');
+    el.classList.add('sim-goal-flash');
+    setTimeout(() => el.classList.remove('sim-goal-flash'), 1400);
+}
+
+// ── Event feed ────────────────────────────────────────────────────────────────
+function appendFeedEvent(ev) {
+    const div = document.createElement('div');
+    div.className = 'sim-event sim-event-' + ev.type.toLowerCase();
+    div.textContent = ev.label;
+    feed.appendChild(div);
+    // Auto-scroll
+    setTimeout(() => feed.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' }), 50);
+}
+
+// ── Event handler (called by clock ticker) ────────────────────────────────────
+function handleEvent(ev) {
+    if (ev.type === 'GOAL_HOME' || ev.type === 'GOAL_AWAY') {
+        // Increment live counters by type — do NOT parse the embedded label score,
+        // as that reflects sub-simulation offsets and goes backwards after tactic changes.
+        if (ev.type === 'GOAL_HOME') liveHomeGoals++;
+        else                         liveAwayGoals++;
+        refreshScore(liveHomeGoals, liveAwayGoals);
+        // Build a clean label using live cumulative score
+        const scorerName = ev.type === 'GOAL_HOME'
+            ? (IS_HOME ? TEAM_NAME : OPP_NAME)
+            : (IS_HOME ? OPP_NAME  : TEAM_NAME);
+        const liveLabel = ev.minute + "' \u2014 GOAL! " + scorerName + " score! " + liveHomeGoals + "-" + liveAwayGoals;
+        appendFeedEvent({ ...ev, label: liveLabel });
+        flashGoal(ev.type === (IS_HOME ? 'GOAL_HOME' : 'GOAL_AWAY'));
+        return;
+    }
+
+    if (ev.type === 'PHASE_CHANGE') {
+        appendFeedEvent(ev);
+        const phIdx = findPhaseIdx(ev.minute);
+        // Only show the picker once per phase — guard against re-simulation sending
+        // PHASE_CHANGE events for phases we've already passed through.
+        if (phIdx > lastShownPickerPhaseIdx) {
+            // Pause the clock and show the tactic picker
+            paused = true;
+            setTimeout(() => showPhasePicker(phIdx), 600);
+        }
+        return;
+    }
+
+    // TACTIC_NOTE or anything else
+    appendFeedEvent(ev);
+}
+
+function findPhaseIdx(minute) {
+    for (let i = 0; i < PHASES.length; i++) {
+        if (minute >= PHASES[i][0] && minute <= PHASES[i][1]) return i;
+    }
+    return PHASES.length - 1;
+}
+
+// ── Phase picker ──────────────────────────────────────────────────────────────
+let currentPickerPhaseIdx   = -1;
+let selectedPickerTactic    = null;
+// Tracks the highest phase idx for which the picker has already been shown.
+// Initialised lazily in DOMContentLoaded (after findPhaseIdx is defined).
+let lastShownPickerPhaseIdx = -1;
+
+function showPhasePicker(phaseIdx) {
+    currentPickerPhaseIdx   = phaseIdx;
+    lastShownPickerPhaseIdx = phaseIdx;   // mark this phase as seen so it won't re-trigger
+    selectedPickerTactic    = tacticPerPhase[phaseIdx] || START_TACTIC;
+
+    waitingEl.style.display = 'none';
+    resultCard.style.display = 'none';
+    pickerCard.style.display = 'flex';
+    pickerPhName.textContent = PHASES[phaseIdx] ? PHASES[phaseIdx][2] : 'Next Phase';
+    pickerConfirm.disabled   = false;
+
+    pickerTactics.innerHTML = '';
+    ALL_TACTICS.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type      = 'button';
+        btn.className = 'sim-tactic-pill' + (t === selectedPickerTactic ? ' active' : '');
+        btn.textContent = t.replace(/_/g, ' ');
+        btn.addEventListener('click', () => {
+            pickerTactics.querySelectorAll('.sim-tactic-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedPickerTactic = t;
+        });
+        pickerTactics.appendChild(btn);
+    });
+}
+
+pickerConfirm.addEventListener('click', () => {
+    if (!selectedPickerTactic) return;
+    pickerCard.style.display = 'none';
+    waitingEl.style.display  = 'flex';
+
+    // Apply chosen tactic to this and all future phases
+    for (let i = currentPickerPhaseIdx; i < 7; i++) {
+        tacticPerPhase[i] = selectedPickerTactic;
+    }
+    curTacticEl.textContent = selectedPickerTactic.replace(/_/g, ' ');
+
+    // Call server to re-simulate from this phase with current score
+    const fromMin = PHASES[currentPickerPhaseIdx] ? PHASES[currentPickerPhaseIdx][0] : currentMinute;
+    const params = new URLSearchParams({
+        teamId:        TEAM_ID,
+        matchId:       MATCH_ID,
+        fromMinute:    Math.max(fromMin, currentMinute),
+        fromHomeGoals: liveHomeGoals,
+        fromAwayGoals: liveAwayGoals,
+        tacticsJson:   JSON.stringify(tacticPerPhase)
+    });
+
+    fetch('/simulate/phase', {
+        method: 'POST',
+        body:   params,
+        headers:{'Content-Type':'application/x-www-form-urlencoded'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        // Discard events after current cursor, replace with new ones.
+        // Also strip any PHASE_CHANGE events whose minute <= currentMinute —
+        // those phases were already shown in the feed before the tactic change.
+        const newEvents = (data.events || []).filter(ev =>
+            !(ev.type === 'PHASE_CHANGE' && ev.minute <= currentMinute)
+        );
+        simEvents = simEvents.slice(0, eventCursor);
+        simEvents.push(...newEvents);
+        // Accumulate Tactical IQ counts — don't overwrite, add to running totals
+        cumulativeMatching += (data.matchingPhases || 0);
+        cumulativeTotal    += (data.totalPhases    || 0);
+        waitingEl.style.display = 'none';
+        paused = false;
+        // Resume the clock from where we are
+        startClock(currentMinute);
+    })
+    .catch(() => {
+        waitingEl.style.display = 'none';
+        paused = false;
+        startClock(currentMinute);
+    });
+});
+
+// ── Tactical IQ helpers ───────────────────────────────────────────────────────
+function computeTacticalIQ() {
+    if (cumulativeTotal === 0) return 100;
+    return Math.round((cumulativeMatching / cumulativeTotal) * 100);
+}
+
+/**
+ * Rating combines tactical knowledge (fidelity %) with match outcome.
+ * Winning while ignoring the engine = bold but effective. That deserves credit.
+ * Losing while following the engine = not your fault, but not glory either.
+ *
+ * outcome: 'win' | 'draw' | 'loss'
+ */
+function iqRatingLabel(score, outcome) {
+    const highFidelity   = score >= 60;
+    const mediumFidelity = score >= 30 && score < 60;
+    // lowFidelity = score < 30
+
+    if (outcome === 'win') {
+        if (highFidelity)   return 'Elite Tactician';
+        if (mediumFidelity) return 'Bold Gaffer';
+        return 'Maverick';           // won despite ignoring the engine — lucky genius
+    }
+    if (outcome === 'draw') {
+        if (highFidelity)   return 'Solid Gaffer';
+        if (mediumFidelity) return 'Work in Progress';
+        return 'Gambler';
+    }
+    // loss
+    if (highFidelity)   return 'Nearly There';
+    if (mediumFidelity) return 'Out of Your Depth';
+    return 'Clueless in the Dugout';
+}
+
+// ── Final result ──────────────────────────────────────────────────────────────
+function showFinalResult() {
+    waitingEl.style.display  = 'none';
+    pickerCard.style.display = 'none';
+    resultCard.style.display = 'flex';
+
+    const tg = IS_HOME ? liveHomeGoals : liveAwayGoals;
+    const og = IS_HOME ? liveAwayGoals : liveHomeGoals;
+    document.getElementById('finalTeamGoals').textContent     = tg;
+    document.getElementById('finalOpponentGoals').textContent = og;
+
+    const outcome  = tg > og ? 'win' : tg === og ? 'draw' : 'loss';
+    const iqScore  = computeTacticalIQ();
+    const iqRating = iqRatingLabel(iqScore, outcome);
+
+    // Result headline line
+    const resultLine = outcome === 'win'  ? 'Victory!'
+                     : outcome === 'draw' ? 'Draw'
+                     :                     'Defeat';
+    const phaseDetail = cumulativeTotal === 0
+        ? 'No tactic changes made'
+        : cumulativeMatching + ' / ' + cumulativeTotal + ' tactic picks matched the engine';
+    document.getElementById('simIQDetail').textContent = resultLine + ' \u2014 ' + phaseDetail;
+
+    // Animate fidelity bar from 0 → final width (force reflow to trigger transition)
+    const fillEl = document.getElementById('simFidelityFill');
+    fillEl.style.transition = 'none';
+    fillEl.style.width = '0%';
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            fillEl.style.transition = 'width 1.2s cubic-bezier(0.4,0,0.2,1)';
+            fillEl.style.width = iqScore + '%';
+        });
+    });
+    document.getElementById('simFidelityPct').textContent  = iqScore + '%';
+    document.getElementById('simRatingBadge').textContent  = iqRating;
+
+    liveBadge.textContent = 'FT';
+    liveBadge.classList.add('sim-ft-badge');
+    setMinuteDisplay(90);
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    if (!INIT_RESULT || !INIT_RESULT.events || INIT_RESULT.events.length === 0) {
+        showFinalResult();
+        return;
+    }
+
+    simEvents = INIT_RESULT.events;
+
+    // Seed lastShownPickerPhaseIdx so the very first phase (the one the user is already in)
+    // never triggers the picker — only genuinely future phases do.
+    lastShownPickerPhaseIdx = findPhaseIdx(START_MINUTE);
+
+    pickerCard.style.display = 'none';
+    resultCard.style.display = 'none';
+    waitingEl.style.display  = 'none';
+
+    // Brief countdown before kick-off
+    setTimeout(() => startClock(START_MINUTE), 1200);
+});
+/*]]>*/
+</script>
+</body>
+</html>

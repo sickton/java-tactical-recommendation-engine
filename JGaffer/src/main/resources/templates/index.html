@@ -19,6 +19,10 @@
         <p class="hero-sub">Select a Premier League team to start your tactical session.</p>
     </div>
 
+    <div class="club-search-wrap">
+        <input type="text" id="clubSearch" class="club-search-input" placeholder="Search clubs..." autocomplete="off" spellcheck="false"/>
+    </div>
+
     <form action="/fixtures" method="get" id="team-form">
         <div class="club-grid">
 
@@ -148,5 +152,21 @@
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
+
+<script>
+const searchInput = document.getElementById('clubSearch');
+const cards = Array.from(document.querySelectorAll('.club-card'));
+
+searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    let anyVisible = false;
+    cards.forEach(card => {
+        const name = card.querySelector('.club-name').textContent.toLowerCase();
+        const match = !q || name.includes(q);
+        card.style.display = match ? '' : 'none';
+        if (match) anyVisible = true;
+    });
+});
+</script>
 </body>
 </html>

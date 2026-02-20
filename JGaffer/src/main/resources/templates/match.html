@@ -96,7 +96,10 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="btn-primary">Get Recommendation &#8594;</button>
+                    <div class="match-action-row">
+                        <button type="submit" formaction="/recommend" class="btn-primary">Get Recommendation &#8594;</button>
+                        <button type="submit" formaction="/simulate" class="btn-simulate">Simulate Match &#9654;</button>
+                    </div>
                 </form>
             </div>
 
@@ -154,6 +157,26 @@ const CRESTS = {
 document.querySelectorAll('.hero-crest').forEach(img => {
     const team = img.dataset.team;
     if (CRESTS[team]) img.src = CRESTS[team];
+});
+
+// ── Score entrance counter-roll ───────────────────────────────────────────
+function animateCount(el, target, duration) {
+    const start = performance.now();
+    const step = (now) => {
+        const t = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(ease * target);
+        if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+
+document.querySelectorAll('.match-hero-score > span:not(.match-hero-score-sep)').forEach(span => {
+    const val = parseInt(span.textContent, 10);
+    if (!isNaN(val) && val > 0) {
+        span.textContent = '0';
+        setTimeout(() => animateCount(span, val, 700), 300);
+    }
 });
 
 // ── Tactic Guide Data ──────────────────────────────────────────────────────

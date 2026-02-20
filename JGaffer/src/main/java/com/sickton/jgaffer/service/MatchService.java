@@ -6,6 +6,7 @@ import com.sickton.jgaffer.engine.TacticalRecommendationEngine;
 import com.sickton.jgaffer.openAIService.OpenAIClient;
 import com.sickton.jgaffer.openAIService.TacticalExplanationService;
 import com.sickton.jgaffer.utility.ApplicationParser;
+import com.sickton.jgaffer.service.GameSimulator;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,5 +184,12 @@ Give exactly 5 bullet points using a dash (-):
     /** Returns all available tactics as a list for rendering in the UI. */
     public List<Tactic> getAllTactics() {
         return List.of(Tactic.values());
+    }
+
+    /** Runs a full match simulation using the supplied per-phase tactic choices. */
+    public SimulationResult simulate(MatchContext context,
+                                     Team team,
+                                     Map<Integer, Tactic> tacticPerPhase) {
+        return new GameSimulator().simulate(context, team, tacticPerPhase);
     }
 }
