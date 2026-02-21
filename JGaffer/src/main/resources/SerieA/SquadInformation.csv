@@ -1,0 +1,21 @@
+team_name,code,id,manager,style,team_adaptability,team_stamina,formation
+Atalanta,ATA,21,Gian Piero Gasperini,ATTACKING,MEDIUM,HIGH,F_3_4_3
+Bologna,BOL,22,Vincenzo Italiano,ATTACKING,MEDIUM,HIGH,F_4_2_3_1
+Cagliari,CAG,23,Davide Nicola,DEFENSIVE,HIGH,HIGH,F_4_3_3
+Como,COM,24,Cesc Fabregas,CONTROLLING,MEDIUM,MEDIUM,F_4_2_3_1
+Empoli,EMP,25,Roberto D'Aversa,DEFENSIVE,MEDIUM,MEDIUM,F_3_5_2
+Fiorentina,FIO,26,Raffaele Palladino,CONTROLLING,MEDIUM,MEDIUM,F_4_2_3_1
+Genoa,GEN,27,Patric Vieira,DEFENSIVE,MEDIUM,HIGH,F_3_5_2
+Hellas Verona,VER,28,Paolo Zanetti,DEFENSIVE,LOW,HIGH,F_4_3_3
+Inter Milan,INT,29,Simone Inzaghi,CONTROLLING,HIGH,HIGH,F_3_5_2
+Juventus,JUV,30,Igor Tudor,ATTACKING,MEDIUM,HIGH,F_4_3_3
+Lazio,LAZ,31,Marco Baroni,ATTACKING,MEDIUM,MEDIUM,F_4_2_3_1
+Lecce,LEC,32,Marco Giampaolo,CONTROLLING,LOW,MEDIUM,F_4_3_3
+AC Milan,MIL,33,Sergio Conceicao,ATTACKING,HIGH,HIGH,F_4_2_3_1
+Monza,MON,34,Alessandro Nesta,DEFENSIVE,MEDIUM,MEDIUM,F_3_4_3
+Napoli,NAP,35,Anotonio Conte,ATTACKING,HIGH,HIGH,F_4_3_3
+Parma,PAR,36,Christian Chivu,CONTROLLING,MEDIUM,HIGH,F_4_2_3_1
+Roma,ROM,37,Claudio Ranieri,DEFENSIVE,HIGH,MEDIUM,F_3_5_2
+Torino,TOR,38,Ricardo Baroni,DEFENSIVE,MEDIUM,HIGH,F_3_4_3
+Udinese,UDI,39,Kosta Runjaic,DEFENSIVE,MEDIUM,HIGH,F_3_5_2
+Venezia,VEN,40,Eusebio Di Francesco,ATTACKING,LOW,MEDIUM,F_4_3_3

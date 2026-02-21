@@ -29,10 +29,10 @@ import java.util.*;
  * @author sickton
  */
 public class jgafferApplication {
-    protected static Map<Integer, String> teams = ApplicationParser.buildTeamMap();
+    protected static Map<Integer, String> teams = ApplicationParser.buildTeamMapFromCsv("/PremierLeague/SquadInformation.csv");
     protected static Map<String, MatchContext> matchContextMap = PremierLeagueFactory.buildAllContexts();
-    protected static Map<Integer, String> titles = ApplicationParser.parseTitles();
-    protected static Map<String, String> teamCodes = ApplicationParser.getTeamCodeMap();
+    protected static Map<Integer, String> titles = ApplicationParser.parseTitles("/PremierLeague/PremierLeagueMatches.csv");
+    protected static Map<String, String> teamCodes = ApplicationParser.getTeamCodeMap("/PremierLeague/SquadInformation.csv");
 
     public static void displayTeams() {
         System.out.println("Select the Club that you want to play with! ");

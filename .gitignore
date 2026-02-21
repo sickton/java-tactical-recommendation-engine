@@ -1,14 +1,20 @@
-#IntelliJ files
+# IntelliJ files
 .idea
 *.iml
 out/
 
-#Maven
+# Maven
 target/
 
-#Logs
+# Logs
 *.log
 
-#OS
+# OS
 .DS_Store
 Thumbs.db
+
+# Node / Vite
+frontend/node_modules/
+
+# Claude internal tooling
+.claude/worktrees/

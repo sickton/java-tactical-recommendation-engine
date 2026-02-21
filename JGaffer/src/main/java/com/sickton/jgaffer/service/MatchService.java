@@ -1,12 +1,12 @@
 package com.sickton.jgaffer.service;
 
 import com.sickton.jgaffer.domain.*;
-import com.sickton.jgaffer.demoUI.PremierLeagueFactory;
+import com.sickton.jgaffer.demoUI.LeagueDataFactory;
 import com.sickton.jgaffer.engine.TacticalRecommendationEngine;
 import com.sickton.jgaffer.openAIService.OpenAIClient;
 import com.sickton.jgaffer.openAIService.TacticalExplanationService;
 import com.sickton.jgaffer.utility.ApplicationParser;
-import com.sickton.jgaffer.service.GameSimulator;
+import com.sickton.jgaffer.utility.FileStorage;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,48 +16,110 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 /**
- * Spring service that encapsulates match data loading and recommendation logic.
+ * Spring service that encapsulates match data loading and recommendation logic
+ * for all supported leagues.
  *
- * <p>Extracts the orchestration code from the CLI {@code jgafferApplication} into
- * a reusable service bean. Holds all match data in memory after startup to avoid
- * repeated CSV parsing on each request.</p>
+ * <p>Holds all match data in memory after startup to avoid repeated CSV parsing
+ * on each request. Accepts a {@code league} string ("PL" or "SA") to route
+ * requests to the correct data set.</p>
  *
  * @author sickton
  */
 @Service
 public class MatchService {
 
+    public static final String PREMIER_LEAGUE = "PL";
+    public static final String SERIE_A = "SA";
+
     private static final Logger log = LoggerFactory.getLogger(MatchService.class);
 
     private final TacticalRecommendationEngine engine = new TacticalRecommendationEngine();
-    private final Map<Integer, String> teams = ApplicationParser.buildTeamMap();
-    private final Map<Integer, String> titles = ApplicationParser.parseTitles();
-    private final Map<String, String> teamCodes = ApplicationParser.getTeamCodeMap();
 
-    private Map<String, MatchContext> matchContextMap;
+    // Premier League data
+    private Map<Integer, String> plTeams;
+    private Map<Integer, String> plTitles;
+    private Map<String, String> plTeamCodes;
+    private Map<String, FileStorage> plTeamData;
+    private Map<String, MatchContext> plContextMap;
 
-    @PostConstruct
-    public void init() {
-        log.info("Loading match context data...");
-        matchContextMap = PremierLeagueFactory.buildAllContexts();
-        log.info("Loaded {} match contexts", matchContextMap.size());
-    }
+    // Serie A data
+    private Map<Integer, String> saTeams;
+    private Map<Integer, String> saTitles;
+    private Map<String, String> saTeamCodes;
+    private Map<String, FileStorage> saTeamData;
+    private Map<String, MatchContext> saContextMap;
 
     @Value("${openai.api.key:}")
     private String openAiApiKey;
 
-    /** All 20 Premier League teams keyed by their display ID (1-20). */
-    public Map<Integer, String> getTeams() {
-        return Collections.unmodifiableMap(teams);
+    @PostConstruct
+    public void init() {
+        log.info("Loading Premier League data...");
+        plTitles   = ApplicationParser.parseTitles("/PremierLeague/PremierLeagueMatches.csv");
+        plTeamData = ApplicationParser.parseSquadInformation("/PremierLeague/SquadInformation.csv");
+        plTeams    = ApplicationParser.buildTeamMapFromCsv("/PremierLeague/SquadInformation.csv");
+        plTeamCodes = ApplicationParser.getTeamCodeMap("/PremierLeague/SquadInformation.csv");
+        plContextMap = LeagueDataFactory.buildAllContexts(
+                "/PremierLeague/MatchMinuteContext.csv", plTitles, plTeamData);
+        log.info("Loaded {} PL match contexts", plContextMap.size());
+
+        log.info("Loading Serie A data...");
+        saTitles   = ApplicationParser.parseTitles("/SerieA/SerieAMatches.csv");
+        saTeamData = ApplicationParser.parseSquadInformation("/SerieA/SquadInformation.csv");
+        saTeams    = ApplicationParser.buildTeamMapFromCsv("/SerieA/SquadInformation.csv");
+        saTeamCodes = ApplicationParser.getTeamCodeMap("/SerieA/SquadInformation.csv");
+        saContextMap = LeagueDataFactory.buildAllContexts(
+                "/SerieA/MatchMinuteContext.csv", saTitles, saTeamData);
+        log.info("Loaded {} Serie A match contexts", saContextMap.size());
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    private Map<Integer, String> teamsFor(String league) {
+        return SERIE_A.equals(league) ? saTeams : plTeams;
+    }
+
+    private Map<Integer, String> titlesFor(String league) {
+        return SERIE_A.equals(league) ? saTitles : plTitles;
+    }
+
+    private Map<String, String> teamCodesFor(String league) {
+        return SERIE_A.equals(league) ? saTeamCodes : plTeamCodes;
+    }
+
+    private Map<String, FileStorage> teamDataFor(String league) {
+        return SERIE_A.equals(league) ? saTeamData : plTeamData;
+    }
+
+    private Map<String, MatchContext> contextsFor(String league) {
+        return SERIE_A.equals(league) ? saContextMap : plContextMap;
+    }
+
+    // ── Public API ───────────────────────────────────────────────────────────
+
+    /** Returns all teams for the given league, keyed by display ID (sorted by ID). */
+    public Map<Integer, String> getTeams(String league) {
+        return Collections.unmodifiableMap(new TreeMap<>(teamsFor(league)));
+    }
+
+    /** Returns the team name for a given team ID in the given league. */
+    public String getTeamName(String league, int teamId) {
+        return teamsFor(league).get(teamId);
+    }
+
+    /** Returns the short code (e.g. "MCI") for a given team name in the given league. */
+    public String getTeamCode(String league, String teamName) {
+        return teamCodesFor(league).get(teamName);
     }
 
     /**
-     * Returns fixtures for the given team, split into home and away lists.
+     * Returns fixtures for the given team split into home and away lists.
      * Each inner map has keys "id" (Integer matchId) and "title" (String match code).
      */
-    public Map<String, List<Map<String, Object>>> getFixtures(String teamName) {
-        String code = teamCodes.get(teamName);
-        Map<Integer, String> all = new TreeMap<>(PremierLeagueFactory.getFixtureList(code));
+    public Map<String, List<Map<String, Object>>> getFixtures(String league, String teamName) {
+        String code = teamCodesFor(league).get(teamName);
+        Map<Integer, String> all = new TreeMap<>(
+                LeagueDataFactory.getFixtureList(code, titlesFor(league)));
 
         List<Map<String, Object>> home = new ArrayList<>();
         List<Map<String, Object>> away = new ArrayList<>();
@@ -80,28 +142,18 @@ public class MatchService {
     }
 
     /**
-     * Fetches the pre-built MatchContext for a given match number and minute.
-     * Returns null if the combination is not found (match/minute not in CSV data).
+     * Fetches the pre-built MatchContext for a given league, match number, and minute.
+     * Returns null if the combination is not found.
      */
-    public MatchContext getMatchContext(int matchNumber, int minute) {
-        String matchTitle = titles.get(matchNumber);
+    public MatchContext getMatchContext(String league, int matchNumber, int minute) {
+        String matchTitle = titlesFor(league).get(matchNumber);
         if (matchTitle == null) return null;
-        return matchContextMap.get(matchTitle + "_" + minute);
+        return contextsFor(league).get(matchTitle + "_" + minute);
     }
 
-    /** Returns the team object for a given team name. */
-    public Team getTeam(String teamName) {
-        return PremierLeagueFactory.buildTeamFromName(teamName);
-    }
-
-    /** Returns the team name for a given team ID. */
-    public String getTeamName(int teamId) {
-        return teams.get(teamId);
-    }
-
-    /** Returns the short code (e.g. "MCI") for a given team name. */
-    public String getTeamCode(String teamName) {
-        return teamCodes.get(teamName);
+    /** Returns the Team object for a given team name in the given league. */
+    public Team getTeam(String league, String teamName) {
+        return LeagueDataFactory.buildTeamFromName(teamName, teamDataFor(league));
     }
 
     /** Runs the engine and returns the full recommendation (tactic + formation + confidence). */
