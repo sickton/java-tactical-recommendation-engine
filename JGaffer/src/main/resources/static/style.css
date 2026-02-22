@@ -390,18 +390,24 @@ h2 {
     grid-template-columns: 1fr 1px 1fr;
     gap: 0 32px;
     flex: 1;
+    min-height: 0;
 }
 
 .fixtures-panel {
-    min-width: 0;
+    width: 100%;
+    align-items: stretch;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 .fixtures-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 5px;
+    gap: 6px;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
     align-content: start;
 }
 
@@ -451,18 +457,14 @@ h2 {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 6px 12px;
     background: rgba(22, 27, 34, 0.7);
     border: 1px solid rgba(55, 55, 65, 0.6);
     border-radius: 8px;
     cursor: pointer;
     text-decoration: none;
-    min-width: 0;
-    box-sizing: border-box;
-    transition: border-color 0.22s var(--spring),
-                background  0.18s ease,
-                transform   0.22s var(--spring),
-                box-shadow  0.18s ease;
+
+    width: 100%;
 }
 
 .fixture-row:hover {
@@ -494,15 +496,14 @@ body.league-sa .fixture-row:hover {
 
 .fixture-opp-name {
     font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: #c9d1d9;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-    min-width: 0;
     transition: color 0.15s;
+    overflow: visible;
+    text-overflow: clip;
+    flex: 1;
 }
 
 .fixture-row:hover .fixture-opp-name { color: #ffffff; }
