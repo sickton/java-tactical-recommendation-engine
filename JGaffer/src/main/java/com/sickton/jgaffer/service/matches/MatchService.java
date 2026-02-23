@@ -327,4 +327,8 @@ Give exactly 5 bullet points using a dash (-):
         if (minute <= 87) return "LATE_GAME";
         return "STOPPAGE_TIME";
     }
+
+    public Set<Integer> getAllMatchIds(String league) {
+        return titlesFor(league).keySet();
+    }
 }
