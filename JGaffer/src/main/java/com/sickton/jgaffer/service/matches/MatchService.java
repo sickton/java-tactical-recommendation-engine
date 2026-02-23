@@ -1,10 +1,13 @@
-package com.sickton.jgaffer.service;
+package com.sickton.jgaffer.service.matches;
 
 import com.sickton.jgaffer.domain.*;
 import com.sickton.jgaffer.demoUI.LeagueDataFactory;
 import com.sickton.jgaffer.engine.TacticalRecommendationEngine;
 import com.sickton.jgaffer.openAIService.OpenAIClient;
 import com.sickton.jgaffer.openAIService.TacticalExplanationService;
+import com.sickton.jgaffer.persistence.entity.MatchDecision;
+import com.sickton.jgaffer.persistence.repository.MatchDecisionRepository;
+import com.sickton.jgaffer.service.simulation.GameSimulator;
 import com.sickton.jgaffer.utility.ApplicationParser;
 import com.sickton.jgaffer.utility.FileStorage;
 import jakarta.annotation.PostConstruct;
@@ -51,6 +54,12 @@ public class MatchService {
 
     @Value("${openai.api.key:}")
     private String openAiApiKey;
+
+    private final MatchDecisionRepository decisionRepository;
+
+    public MatchService(MatchDecisionRepository decisionRepository) {
+        this.decisionRepository = decisionRepository;
+    }
 
     @PostConstruct
     public void init() {
@@ -243,5 +252,83 @@ Give exactly 5 bullet points using a dash (-):
                                      Team team,
                                      Map<Integer, Tactic> tacticPerPhase) {
         return new GameSimulator().simulate(context, team, tacticPerPhase);
+    }
+
+    public SimulationResult simulateAndLog(
+            String league,
+            int teamId,
+            int matchId,
+            int minute,
+            Tactic startTactic,
+            MatchContext context,
+            Team team,
+            Map<Integer, Tactic> tacticPerPhase) {
+
+        // 1️⃣ Run pure simulation
+        SimulationResult result = simulate(context, team, tacticPerPhase);
+
+        // 2️⃣ Determine home/away perspective
+        boolean isHome = context.getHome().getName()
+                .equalsIgnoreCase(team.getName());
+
+        int finalHomeGoals = result.getFinalHomeGoals();
+        int finalAwayGoals = result.getFinalAwayGoals();
+
+        int teamFinalGoals = isHome ? finalHomeGoals : finalAwayGoals;
+        int opponentFinalGoals = isHome ? finalAwayGoals : finalHomeGoals;
+
+        int goalDelta = teamFinalGoals - opponentFinalGoals;
+
+        // 3️⃣ Determine outcome
+        String outcome;
+        if (goalDelta > 0) outcome = "WIN";
+        else if (goalDelta < 0) outcome = "LOSS";
+        else outcome = "DRAW";
+
+        // 4️⃣ Determine phase label
+        String phase = determinePhase(minute);
+
+        // 5️⃣ Build MatchDecision entity
+        MatchDecision decision = new MatchDecision();
+
+        decision.setLeague(league);
+        decision.setTeamId(teamId);
+        decision.setMatchId(matchId);
+
+        decision.setStartMinute(minute);
+        decision.setStartTactic(startTactic.name());
+        decision.setGamePhase(phase);
+
+        decision.setFidelity(result.getTacticFidelityScore());
+        decision.setMatchingPhases(result.getMatchingPhases());
+        decision.setTotalPhases(result.getTotalPhases());
+
+        decision.setFinalHomeGoals(finalHomeGoals);
+        decision.setFinalAwayGoals(finalAwayGoals);
+
+        decision.setGoalDelta(goalDelta);
+        decision.setOutcome(outcome);
+
+        decision.setCreatedAt(java.time.LocalDateTime.now());
+        decision.setUserTactic(startTactic.name());
+
+        // 6️⃣ Persist
+        decisionRepository.save(decision);
+
+        return result;
+    }
+
+    private String determinePhase(int minute) {
+        if (minute <= 15) return "EARLY_MINUTES";
+        if (minute <= 44) return "CLOSING_HALF";
+        if (minute <= 50) return "HALF_TIME";
+        if (minute <= 60) return "BUILD_PHASE";
+        if (minute <= 70) return "TENSION_TIME";
+        if (minute <= 87) return "LATE_GAME";
+        return "STOPPAGE_TIME";
+    }
+
+    public Set<Integer> getAllMatchIds(String league) {
+        return titlesFor(league).keySet();
     }
 }

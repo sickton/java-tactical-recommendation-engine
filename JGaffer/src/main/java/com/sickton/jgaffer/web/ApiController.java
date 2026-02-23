@@ -6,7 +6,7 @@ import com.sickton.jgaffer.domain.SimulationResult;
 import com.sickton.jgaffer.domain.Tactic;
 import com.sickton.jgaffer.domain.TacticRecommendation;
 import com.sickton.jgaffer.domain.Team;
-import com.sickton.jgaffer.service.MatchService;
+import com.sickton.jgaffer.service.matches.MatchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -184,7 +184,16 @@ public class ApiController {
         Map<Integer, Tactic> tacticPerPhase = new HashMap<>();
         for (int i = 0; i < 7; i++) tacticPerPhase.put(i, startTactic);
 
-        SimulationResult result = matchService.simulate(context, team, tacticPerPhase);
+        SimulationResult result = matchService.simulateAndLog(
+                league,
+                teamId,
+                matchId,
+                minute,
+                startTactic,
+                context,
+                team,
+                tacticPerPhase
+        );
         boolean isHome = context.getHome().getName().equalsIgnoreCase(teamName);
 
         Map<String, Object> resp = new LinkedHashMap<>();
