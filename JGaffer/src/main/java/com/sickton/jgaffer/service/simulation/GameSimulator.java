@@ -1,4 +1,4 @@
-package com.sickton.jgaffer.service;
+package com.sickton.jgaffer.service.simulation;
 
 import com.sickton.jgaffer.domain.*;
 import com.sickton.jgaffer.engine.TacticalRecommendationEngine;

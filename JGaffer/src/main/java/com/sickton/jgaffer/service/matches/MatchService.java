@@ -1,4 +1,4 @@
-package com.sickton.jgaffer.service;
+package com.sickton.jgaffer.service.matches;
 
 import com.sickton.jgaffer.domain.*;
 import com.sickton.jgaffer.demoUI.LeagueDataFactory;
@@ -7,6 +7,7 @@ import com.sickton.jgaffer.openAIService.OpenAIClient;
 import com.sickton.jgaffer.openAIService.TacticalExplanationService;
 import com.sickton.jgaffer.persistence.entity.MatchDecision;
 import com.sickton.jgaffer.persistence.repository.MatchDecisionRepository;
+import com.sickton.jgaffer.service.simulation.GameSimulator;
 import com.sickton.jgaffer.utility.ApplicationParser;
 import com.sickton.jgaffer.utility.FileStorage;
 import jakarta.annotation.PostConstruct;

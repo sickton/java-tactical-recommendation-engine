@@ -6,7 +6,7 @@ import com.sickton.jgaffer.domain.SimulationResult;
 import com.sickton.jgaffer.domain.Tactic;
 import com.sickton.jgaffer.domain.TacticRecommendation;
 import com.sickton.jgaffer.domain.Team;
-import com.sickton.jgaffer.service.MatchService;
+import com.sickton.jgaffer.service.matches.MatchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
