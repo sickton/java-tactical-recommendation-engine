@@ -80,6 +80,150 @@ All endpoints return JSON. `league` param is always `"PL"` or `"SA"` (default `"
 ### SPA Routing — `SpaController`
 Forwards all React Router paths (`/`, `/clubs`, `/fixtures`, `/match`, `/result`, `/simulation`) to `static/index.html` so direct URL access and browser refresh work.
 
+## 🔬 Analytics & Tactical Research Layer (Branch 4+)
+
+JGaffer now includes an advanced tactical analytics and meta-evaluation layer built on top of the simulation engine.
+
+---
+
+### Architecture Additions
+
+```
+service/analytics/
+    AnalyticsService
+
+persistence/dto/
+    TacticAnalytics
+    LeagueNormalizerResult
+    PhaseNormalizerResult
+    PhasePerformance
+
+web/
+    AnalyticsController
+```
+
+All analytics endpoints are exposed under:
+
+```
+/api/analytics/*
+```
+
+---
+
+## 1️⃣ Historical Analytics (DB-Based)
+
+**Endpoint**
+```
+GET /api/analytics/win-rate-by-tactic?league=PL|SA
+```
+
+**Purpose**
+- Aggregates logged simulations from `match_decisions`
+- Returns total simulations, wins, and win rate per tactic
+- Filtered by league
+
+**Data Source**
+- `MatchDecisionRepository`
+- JPQL aggregation grouped by tactic
+
+Reflects historical logged simulation results only.
+
+---
+
+## 2️⃣ League Normalizer (Monte Carlo Meta Sweep)
+
+**Endpoint**
+```
+GET /api/analytics/league-normalizer
+```
+
+**Params**
+- `league`
+- `tactic`
+- `samplesPerTeam` (default: 3)
+- `iterationsPerSample` (default: 3)
+
+**Method**
+- Iterates across all teams in the league
+- Random match selection
+- Random minute sampling
+- Repeated simulations
+- Aggregates wins/losses/draws
+
+**Purpose**
+Removes:
+- Team strength bias
+- Opponent bias
+- Single-match bias
+
+Returns league-wide meta win rate for a tactic.
+
+---
+
+## 3️⃣ Phase Normalizer (Phase-Level Meta Strength)
+
+**Endpoint**
+```
+GET /api/analytics/phase-normalizer
+```
+
+**Params**
+- `league`
+- `tactic`
+- `samplesPerTeam`
+- `iterationsPerSample`
+
+**Method**
+- Evaluates all 7 game phases:
+    - EARLY_MINUTES
+    - CLOSING_HALF
+    - HALF_TIME
+    - BUILD_PHASE
+    - TENSION_TIME
+    - LATE_GAME
+    - STOPPAGE_TIME
+- Runs Monte Carlo simulations per phase
+- Returns win rate per phase
+
+**Purpose**
+Identifies:
+- Phase strengths
+- Tactical volatility
+- Late-game effectiveness
+- Momentum scaling behavior
+
+---
+
+## Runtime Profiles
+
+**Default Profile**
+- Uses `jgaffer` database
+- Used for Monte Carlo normalizers and real simulations
+
+**test-analytics Profile**
+- Uses `jgaffer_test_analytics`
+- Seeds 100 simulations
+- Used for historical analytics preview
+
+Monte Carlo normalizers do NOT depend on database state.
+
+---
+
+## Design Principles
+
+- Simulation remains pure
+- Normalizers do NOT persist results
+- No engine modification
+- Clean layering:
+
+```
+Controller → AnalyticsService → MatchService.simulate()
+```
+
+JGaffer now functions as both:
+- Tactical recommendation engine
+- Tactical meta-analysis and research platform
+
 ## Frontend
 
 ### Navigation Flow
