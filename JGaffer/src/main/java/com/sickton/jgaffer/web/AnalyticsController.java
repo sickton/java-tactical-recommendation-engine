@@ -17,7 +17,8 @@ public class AnalyticsController {
     }
 
     @GetMapping("/win-rate-by-tactic")
-    public List<TacticAnalytics> getWinRateByTactic() {
-        return analyticsService.getWinRateByTactic();
+    public List<TacticAnalytics> getWinRateByTactic(
+            @RequestParam(defaultValue = "PL") String league) {
+        return analyticsService.getWinRateByTactic(league);
     }
 }

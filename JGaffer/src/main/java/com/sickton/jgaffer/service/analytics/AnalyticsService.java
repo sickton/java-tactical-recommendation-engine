@@ -15,8 +15,8 @@ public class AnalyticsService{
         this.repository = repository;
     }
 
-    public List<TacticAnalytics> getWinRateByTactic() {
-        return repository.getWinRateByTactic()
+    public List<TacticAnalytics> getWinRateByTactic(String league) {
+        return repository.getWinRateByTactic(league)
                 .stream()
                 .map(stat -> {
                     double winRate = 0.0;
