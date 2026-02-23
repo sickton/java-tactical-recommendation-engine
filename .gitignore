@@ -18,3 +18,5 @@ frontend/node_modules/
 
 # Claude internal tooling
 .claude/worktrees/
+
+JGaffer/src/main/resources/application.properties
