@@ -89,3 +89,37 @@ export interface Fixture {
   id: number;
   title: string;
 }
+
+export interface TacticAnalytics {
+  startTactic: string;
+  total: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winRate: number;
+}
+
+export interface LeagueNormalizerResult {
+  league: string;
+  tactic: string;
+  totalSimulations: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winRate: number;
+}
+
+export interface PhasePerformance {
+  phase: string;
+  totalSimulations: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winRate: number;
+}
+
+export interface PhaseNormalizerResult {
+  league: string;
+  tactic: string;
+  phases: PhasePerformance[];
+}

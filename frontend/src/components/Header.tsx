@@ -1,6 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Header() {
+  const { pathname } = useLocation();
+  const isAnalytics = pathname === '/analytics';
+
   return (
     <header>
       <div className="header-bar">
@@ -19,6 +22,10 @@ export default function Header() {
         <span className="header-divider"></span>
         <span className="header-sub">Tactical Recommendation Engine</span>
         <div className="header-right">
+          <Link
+            to="/analytics"
+            className={`header-nav-link${isAnalytics ? ' active' : ''}`}
+          >Analytics</Link>
           <img
             className="header-league-badge header-league-badge-pl"
             src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/200px-Premier_League_Logo.svg.png"

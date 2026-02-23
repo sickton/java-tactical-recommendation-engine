@@ -13,17 +13,19 @@ import com.sickton.jgaffer.service.matches.MatchService;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.LongAdder;
 
 @Service
 public class AnalyticsService {
 
     private final MatchDecisionRepository repository;
     private final MatchService matchService;
-    private final Random random = new Random();
 
     public AnalyticsService(MatchDecisionRepository repository,
                             MatchService matchService) {
-        this.repository = repository;
+        this.repository   = repository;
         this.matchService = matchService;
     }
 
@@ -32,19 +34,18 @@ public class AnalyticsService {
     // ─────────────────────────────────────────────────────────
 
     public List<TacticAnalytics> getWinRateByTactic(String league) {
-
         return repository.getWinRateByTactic(league)
                 .stream()
                 .map(stat -> {
-
                     double winRate = stat.getTotal() == 0
                             ? 0
                             : (stat.getWins() * 100.0) / stat.getTotal();
-
                     return new TacticAnalytics(
                             stat.getStartTactic(),
                             stat.getTotal(),
                             stat.getWins(),
+                            stat.getLosses(),
+                            stat.getDraws(),
                             round(winRate)
                     );
                 })
@@ -52,7 +53,9 @@ public class AnalyticsService {
     }
 
     // ─────────────────────────────────────────────────────────
-    // League Normalizer (Monte Carlo Sweep)
+    // League Normalizer — parallel Monte Carlo sweep
+    //   20 teams × samplesPerTeam × iterationsPerSample trials
+    //   at default params (15 × 9): n = 2700 → margin ±1.88% @ 95% CI
     // ─────────────────────────────────────────────────────────
 
     public LeagueNormalizerResult runLeagueNormalizer(
@@ -61,57 +64,119 @@ public class AnalyticsService {
             int samplesPerTeam,
             int iterationsPerSample) {
 
-        int wins = 0;
-        int losses = 0;
-        int draws = 0;
+        Map<Integer, String> teams    = matchService.getTeams(league);
+        List<Integer>        matchIds = List.copyOf(matchService.getAllMatchIds(league));
 
-        Map<Integer, String> teams = matchService.getTeams(league);
-        List<Integer> matchIds = new ArrayList<>(matchService.getAllMatchIds(league));
+        LongAdder wins   = new LongAdder();
+        LongAdder losses = new LongAdder();
+        LongAdder draws  = new LongAdder();
 
-        for (Integer teamId : teams.keySet()) {
-
-            String teamName = matchService.getTeamName(league, teamId);
-            Team team = matchService.getTeam(league, teamName);
+        // Parallelise over all 20 teams; ThreadLocalRandom is per-thread — no contention
+        teams.keySet().parallelStream().forEach(teamId -> {
+            ThreadLocalRandom rng      = ThreadLocalRandom.current();
+            String            teamName = matchService.getTeamName(league, teamId);
+            Team              team     = matchService.getTeam(league, teamName);
 
             for (int s = 0; s < samplesPerTeam; s++) {
-
-                int matchId = matchIds.get(random.nextInt(matchIds.size()));
-                int minute = random.nextInt(90);
-
-                MatchContext context =
-                        matchService.getMatchContext(league, matchId, minute);
-
+                int          matchId = matchIds.get(rng.nextInt(matchIds.size()));
+                int          minute  = rng.nextInt(90);
+                MatchContext context = matchService.getMatchContext(league, matchId, minute);
                 if (context == null) continue;
 
                 Map<Integer, Tactic> tacticMap = new HashMap<>();
                 tacticMap.put(0, tactic);
 
                 for (int i = 0; i < iterationsPerSample; i++) {
-
-                    SimulationResult result =
-                            matchService.simulate(context, team, tacticMap);
-
+                    SimulationResult result = matchService.simulate(context, team, tacticMap);
                     int delta = calculateGoalDelta(result, context, team);
-
-                    if (delta > 0) wins++;
-                    else if (delta < 0) losses++;
-                    else draws++;
+                    if      (delta > 0) wins.increment();
+                    else if (delta < 0) losses.increment();
+                    else                draws.increment();
                 }
+            }
+        });
+
+        long w = wins.longValue(), l = losses.longValue(), d = draws.longValue();
+        long total    = w + l + d;
+        double winRate = total == 0 ? 0 : (w * 100.0) / total;
+
+        return new LeagueNormalizerResult(
+                league, tactic.name(),
+                (int) total, (int) w, (int) l, (int) d,
+                round(winRate));
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Phase Normalizer — parallel Monte Carlo sweep
+    //   20 teams × 7 phases = 140 work items processed in parallel
+    //   per-phase trials at default params: 20 × 15 × 9 = 2700 → margin ±1.88% @ 95% CI
+    // ─────────────────────────────────────────────────────────
+
+    public PhaseNormalizerResult runPhaseNormalizer(
+            String league,
+            Tactic tactic,
+            int samplesPerTeam,
+            int iterationsPerSample) {
+
+        List<String> phases = List.of(
+                "EARLY_MINUTES", "CLOSING_HALF", "HALF_TIME",
+                "BUILD_PHASE",   "TENSION_TIME", "LATE_GAME", "STOPPAGE_TIME");
+
+        Map<Integer, String> teams    = matchService.getTeams(league);
+        List<Integer>        matchIds = List.copyOf(matchService.getAllMatchIds(league));
+
+        // LongAdder[0]=wins, [1]=losses, [2]=draws — one triple per phase
+        Map<String, LongAdder[]> phaseStats = new ConcurrentHashMap<>();
+        phases.forEach(p -> phaseStats.put(p,
+                new LongAdder[]{new LongAdder(), new LongAdder(), new LongAdder()}));
+
+        // 20 teams × 7 phases = 140 work items; the JVM parallel pool saturates all cores
+        List<int[]> workItems = new ArrayList<>(teams.size() * phases.size());
+        for (Integer teamId : teams.keySet()) {
+            for (int pi = 0; pi < phases.size(); pi++) {
+                workItems.add(new int[]{teamId, pi});
             }
         }
 
-        int total = wins + losses + draws;
-        double winRate = total == 0 ? 0 : (wins * 100.0) / total;
+        workItems.parallelStream().forEach(item -> {
+            int               teamId   = item[0];
+            String            phase    = phases.get(item[1]);
+            ThreadLocalRandom rng      = ThreadLocalRandom.current();
+            String            teamName = matchService.getTeamName(league, teamId);
+            Team              team     = matchService.getTeam(league, teamName);
+            LongAdder[]       acc      = phaseStats.get(phase);
 
-        return new LeagueNormalizerResult(
-                league,
-                tactic.name(),
-                total,
-                wins,
-                losses,
-                draws,
-                round(winRate)
-        );
+            for (int s = 0; s < samplesPerTeam; s++) {
+                int          matchId = matchIds.get(rng.nextInt(matchIds.size()));
+                int          minute  = minuteForPhase(phase, rng);
+                MatchContext context = matchService.getMatchContext(league, matchId, minute);
+                if (context == null) continue;
+
+                Map<Integer, Tactic> tacticMap = new HashMap<>();
+                tacticMap.put(0, tactic);
+
+                for (int i = 0; i < iterationsPerSample; i++) {
+                    SimulationResult result = matchService.simulate(context, team, tacticMap);
+                    int delta = calculateGoalDelta(result, context, team);
+                    if      (delta > 0) acc[0].increment();
+                    else if (delta < 0) acc[1].increment();
+                    else                acc[2].increment();
+                }
+            }
+        });
+
+        List<PhasePerformance> results = phases.stream()
+                .map(phase -> {
+                    LongAdder[] acc = phaseStats.get(phase);
+                    long w = acc[0].longValue(), l = acc[1].longValue(), d = acc[2].longValue();
+                    long total     = w + l + d;
+                    double winRate = total == 0 ? 0 : (w * 100.0) / total;
+                    return new PhasePerformance(
+                            phase, (int) total, (int) w, (int) l, (int) d, round(winRate));
+                })
+                .toList();
+
+        return new PhaseNormalizerResult(league, tactic.name(), results);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -121,18 +186,9 @@ public class AnalyticsService {
     private int calculateGoalDelta(SimulationResult result,
                                    MatchContext context,
                                    Team team) {
-
-        boolean isHome = context.getHome().getName()
-                .equalsIgnoreCase(team.getName());
-
-        int teamGoals = isHome
-                ? result.getFinalHomeGoals()
-                : result.getFinalAwayGoals();
-
-        int opponentGoals = isHome
-                ? result.getFinalAwayGoals()
-                : result.getFinalHomeGoals();
-
+        boolean isHome    = context.getHome().getName().equalsIgnoreCase(team.getName());
+        int teamGoals     = isHome ? result.getFinalHomeGoals() : result.getFinalAwayGoals();
+        int opponentGoals = isHome ? result.getFinalAwayGoals() : result.getFinalHomeGoals();
         return teamGoals - opponentGoals;
     }
 
@@ -140,111 +196,16 @@ public class AnalyticsService {
         return Math.round(value * 100.0) / 100.0;
     }
 
-    public PhaseNormalizerResult runPhaseNormalizer(
-            String league,
-            Tactic tactic,
-            int samplesPerTeam,
-            int iterationsPerSample) {
-
-        Map<String, PhaseAccumulator> phaseStats = new LinkedHashMap<>();
-
-        // Initialize all 7 phases
-        List<String> phases = List.of(
-                "EARLY_MINUTES",
-                "CLOSING_HALF",
-                "HALF_TIME",
-                "BUILD_PHASE",
-                "TENSION_TIME",
-                "LATE_GAME",
-                "STOPPAGE_TIME"
-        );
-
-        phases.forEach(p -> phaseStats.put(p, new PhaseAccumulator()));
-
-        Map<Integer, String> teams = matchService.getTeams(league);
-        List<Integer> matchIds =
-                new ArrayList<>(matchService.getAllMatchIds(league));
-
-        for (Integer teamId : teams.keySet()) {
-
-            String teamName = matchService.getTeamName(league, teamId);
-            Team team = matchService.getTeam(league, teamName);
-
-            for (String phase : phases) {
-
-                for (int s = 0; s < samplesPerTeam; s++) {
-
-                    int matchId = matchIds.get(random.nextInt(matchIds.size()));
-                    int minute = minuteForPhase(phase);
-
-                    MatchContext context =
-                            matchService.getMatchContext(league, matchId, minute);
-
-                    if (context == null) continue;
-
-                    Map<Integer, Tactic> tacticMap = new HashMap<>();
-                    tacticMap.put(0, tactic);
-
-                    for (int i = 0; i < iterationsPerSample; i++) {
-
-                        SimulationResult result =
-                                matchService.simulate(context, team, tacticMap);
-
-                        int delta = calculateGoalDelta(result, context, team);
-
-                        PhaseAccumulator acc = phaseStats.get(phase);
-
-                        if (delta > 0) acc.wins++;
-                        else if (delta < 0) acc.losses++;
-                        else acc.draws++;
-                    }
-                }
-            }
-        }
-
-        List<PhasePerformance> results = new ArrayList<>();
-
-        for (String phase : phases) {
-
-            PhaseAccumulator acc = phaseStats.get(phase);
-            int total = acc.wins + acc.losses + acc.draws;
-
-            double winRate = total == 0 ? 0 :
-                    (acc.wins * 100.0) / total;
-
-            results.add(new PhasePerformance(
-                    phase,
-                    total,
-                    acc.wins,
-                    acc.losses,
-                    acc.draws,
-                    round(winRate)
-            ));
-        }
-
-        return new PhaseNormalizerResult(
-                league,
-                tactic.name(),
-                results
-        );
-    }
-
-    private static class PhaseAccumulator {
-        int wins = 0;
-        int losses = 0;
-        int draws = 0;
-    }
-
-    private int minuteForPhase(String phase) {
-
+    // Receives the caller's ThreadLocalRandom — no shared state
+    private int minuteForPhase(String phase, ThreadLocalRandom rng) {
         return switch (phase) {
-            case "EARLY_MINUTES" -> random.nextInt(16);
-            case "CLOSING_HALF" -> 16 + random.nextInt(29);
-            case "HALF_TIME" -> 45 + random.nextInt(6);
-            case "BUILD_PHASE" -> 51 + random.nextInt(10);
-            case "TENSION_TIME" -> 61 + random.nextInt(10);
-            case "LATE_GAME" -> 71 + random.nextInt(17);
-            case "STOPPAGE_TIME" -> 88 + random.nextInt(5);
+            case "EARLY_MINUTES" -> rng.nextInt(16);
+            case "CLOSING_HALF"  -> 16 + rng.nextInt(29);
+            case "HALF_TIME"     -> 45 + rng.nextInt(6);
+            case "BUILD_PHASE"   -> 51 + rng.nextInt(10);
+            case "TENSION_TIME"  -> 61 + rng.nextInt(10);
+            case "LATE_GAME"     -> 71 + rng.nextInt(17);
+            case "STOPPAGE_TIME" -> 88 + rng.nextInt(5);
             default -> 0;
         };
     }
