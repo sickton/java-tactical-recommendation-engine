@@ -70,14 +70,32 @@ public class ApplicationParser {
                 lines++;
                 String line = sc.nextLine();
                 if (lines <= 1) continue;
-                String[] parts = line.split(",");
+                String[] parts = line.split(",", -1);  // -1 keeps trailing empty fields
                 String squadName = parts[0];
                 String manager = parts[3];
                 Style teamStyle = Style.valueOf(parts[4]);
                 TeamAdaptability adaptability = TeamAdaptability.valueOf(parts[5]);
                 StaminaLevel staminaLevel = StaminaLevel.valueOf(parts[6]);
                 Formation formation = Formation.valueOf(parts[7].trim());
-                FileStorage file = new FileStorage(new Squad(squadName, manager, teamStyle, formation), adaptability, staminaLevel, formation);
+
+                // Optional PCA weight columns: 8=atk_weight, 9=def_weight, 10=ctrl_weight.
+                // Empty or absent → NO_WEIGHT sentinel → TeamIntent uses style-bias fallback.
+                double atkW  = FileStorage.NO_WEIGHT;
+                double defW  = FileStorage.NO_WEIGHT;
+                double ctrlW = FileStorage.NO_WEIGHT;
+                if (parts.length > 10
+                        && !parts[8].trim().isEmpty()
+                        && !parts[9].trim().isEmpty()
+                        && !parts[10].trim().isEmpty()) {
+                    atkW  = Double.parseDouble(parts[8].trim());
+                    defW  = Double.parseDouble(parts[9].trim());
+                    ctrlW = Double.parseDouble(parts[10].trim());
+                }
+
+                FileStorage file = new FileStorage(
+                        new Squad(squadName, manager, teamStyle, formation),
+                        adaptability, staminaLevel, formation,
+                        atkW, defW, ctrlW);
                 squads.put(squadName, file);
             }
             sc.close();

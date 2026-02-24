@@ -43,6 +43,31 @@ public class Team {
     }
 
     /**
+     * Constructs a new Team using explicit PCA-derived intent weights instead of the
+     * style-bias formula. Use this constructor when per-team weights are available
+     * from the {@code atk_weight / def_weight / ctrl_weight} CSV columns.
+     *
+     * <p>Weight order: {@code (attack, defence, control)} — matches
+     * {@link TeamIntent#TeamIntent(double, double, double)}.</p>
+     *
+     * @param s            the squad providing team identity, style, and base formation
+     * @param stamina      the stamina level of the team
+     * @param adaptability the team's adaptability to tactical changes
+     * @param atkWeight    PCA-derived attack weight  (0.0–1.0)
+     * @param defWeight    PCA-derived defence weight (0.0–1.0)
+     * @param ctrlWeight   PCA-derived control weight (0.0–1.0)
+     */
+    public Team(Squad s, StaminaLevel stamina, TeamAdaptability adaptability,
+                double atkWeight, double defWeight, double ctrlWeight) {
+        this.squad = s;
+        this.name = s.getTeam();
+        this.formation = s.getBaseFormation();
+        this.intent = new TeamIntent(atkWeight, defWeight, ctrlWeight);
+        this.staminaLevel = stamina;
+        this.adaptability = adaptability;
+    }
+
+    /**
      * Returns the tactical intent of the team.
      *
      * @return the {@link TeamIntent} representing attack, control, and defence weights

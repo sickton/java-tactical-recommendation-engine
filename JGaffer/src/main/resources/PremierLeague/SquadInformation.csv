@@ -1,21 +1,21 @@
-team_name,code,id,manager,style,team_adaptability,team_stamina,formation
-Arsenal,ARS,1,Mikel Arteta,CONTROLLING,HIGH,HIGH,F_4_3_3
-Aston Villa,AVL,2,Unai Emery,CONTROLLING,MEDIUM,HIGH,F_4_2_3_1
-Bournemouth,BOU,3,Andoni Iroala,ATTACKING,LOW,HIGH,F_4_3_3
-Brentford,BRE,4,Thomas Frank,ATTACKING,MEDIUM,HIGH,F_3_5_2
-Brighton,BHA,5,Fabian Hurzeler,CONTROLLING,HIGH,MEDIUM,F_4_2_3_1
-Chelsea,CHE,6,Enzo Maresca,CONTROLLING,MEDIUM,HIGH,F_4_2_3_1
-Crystal Palace,CRY,7,Oliver Glasner,ATTACKING,MEDIUM,HIGH,F_3_4_3
-Everton,EVE,8,Sean Dyche,DEFENSIVE,MEDIUM,MEDIUM,F_3_5_2
-Fulham,FUL,9,Marco Silva,CONTROLLING,HIGH,MEDIUM,F_4_2_3_1
-Liverpool,LIV,10,Arne Slot,CONTROLLING,HIGH,HIGH,F_4_3_3
-Manchester City,MCI,11,Pep Guardiola,CONTROLLING,HIGH,HIGH,F_4_3_3
-Manchester United,MUN,12,Ruben Amorim,ATTACKING,MEDIUM,HIGH,F_3_4_3
-Newcastle United,NEW,13,Eddie Howe,ATTACKING,MEDIUM,HIGH,F_4_3_3
-Nottingham Forest,NFO,14,Nuno Espirito Santo,DEFENSIVE,MEDIUM,MEDIUM,F_4_2_3_1
-Tottenham Hotspur,TOT,15,Ange Postecoglu,ATTACKING,MEDIUM,HIGH,F_4_3_3
-West Ham United,WHU,16,Graham Potter,CONTROLLING,MEDIUM,LOW,F_4_2_3_1
-Wolves,WOL,17,Vitor Pereira,DEFENSIVE,MEDIUM,MEDIUM,F_3_4_3
-Leicester City,LEI,18,Steve Cooper,DEFENSIVE,LOW,MEDIUM,F_4_2_3_1
-Ipswich Town,IPS,19,Kieran McKenna,ATTACKING,MEDIUM,HIGH,F_4_3_3
-Southampton,SOU,20,Ivan Juric,CONTROLLING,MEDIUM,HIGH,F_4_2_3_1
+team_name,code,id,manager,style,team_adaptability,team_stamina,formation,atk_weight,def_weight,ctrl_weight
+Arsenal,ARS,1,Mikel Arteta,CONTROLLING,HIGH,HIGH,F_4_3_3,0.529,0.265,0.206
+Aston Villa,AVL,2,Unai Emery,CONTROLLING,MEDIUM,HIGH,F_4_2_3_1,0.454,0.153,0.393
+Bournemouth,BOU,3,Andoni Iroala,ATTACKING,LOW,HIGH,F_4_3_3,0.236,0.403,0.361
+Brentford,BRE,4,Thomas Frank,ATTACKING,MEDIUM,HIGH,F_3_5_2,0.638,0.257,0.105
+Brighton,BHA,5,Fabian Hurzeler,CONTROLLING,HIGH,MEDIUM,F_4_2_3_1,0.282,0.285,0.433
+Chelsea,CHE,6,Enzo Maresca,CONTROLLING,MEDIUM,HIGH,F_4_2_3_1,0.371,0.254,0.375
+Crystal Palace,CRY,7,Oliver Glasner,ATTACKING,MEDIUM,HIGH,F_3_4_3,0.269,0.501,0.230
+Everton,EVE,8,Sean Dyche,DEFENSIVE,MEDIUM,MEDIUM,F_3_5_2,0.263,0.584,0.154
+Fulham,FUL,9,Marco Silva,CONTROLLING,HIGH,MEDIUM,F_4_2_3_1,0.294,0.261,0.445
+Liverpool,LIV,10,Arne Slot,CONTROLLING,HIGH,HIGH,F_4_3_3,0.401,0.287,0.312
+Manchester City,MCI,11,Pep Guardiola,CONTROLLING,HIGH,HIGH,F_4_3_3,0.596,0.000,0.404
+Manchester United,MUN,12,Ruben Amorim,ATTACKING,MEDIUM,HIGH,F_3_4_3,0.204,0.443,0.353
+Newcastle United,NEW,13,Eddie Howe,ATTACKING,MEDIUM,HIGH,F_4_3_3,0.479,0.277,0.244
+Nottingham Forest,NFO,14,Nuno Espirito Santo,DEFENSIVE,MEDIUM,MEDIUM,F_4_2_3_1,0.390,0.610,0.000
+Tottenham Hotspur,TOT,15,Ange Postecoglu,ATTACKING,MEDIUM,HIGH,F_4_3_3,0.284,0.297,0.419
+West Ham United,WHU,16,Graham Potter,CONTROLLING,MEDIUM,LOW,F_4_2_3_1,0.217,0.401,0.382
+Wolves,WOL,17,Vitor Pereira,DEFENSIVE,MEDIUM,MEDIUM,F_3_4_3,0.226,0.392,0.382
+Leicester City,LEI,18,Steve Cooper,DEFENSIVE,LOW,MEDIUM,F_4_2_3_1,0.098,0.409,0.493
+Ipswich Town,IPS,19,Kieran McKenna,ATTACKING,MEDIUM,HIGH,F_4_3_3,0.152,0.169,0.679
+Southampton,SOU,20,Ivan Juric,CONTROLLING,MEDIUM,HIGH,F_4_2_3_1,0.000,0.154,0.846

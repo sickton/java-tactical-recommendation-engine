@@ -23,7 +23,20 @@ public class FileStorage {
     private final Formation formation;
 
     /**
-     * Constructs a new {@code FileStorage} bundling squad, adaptability, stamina, and formation data.
+     * PCA-derived intent weights. −1.0 ({@link #NO_WEIGHT}) means "not set";
+     * the engine falls back to the style-bias formula in that case.
+     * Order: attack, defence, control — matches
+     * {@link com.sickton.jgaffer.domain.TeamIntent#TeamIntent(double, double, double)}.
+     */
+    private final double atkWeight;
+    private final double defWeight;
+    private final double ctrlWeight;
+
+    /** Sentinel value indicating no PCA weight has been provided for this team. */
+    public static final double NO_WEIGHT = -1.0;
+
+    /**
+     * Constructs a new {@code FileStorage} with no custom weights (style-bias fallback).
      *
      * @param s  the squad data parsed from CSV
      * @param a  the team adaptability level
@@ -31,10 +44,29 @@ public class FileStorage {
      * @param f  the team's base formation
      */
     public FileStorage(Squad s, TeamAdaptability a, StaminaLevel st, Formation f) {
+        this(s, a, st, f, NO_WEIGHT, NO_WEIGHT, NO_WEIGHT);
+    }
+
+    /**
+     * Constructs a new {@code FileStorage} with explicit PCA-derived intent weights.
+     *
+     * @param s          the squad data parsed from CSV
+     * @param a          the team adaptability level
+     * @param st         the team stamina level
+     * @param f          the team's base formation
+     * @param atkWeight  PCA attack weight  (0.0–1.0), or {@link #NO_WEIGHT} to fall back
+     * @param defWeight  PCA defence weight (0.0–1.0), or {@link #NO_WEIGHT} to fall back
+     * @param ctrlWeight PCA control weight (0.0–1.0), or {@link #NO_WEIGHT} to fall back
+     */
+    public FileStorage(Squad s, TeamAdaptability a, StaminaLevel st, Formation f,
+                       double atkWeight, double defWeight, double ctrlWeight) {
         this.squadData = s;
         this.adaptabilityData = a;
         this.staminaData = st;
         this.formation = f;
+        this.atkWeight  = atkWeight;
+        this.defWeight  = defWeight;
+        this.ctrlWeight = ctrlWeight;
     }
 
     /**
@@ -71,5 +103,22 @@ public class FileStorage {
      */
     public Formation getFormation() {
         return formation;
+    }
+
+    /** Returns the PCA attack weight, or {@link #NO_WEIGHT} if not set. */
+    public double getAtkWeight()  { return atkWeight; }
+
+    /** Returns the PCA defence weight, or {@link #NO_WEIGHT} if not set. */
+    public double getDefWeight()  { return defWeight; }
+
+    /** Returns the PCA control weight, or {@link #NO_WEIGHT} if not set. */
+    public double getCtrlWeight() { return ctrlWeight; }
+
+    /**
+     * Returns {@code true} if all three PCA weights are present (i.e. not {@link #NO_WEIGHT}).
+     * Use this to decide whether to call the custom-weight {@code Team} constructor.
+     */
+    public boolean hasCustomWeights() {
+        return atkWeight != NO_WEIGHT && defWeight != NO_WEIGHT && ctrlWeight != NO_WEIGHT;
     }
 }

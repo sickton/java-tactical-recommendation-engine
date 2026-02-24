@@ -35,6 +35,24 @@ public class TeamIntent {
     }
 
     /**
+     * Constructs a TeamIntent with explicit PCA-derived weights, bypassing the
+     * style-bias formula entirely. The three values must already be normalised so
+     * they sum to 1.0.
+     *
+     * <p>Constructor parameter order matches {@link com.sickton.jgaffer.domain.WeightCombination}:
+     * {@code (attack, defence, control)} — NOT alphabetical.</p>
+     *
+     * @param attack  the attack weight  (0.0–1.0)
+     * @param defence the defence weight (0.0–1.0)
+     * @param control the control weight (0.0–1.0)
+     */
+    public TeamIntent(double attack, double defence, double control) {
+        this.attack  = attack;
+        this.defence = defence;
+        this.control = control;
+    }
+
+    /**
      * Assigns the attack, control, and defence weights based on the given squad's
      * playing style. Each weight starts at the initial baseline value and is then
      * biased according to the squad's style.

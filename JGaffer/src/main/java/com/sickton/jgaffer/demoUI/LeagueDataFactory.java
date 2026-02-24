@@ -61,8 +61,14 @@ public class LeagueDataFactory {
                 TeamAdaptability awayTeamAdaptability = awayTeamData.getAdaptabilityData();
                 StaminaLevel awayTeamStaminaLevel = awayTeamData.getStaminaData();
                 Squad awayTeamSquad = awayTeamData.getSquadData();
-                Team homeTeam = new Team(homeTeamSquad, homeTeamStaminaLevel, homeTeamAdaptability);
-                Team awayTeam = new Team(awayTeamSquad, awayTeamStaminaLevel, awayTeamAdaptability);
+                Team homeTeam = homeTeamData.hasCustomWeights()
+                        ? new Team(homeTeamSquad, homeTeamStaminaLevel, homeTeamAdaptability,
+                                   homeTeamData.getAtkWeight(), homeTeamData.getDefWeight(), homeTeamData.getCtrlWeight())
+                        : new Team(homeTeamSquad, homeTeamStaminaLevel, homeTeamAdaptability);
+                Team awayTeam = awayTeamData.hasCustomWeights()
+                        ? new Team(awayTeamSquad, awayTeamStaminaLevel, awayTeamAdaptability,
+                                   awayTeamData.getAtkWeight(), awayTeamData.getDefWeight(), awayTeamData.getCtrlWeight())
+                        : new Team(awayTeamSquad, awayTeamStaminaLevel, awayTeamAdaptability);
                 int homeGoals = Integer.parseInt(parts[4]);
                 int awayGoals = Integer.parseInt(parts[5]);
                 MatchContext context = new MatchContext(matchTitle, homeTeam, awayTeam, homeGoals, awayGoals, minute);
@@ -86,9 +92,13 @@ public class LeagueDataFactory {
         return matches;
     }
 
-    /** Builds a Team domain object from the given team name and data map. */
+    /** Builds a Team domain object from the given team name and data map.
+     *  Uses PCA-derived weights when present; falls back to style-bias otherwise. */
     public static Team buildTeamFromName(String name, Map<String, FileStorage> teamData) {
         FileStorage file = teamData.get(name);
-        return new Team(file.getSquadData(), file.getStaminaData(), file.getAdaptabilityData());
+        return file.hasCustomWeights()
+                ? new Team(file.getSquadData(), file.getStaminaData(), file.getAdaptabilityData(),
+                           file.getAtkWeight(), file.getDefWeight(), file.getCtrlWeight())
+                : new Team(file.getSquadData(), file.getStaminaData(), file.getAdaptabilityData());
     }
 }
