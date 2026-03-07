@@ -65,48 +65,11 @@ public class jgafferApplication {
         System.out.println("Enter the Team ID - ");
     }
 
-    public static void showFixtures(String teamName)
-    {
-        Map<Integer, String> matches = new TreeMap<>(PremierLeagueFactory.getFixtureList(teamCodes.get(teamName)));
-        System.out.println("Showing a total of : " + matches.size() + " matches");
-        List<String> homeMatches = new ArrayList<>();
-        List<String> awayMatches = new ArrayList<>();
-        for(Map.Entry<Integer, String> entry : matches.entrySet())
-        {
-            if(entry.getValue().indexOf(teamCodes.get(teamName)) == 0) {
-                String matchNum = "";
-                if(entry.getKey() < 10)
-                    matchNum = "  " + entry.getKey();
-                else if(entry.getKey() < 100)
-                    matchNum = " " + entry.getKey();
-                else
-                    matchNum = "" + entry.getKey();
-                homeMatches.add(matchNum.concat(" : ".concat(entry.getValue())));
-            }
-            else {
-                String matchNum = "";
-                if(entry.getKey() < 10)
-                    matchNum = "  " + entry.getKey();
-                else if(entry.getKey() < 100)
-                    matchNum = " " + entry.getKey();
-                else
-                    matchNum = "" + entry.getKey();
-                awayMatches.add(matchNum.concat(" : ".concat(entry.getValue())));
-            }
-        }
-
-        if(homeMatches.size() != awayMatches.size())
-            throw new IllegalArgumentException("Invalid fixtures list");
-        System.out.println("+-------------------------------------------+");
-        System.out.println("|                 Fixtures                  |");
-        System.out.println("+-------------------------------------------+");
-        System.out.println("|        Home         |        Away         |");
-        System.out.println("+-------------------------------------------+");
-        for(int i = 0; i < homeMatches.size(); i++)
-        {
-            System.out.println("|    " + homeMatches.get(i) + "    |    " + awayMatches.get(i) + "    |");
-        }
-        System.out.println("+-------------------------------------------+");
+    public static Integer getRandomTeam(int excludeId) {
+        Random rand = new Random();
+        int id;
+        do { id = rand.nextInt(20) + 1; } while (id == excludeId);
+        return id;
     }
 
     public static void displayTactics()
@@ -129,14 +92,23 @@ public class jgafferApplication {
         displayTeams();
         int teamId = sc.nextInt();
         System.out.println("Proceeding with the selected team - " + teams.get(teamId));
-        showFixtures(teams.get(teamId));
-        System.out.print("Enter the Match Number to retrieve a context - ");
-        Integer matchNumber = sc.nextInt();
+        System.out.println("Selecting random Opponent to retrieve a context - ");
+        Integer opponentId = getRandomTeam(teamId);
+        System.out.println("Opponent Matched! You are playing against - " + teams.get(opponentId));
+        System.out.print("Select whether to Play at home or away. Enter \"HOME\" for home, and \"AWAY\" for an away game - ");
+        String arena = sc.next();
+        System.out.println();
         Team team = PremierLeagueFactory.buildTeamFromName(teams.get(teamId));
+        Team opponent = PremierLeagueFactory.buildTeamFromName(teams.get(opponentId));
         TacticalRecommendationEngine engine = new TacticalRecommendationEngine();
         Random random = new Random();
         int minute = random.nextInt(90 - 1 + 1) + 1;
-        MatchContext matchContext = matchContextMap.get(titles.get(matchNumber).concat("_".concat("" + minute)));
+        String matchTitle = "";
+        if(arena.equals("HOME"))
+            matchTitle = teamCodes.get(team.getName()) + "-" + teamCodes.get(opponent.getName());
+        else if(arena.equals("AWAY"))
+            matchTitle = teamCodes.get(opponent.getName()) + "-" + teamCodes.get(team.getName());
+        MatchContext matchContext = matchContextMap.get(matchTitle+"_"+minute);
         System.out.println("-------------------------------------------------------------------");
         System.out.println(matchContext.toString());
         System.out.println("-------------------------------------------------------------------");
@@ -151,8 +123,6 @@ public class jgafferApplication {
         System.out.println("-------------------------------------------------------------------");
         System.out.println("Engine recommendation: " + systemTact + " — " + suggestedFormation.getLabel() + " (Confidence: " + confidence + "%)");
         System.out.println("-------------------------------------------------------------------");
-        Team opponent = matchContext.getHome().getName().equalsIgnoreCase(team.getName())
-                ? matchContext.getAway() : matchContext.getHome();
         String teamStyle    = team.getSquad().getTeamStyle().name();
         String oppStyle     = opponent.getSquad().getTeamStyle().name();
         String teamStamina  = team.getStaminaLevel().name();
