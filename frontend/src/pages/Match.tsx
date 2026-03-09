@@ -5,8 +5,9 @@ import Footer from '../components/Footer';
 import TeamCrest from '../components/TeamCrest';
 import { useLeagueTheme } from '../hooks/useLeagueTheme';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { formatTactic } from '../utils/formatTactic';
+import { plainTactic } from '../utils/formatTactic';
 import { TACTIC_GUIDE } from '../constants/tacticGuide';
+import TacticDiagram, { FormationDiagram } from '../components/TacticDiagram';
 import type { MatchData } from '../types';
 
 const ALL_TACTICS = Object.keys(TACTIC_GUIDE);
@@ -27,23 +28,24 @@ export default function Match() {
   const navigate = useNavigate();
 
   const matchId = Number(params.get('matchId'));
-  const teamId = Number(params.get('teamId'));
-  const league = params.get('league') || 'PL';
+  const teamId  = Number(params.get('teamId'));
+  const league  = params.get('league') || 'PL';
 
   useLeagueTheme(league);
 
-  const [matchData, setMatchData] = useState<MatchData | null>(null);
+  const [matchData, setMatchData]           = useState<MatchData | null>(null);
   const homeLabel = matchData ? matchData.context.home.name : '';
   const awayLabel = matchData ? matchData.context.away.name : '';
   usePageTitle(homeLabel && awayLabel ? `${homeLabel} vs ${awayLabel}` : 'Match');
+
   const [selectedTactic, setSelectedTactic] = useState<string>('');
-  const [hoveredTactic, setHoveredTactic] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [hoveredTactic,  setHoveredTactic]  = useState<string | null>(null);
+  const [submitting, setSubmitting]         = useState(false);
+  const [error, setError]                   = useState('');
 
   const homeScoreRef = useRef<HTMLSpanElement>(null);
   const awayScoreRef = useRef<HTMLSpanElement>(null);
-  const didAnimate = useRef(false);
+  const didAnimate   = useRef(false);
 
   useEffect(() => {
     fetch(`/api/match?matchId=${matchId}&teamId=${teamId}&league=${league}`)
@@ -52,12 +54,10 @@ export default function Match() {
       .catch(() => setError('Failed to load match data.'));
   }, [matchId, teamId, league]);
 
-  // Score counter-roll animation
   useEffect(() => {
     if (!matchData || didAnimate.current) return;
     didAnimate.current = true;
-    const homeGoals = matchData.context.homeGoals;
-    const awayGoals = matchData.context.awayGoals;
+    const { homeGoals, awayGoals } = matchData.context;
     if (homeGoals > 0 && homeScoreRef.current) {
       homeScoreRef.current.textContent = '0';
       setTimeout(() => animateCount(homeScoreRef.current!, homeGoals, 700), 300);
@@ -73,11 +73,8 @@ export default function Match() {
     setSubmitting(true);
     try {
       const body = new URLSearchParams({
-        teamId: String(teamId),
-        matchId: String(matchId),
-        minute: String(matchData.minute),
-        userTactic: selectedTactic,
-        league,
+        teamId: String(teamId), matchId: String(matchId),
+        minute: String(matchData.minute), userTactic: selectedTactic, league,
       });
       const resp = await fetch('/api/recommend', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
       const data = await resp.json();
@@ -93,11 +90,8 @@ export default function Match() {
     setSubmitting(true);
     try {
       const body = new URLSearchParams({
-        teamId: String(teamId),
-        matchId: String(matchId),
-        minute: String(matchData.minute),
-        userTactic: selectedTactic,
-        league,
+        teamId: String(teamId), matchId: String(matchId),
+        minute: String(matchData.minute), userTactic: selectedTactic, league,
       });
       const resp = await fetch('/api/simulate', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
       const data = await resp.json();
@@ -109,12 +103,13 @@ export default function Match() {
   }
 
   const displayedTactic = hoveredTactic || (selectedTactic ? selectedTactic : null);
-  const guideData = displayedTactic ? TACTIC_GUIDE[displayedTactic] : null;
+  const guideData       = displayedTactic ? TACTIC_GUIDE[displayedTactic] : null;
 
-  if (error) return <><Header /><main className="match-page"><p style={{ padding: '2rem', color: 'var(--ac)' }}>{error}</p></main><Footer /></>;
+  if (error)      return <><Header /><main className="match-page"><p style={{ padding: '2rem', color: 'var(--ac)' }}>{error}</p></main><Footer /></>;
   if (!matchData) return <><Header /><main className="match-page"><p style={{ padding: '2rem', opacity: 0.5 }}>Loading match...</p></main><Footer /></>;
 
   const { context, gamePhase, teamName } = matchData;
+  const teamFormation = matchData.isHome ? matchData.homeFormation : matchData.awayFormation;
 
   return (
     <>
@@ -125,7 +120,7 @@ export default function Match() {
           <Link to={`/fixtures?teamId=${teamId}&league=${league}`} className="match-breadcrumb-link">← Back to Fixtures</Link>
         </div>
 
-        {/* Hero Scoreboard */}
+        {/* ── Scoreboard ── */}
         <div className="match-hero">
           <div className="match-hero-code">{context.title}</div>
 
@@ -170,10 +165,10 @@ export default function Match() {
           </div>
         </div>
 
-        {/* Split layout */}
+        {/* ── Two-panel split ── */}
         <div className="match-split">
 
-          {/* LEFT: Tactic picker */}
+          {/* LEFT — tactic picker */}
           <div className="match-left">
             <div className="tactic-section">
               <div className="dugout-card">
@@ -198,7 +193,7 @@ export default function Match() {
                       checked={selectedTactic === tactic}
                       onChange={() => setSelectedTactic(tactic)}
                     />
-                    <span className="tactic-name">{formatTactic(tactic)}</span>
+                    <span className="tactic-name">{plainTactic(tactic)}</span>
                   </label>
                 ))}
               </div>
@@ -222,44 +217,55 @@ export default function Match() {
             </div>
           </div>
 
-          {/* RIGHT: Tactic Guide Panel */}
+          {/* RIGHT — tactic guide panel */}
           <div className="tactic-guide-panel">
             <div className="tactic-guide-header">
               <span className="tactic-guide-icon">☰</span>
               <span className="tactic-guide-title">Tactic Guide</span>
               <span className="tactic-guide-hint">Hover a tactic to learn more</span>
             </div>
+
             <div className="tactic-guide-body">
               {!guideData ? (
                 <div className="tactic-guide-default">
                   <p>Not sure which tactic to pick?</p>
-                  <p>Hover over any tactic on the left to see a plain-English explanation, real-life examples, and when it works best.</p>
+                  <p>Hover over any tactic on the left to see a plain-English explanation and how your team would line up.</p>
                   <p>No football knowledge required.</p>
                 </div>
               ) : (
                 <div className="tactic-guide-content">
                   <div className="guide-tactic-name">
                     <span className="guide-emoji">{guideData.emoji}</span>
-                    <span>{formatTactic(displayedTactic!)}</span>
+                    <span>{plainTactic(displayedTactic!)}</span>
                   </div>
                   <p className="guide-tagline">{guideData.tagline}</p>
 
-                  <div className="guide-section">
-                    <div className="guide-section-label">What is it?</div>
-                    <p>{guideData.whatIsIt}</p>
+                  {/* Both diagrams side by side */}
+                  <div className="tc-diagrams-row">
+                    <div className="tc-diagram-col">
+                      <span className="tc-diagram-label">Formation</span>
+                      <FormationDiagram formation={teamFormation} />
+                      <span className="tc-diagram-sublabel">{teamFormation}</span>
+                    </div>
+                    <div className="tc-diagram-divider">→</div>
+                    <div className="tc-diagram-col">
+                      <span className="tc-diagram-label">Tactic</span>
+                      <TacticDiagram key={displayedTactic!} tactic={displayedTactic!} formation={teamFormation} />
+                    </div>
                   </div>
-                  <div className="guide-section">
-                    <div className="guide-section-label">Real-life example</div>
-                    <p>{guideData.realLife}</p>
+
+                  {/* Quick facts */}
+                  <div className="guide-quick-facts">
+                    <div className="guide-quick-row guide-positive">
+                      <span className="guide-quick-icon">✓</span>
+                      <span>{guideData.whenItWorks.split('.')[0]}.</span>
+                    </div>
+                    <div className="guide-quick-row guide-negative">
+                      <span className="guide-quick-icon">✗</span>
+                      <span>{guideData.whenItDoesnt.split('.')[0]}.</span>
+                    </div>
                   </div>
-                  <div className="guide-section">
-                    <div className="guide-section-label">When it works</div>
-                    <p className="guide-positive">{guideData.whenItWorks}</p>
-                  </div>
-                  <div className="guide-section">
-                    <div className="guide-section-label">When it doesn't</div>
-                    <p className="guide-negative">{guideData.whenItDoesnt}</p>
-                  </div>
+
                   <div className="guide-analogy">
                     <span className="guide-analogy-emoji">{guideData.analogyEmoji}</span>
                     <span>{guideData.analogy}</span>

@@ -24,6 +24,8 @@ export interface MatchData {
   context: MatchContext;
   tactics: string[];
   isHome: boolean;
+  homeFormation: string;
+  awayFormation: string;
 }
 
 export interface Recommendation {

@@ -896,15 +896,15 @@ body.league-sa .fixture-row:hover {
 /* Guide content sections */
 .guide-tactic-name {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     font-family: 'Space Grotesk', 'Inter', sans-serif;
-    font-size: 1.3rem;
+    font-size: 0.98rem;       /* sentence label — needs breathing room */
     font-weight: 700;
     color: #e6edf3;
     margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    line-height: 1.35;
+    /* removed text-transform: uppercase and letter-spacing — labels are now sentences */
 }
 
 .guide-emoji {
@@ -3110,4 +3110,198 @@ body.league-sa .op-arena-btn:hover {
     .op-team-block { min-width: unset; }
     .op-arena-row { flex-direction: column; gap: 14px; }
     .op-arena-btn { padding: 18px 32px; min-width: 200px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TACTIC DIAGRAM  (.tac-diagram + .guide-quick-*)
+   Mini SVG pitch in the tactic guide panel — replaces the text wall.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tac-diagram {
+    display: block;
+    width: 100%;
+    max-width: 192px;
+    height: auto;
+    margin: 14px auto 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* subtle inner shadow so the pitch looks inset */
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Quick-fact rows (✓ works / ✗ risky) ───────────────────────────────── */
+.guide-quick-facts {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 12px 0 10px;
+}
+
+.guide-quick-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+.guide-quick-icon {
+    font-size: 0.82rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-style: normal;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TACTIC CHOOSER — Option C single-column layout  (.tc-*)
+   Replaces the old .match-split two-panel layout on the Match page.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Scrollable column that fills the space below .match-hero */
+.tc-section {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 1.25rem 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+}
+.tc-section::-webkit-scrollbar { display: none; }
+
+/* ── Prompt header ────────────────────────────────────────────────────────── */
+.tc-header {
+    text-align: center;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.62);
+    padding: 0 0.5rem;
+}
+.tc-managing {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+}
+.tc-team-name {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #c9d1d9;
+    margin: 0 0.3rem;
+}
+.tc-question {
+    font-size: 0.88rem;
+    opacity: 0.7;
+}
+
+/* ── Pill strip ───────────────────────────────────────────────────────────── */
+.tc-pill-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    justify-content: center;
+}
+.tc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.42rem 0.9rem;
+    border-radius: 999px;
+    border: 1.5px solid rgba(255, 255, 255, 0.13);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    white-space: nowrap;
+    line-height: 1.3;
+}
+.tc-pill:hover {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+.tc-pill--selected {
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-weight: 600;
+}
+.tc-pill-emoji {
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+/* ── Guide panel ──────────────────────────────────────────────────────────── */
+.tc-guide-panel {
+    background: rgba(22, 27, 34, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+}
+
+/* ── Two-diagram row inside the guide panel ─────────────────────────────── */
+.tc-diagrams-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+.tc-diagram-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+/* Override the stand-alone max-width so diagrams fill their column */
+.tc-diagram-col .tac-diagram {
+    max-width: none;
+    margin: 0;
+    width: 100%;
+}
+.tc-diagram-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.42;
+}
+.tc-diagram-sublabel {
+    font-size: 0.7rem;
+    opacity: 0.48;
+    font-family: 'Space Grotesk', monospace;
+    letter-spacing: 0.06em;
+}
+/* Arrow glyph between the two diagrams */
+.tc-diagram-divider {
+    align-self: center;
+    font-size: 1.1rem;
+    opacity: 0.22;
+    flex-shrink: 0;
+    padding-top: 1.4rem; /* nudge below the label */
+    user-select: none;
+}
+
+/* ── League theme overrides for new TC classes ───────────────────────────── */
+body.league-pl .tc-team-name { color: #e8668c; }
+body.league-pl .tc-pill--selected {
+    border-color: rgba(232, 102, 140, 0.75);
+    background: rgba(55, 0, 60, 0.45);
+    color: #e8668c;
+    box-shadow: 0 0 0 1px rgba(232, 102, 140, 0.3), -2px 0 0 0 #e8668c;
+}
+body.league-sa .tc-team-name { color: #e8b84b; }
+body.league-sa .tc-pill--selected {
+    border-color: rgba(232, 184, 75, 0.75);
+    background: rgba(0, 57, 110, 0.45);
+    color: #e8b84b;
+    box-shadow: 0 0 0 1px rgba(232, 184, 75, 0.3), -2px 0 0 0 #e8b84b;
 }
