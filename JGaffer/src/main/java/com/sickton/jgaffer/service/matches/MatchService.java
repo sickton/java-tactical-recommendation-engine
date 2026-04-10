@@ -1,7 +1,7 @@
 package com.sickton.jgaffer.service.matches;
 
 import com.sickton.jgaffer.domain.*;
-import com.sickton.jgaffer.demoUI.LeagueDataFactory;
+import com.sickton.jgaffer.loader.LeagueDataFactory;
 import com.sickton.jgaffer.engine.TacticalRecommendationEngine;
 import com.sickton.jgaffer.openAIService.OpenAIClient;
 import com.sickton.jgaffer.openAIService.TacticalExplanationService;

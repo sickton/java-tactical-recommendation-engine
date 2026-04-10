@@ -896,15 +896,15 @@ body.league-sa .fixture-row:hover {
 /* Guide content sections */
 .guide-tactic-name {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     font-family: 'Space Grotesk', 'Inter', sans-serif;
-    font-size: 1.3rem;
+    font-size: 0.98rem;       /* sentence label — needs breathing room */
     font-weight: 700;
     color: #e6edf3;
     margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    line-height: 1.35;
+    /* removed text-transform: uppercase and letter-spacing — labels are now sentences */
 }
 
 .guide-emoji {
@@ -2758,4 +2758,550 @@ body.league-sa .league-card:hover .league-card-name { color: #e8b84b; }
     .an-lower-row { grid-template-columns: 1fr; }
     .an-bar-row { grid-template-columns: 110px 1fr 48px 52px; }
     .an-page { padding: 0 16px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OPPONENT PICKER  (.op-*)
+   Replaces the old fixture list — random opponent reveal with spin animation.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.op-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 44px;
+    padding: 48px 0 72px;
+    min-height: calc(100vh - 120px);
+    justify-content: center;
+}
+
+.op-hero { text-align: center; }
+
+/* ── VS card container ─────────────────────────────────────────────────── */
+.op-versus-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 56px;
+    background: rgba(22, 27, 34, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(123, 94, 167, 0.28);
+    border-radius: 22px;
+    padding: 52px 72px;
+    box-shadow: 0 8px 40px rgba(61, 25, 91, 0.35);
+    transition: border-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+/* Card gets a stronger glow once the opponent is revealed */
+.op-versus-card.op-card-revealed {
+    border-color: rgba(123, 94, 167, 0.55);
+    box-shadow: 0 0 0 1px rgba(123, 94, 167, 0.2),
+                0 8px 48px rgba(61, 25, 91, 0.5);
+}
+body.league-pl .op-versus-card.op-card-revealed {
+    border-color: rgba(232, 102, 140, 0.5);
+    box-shadow: 0 0 0 1px rgba(232, 102, 140, 0.18),
+                0 8px 48px rgba(232, 102, 140, 0.25);
+}
+body.league-sa .op-versus-card.op-card-revealed {
+    border-color: rgba(232, 184, 75, 0.5);
+    box-shadow: 0 0 0 1px rgba(232, 184, 75, 0.18),
+                0 8px 48px rgba(232, 184, 75, 0.25);
+}
+
+/* ── Team blocks (left = user, right = opponent) ──────────────────────── */
+.op-team-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    min-width: 150px;
+}
+
+/* ── Crest wrapper ────────────────────────────────────────────────────── */
+.op-crest-wrap {
+    width: 124px;
+    height: 124px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-radius: 50%;
+}
+
+.op-crest {
+    width: 112px;
+    height: 112px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
+}
+
+/* Static (user's team) — persistent ambient glow ring */
+.op-crest-static::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(123, 94, 167, 0.45);
+    box-shadow: 0 0 22px rgba(123, 94, 167, 0.28),
+                0 0 48px rgba(61, 25, 91, 0.18);
+    animation: opStaticGlow 2.4s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+body.league-pl .op-crest-static::after {
+    border-color: rgba(232, 102, 140, 0.45);
+    box-shadow: 0 0 22px rgba(232, 102, 140, 0.3),
+                0 0 48px rgba(232, 102, 140, 0.12);
+}
+body.league-sa .op-crest-static::after {
+    border-color: rgba(232, 184, 75, 0.45);
+    box-shadow: 0 0 22px rgba(232, 184, 75, 0.3),
+                0 0 48px rgba(232, 184, 75, 0.12);
+}
+
+@keyframes opStaticGlow {
+    from { opacity: 0.5; transform: scale(0.98); }
+    to   { opacity: 1;   transform: scale(1.02); }
+}
+
+/* ── Spinning state — each crest flashes in on mount ─────────────────── */
+.op-crest-spinning .op-crest {
+    animation: opCrestFlash 0.07s ease-out both;
+}
+
+@keyframes opCrestFlash {
+    from { opacity: 0; transform: scale(0.86); filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55)) blur(3px); }
+    to   { opacity: 1; transform: scale(1);    filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55)); }
+}
+
+/* Scanning line — sweeps vertically over the spinning crest */
+.op-scan-line {
+    position: absolute;
+    left: -6px;
+    right: -6px;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(123, 94, 167, 0.85) 40%,
+        rgba(200, 160, 255, 0.9) 50%,
+        rgba(123, 94, 167, 0.85) 60%,
+        transparent 100%);
+    border-radius: 1px;
+    animation: opScanLine 0.28s linear infinite;
+    pointer-events: none;
+}
+body.league-pl .op-scan-line {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(232, 102, 140, 0.85) 40%,
+        rgba(255, 180, 200, 0.9) 50%,
+        rgba(232, 102, 140, 0.85) 60%,
+        transparent 100%);
+}
+body.league-sa .op-scan-line {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(232, 184, 75, 0.85) 40%,
+        rgba(255, 220, 130, 0.9) 50%,
+        rgba(232, 184, 75, 0.85) 60%,
+        transparent 100%);
+}
+
+@keyframes opScanLine {
+    0%   { top: -8px;  opacity: 0.6; }
+    20%  {              opacity: 1;   }
+    80%  {              opacity: 1;   }
+    100% { top: 132px; opacity: 0;   }
+}
+
+/* Ring pulse around the spinning crest */
+.op-crest-spinning::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(123, 94, 167, 0.55);
+    animation: opRingPulse 0.35s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+body.league-pl .op-crest-spinning::after { border-color: rgba(232, 102, 140, 0.55); }
+body.league-sa .op-crest-spinning::after { border-color: rgba(232, 184, 75,  0.55); }
+
+@keyframes opRingPulse {
+    from { opacity: 0.3; transform: scale(0.97); }
+    to   { opacity: 1;   transform: scale(1.04); }
+}
+
+/* ── Revealed state — glow + spring entrance ──────────────────────────── */
+.op-crest-revealed {
+    border-radius: 50%;
+    animation: opRevealWrap 0.75s var(--spring) both;
+}
+.op-crest-revealed::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(123, 94, 167, 0.6);
+    box-shadow: 0 0 28px rgba(123, 94, 167, 0.35),
+                0 0 60px rgba(61, 25, 91, 0.2);
+    animation: opRevealRing 0.8s var(--spring) 0.1s both;
+    pointer-events: none;
+}
+body.league-pl .op-crest-revealed::after {
+    border-color: rgba(232, 102, 140, 0.6);
+    box-shadow: 0 0 28px rgba(232, 102, 140, 0.4), 0 0 60px rgba(232, 102, 140, 0.15);
+}
+body.league-sa .op-crest-revealed::after {
+    border-color: rgba(232, 184, 75, 0.6);
+    box-shadow: 0 0 28px rgba(232, 184, 75, 0.4), 0 0 60px rgba(232, 184, 75, 0.15);
+}
+
+.op-crest-revealed .op-crest {
+    animation: opRevealCrest 0.72s var(--spring) both;
+}
+
+@keyframes opRevealWrap {
+    0%   { transform: scale(0.7);  opacity: 0; }
+    65%  { transform: scale(1.07); opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+}
+@keyframes opRevealCrest {
+    0%   { opacity: 0; transform: scale(0.7) rotate(-6deg); filter: blur(5px)  drop-shadow(0 4px 14px rgba(0,0,0,0.55)); }
+    60%  {             transform: scale(1.06) rotate(1deg); }
+    100% { opacity: 1; transform: scale(1)   rotate(0deg);  filter: drop-shadow(0 6px 20px rgba(0,0,0,0.65)); }
+}
+@keyframes opRevealRing {
+    from { opacity: 0; transform: scale(0.8); }
+    60%  {             transform: scale(1.1); }
+    to   { opacity: 1; transform: scale(1);   }
+}
+
+/* ── VS badge ─────────────────────────────────────────────────────────── */
+.op-vs-badge {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: rgba(123, 94, 167, 0.85);
+    letter-spacing: 0.14em;
+    text-shadow: 0 0 22px rgba(123, 94, 167, 0.45);
+    flex-shrink: 0;
+    user-select: none;
+}
+body.league-pl .op-vs-badge {
+    color: rgba(232, 102, 140, 0.9);
+    text-shadow: 0 0 22px rgba(232, 102, 140, 0.4);
+}
+body.league-sa .op-vs-badge {
+    color: rgba(232, 184, 75, 0.9);
+    text-shadow: 0 0 22px rgba(232, 184, 75, 0.4);
+}
+
+/* ── Team name labels ─────────────────────────────────────────────────── */
+.op-team-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e6edf3;
+    text-align: center;
+    letter-spacing: 0.01em;
+    min-height: 1.4rem;
+}
+
+/* "???" placeholder while spinning */
+.op-name-hidden {
+    color: #484f58;
+    letter-spacing: 0.35em;
+    font-size: 1.1rem;
+}
+
+/* Opponent name slides in from below after reveal */
+.op-name-reveal {
+    animation: opNameReveal 0.52s var(--spring) 0.38s both;
+}
+
+@keyframes opNameReveal {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Continue button ──────────────────────────────────────────────────── */
+.op-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    animation: opActionIn 0.5s var(--spring) 0.62s both;
+}
+
+@keyframes opActionIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Arena picker row (Home / Away buttons) ───────────────────────────── */
+.op-arena-row {
+    display: flex;
+    gap: 20px;
+}
+
+.op-arena-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 20px 40px;
+    background: rgba(22, 27, 34, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(123, 94, 167, 0.35);
+    border-radius: 14px;
+    cursor: pointer;
+    color: #e6edf3;
+    transition: transform 0.25s var(--spring),
+                border-color 0.25s ease,
+                box-shadow 0.25s ease,
+                background 0.25s ease;
+    min-width: 140px;
+}
+
+.op-arena-btn:hover {
+    transform: translateY(-5px) scale(1.03);
+    border-color: rgba(123, 94, 167, 0.75);
+    background: rgba(36, 18, 56, 0.88);
+    box-shadow: 0 8px 28px rgba(61, 25, 91, 0.5),
+                0 0 0 1px rgba(123, 94, 167, 0.2);
+}
+body.league-pl .op-arena-btn:hover {
+    border-color: rgba(232, 102, 140, 0.7);
+    background: rgba(55, 0, 60, 0.88);
+    box-shadow: 0 8px 28px rgba(232, 102, 140, 0.3),
+                0 0 0 1px rgba(232, 102, 140, 0.18);
+}
+body.league-sa .op-arena-btn:hover {
+    border-color: rgba(232, 184, 75, 0.7);
+    background: rgba(0, 30, 60, 0.88);
+    box-shadow: 0 8px 28px rgba(232, 184, 75, 0.25),
+                0 0 0 1px rgba(232, 184, 75, 0.18);
+}
+
+.op-arena-btn:active { transform: translateY(-2px) scale(1.01); }
+
+.op-arena-venue {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #e6edf3;
+}
+
+.op-arena-desc {
+    font-size: 0.75rem;
+    color: #8b949e;
+    letter-spacing: 0.02em;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 620px) {
+    .op-versus-card {
+        flex-direction: column;
+        gap: 28px;
+        padding: 40px 36px;
+    }
+    .op-vs-badge { letter-spacing: 0.1em; }
+    .op-team-block { min-width: unset; }
+    .op-arena-row { flex-direction: column; gap: 14px; }
+    .op-arena-btn { padding: 18px 32px; min-width: 200px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TACTIC DIAGRAM  (.tac-diagram + .guide-quick-*)
+   Mini SVG pitch in the tactic guide panel — replaces the text wall.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tac-diagram {
+    display: block;
+    width: 100%;
+    max-width: 192px;
+    height: auto;
+    margin: 14px auto 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* subtle inner shadow so the pitch looks inset */
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Quick-fact rows (✓ works / ✗ risky) ───────────────────────────────── */
+.guide-quick-facts {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 12px 0 10px;
+}
+
+.guide-quick-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+.guide-quick-icon {
+    font-size: 0.82rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-style: normal;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TACTIC CHOOSER — Option C single-column layout  (.tc-*)
+   Replaces the old .match-split two-panel layout on the Match page.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Scrollable column that fills the space below .match-hero */
+.tc-section {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 1.25rem 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+}
+.tc-section::-webkit-scrollbar { display: none; }
+
+/* ── Prompt header ────────────────────────────────────────────────────────── */
+.tc-header {
+    text-align: center;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.62);
+    padding: 0 0.5rem;
+}
+.tc-managing {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+}
+.tc-team-name {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #c9d1d9;
+    margin: 0 0.3rem;
+}
+.tc-question {
+    font-size: 0.88rem;
+    opacity: 0.7;
+}
+
+/* ── Pill strip ───────────────────────────────────────────────────────────── */
+.tc-pill-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    justify-content: center;
+}
+.tc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.42rem 0.9rem;
+    border-radius: 999px;
+    border: 1.5px solid rgba(255, 255, 255, 0.13);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    white-space: nowrap;
+    line-height: 1.3;
+}
+.tc-pill:hover {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+.tc-pill--selected {
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-weight: 600;
+}
+.tc-pill-emoji {
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+/* ── Guide panel ──────────────────────────────────────────────────────────── */
+.tc-guide-panel {
+    background: rgba(22, 27, 34, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+}
+
+/* ── Two-diagram row inside the guide panel ─────────────────────────────── */
+.tc-diagrams-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+.tc-diagram-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+/* Override the stand-alone max-width so diagrams fill their column */
+.tc-diagram-col .tac-diagram {
+    max-width: none;
+    margin: 0;
+    width: 100%;
+}
+.tc-diagram-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.42;
+}
+.tc-diagram-sublabel {
+    font-size: 0.7rem;
+    opacity: 0.48;
+    font-family: 'Space Grotesk', monospace;
+    letter-spacing: 0.06em;
+}
+/* Arrow glyph between the two diagrams */
+.tc-diagram-divider {
+    align-self: center;
+    font-size: 1.1rem;
+    opacity: 0.22;
+    flex-shrink: 0;
+    padding-top: 1.4rem; /* nudge below the label */
+    user-select: none;
+}
+
+/* ── League theme overrides for new TC classes ───────────────────────────── */
+body.league-pl .tc-team-name { color: #e8668c; }
+body.league-pl .tc-pill--selected {
+    border-color: rgba(232, 102, 140, 0.75);
+    background: rgba(55, 0, 60, 0.45);
+    color: #e8668c;
+    box-shadow: 0 0 0 1px rgba(232, 102, 140, 0.3), -2px 0 0 0 #e8668c;
+}
+body.league-sa .tc-team-name { color: #e8b84b; }
+body.league-sa .tc-pill--selected {
+    border-color: rgba(232, 184, 75, 0.75);
+    background: rgba(0, 57, 110, 0.45);
+    color: #e8b84b;
+    box-shadow: 0 0 0 1px rgba(232, 184, 75, 0.3), -2px 0 0 0 #e8b84b;
 }

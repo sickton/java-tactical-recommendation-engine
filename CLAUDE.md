@@ -72,6 +72,65 @@ cd frontend && npm run build
 - Always use `formatTactic()` when displaying tactic enums | Analytics CSS namespace: `.an-*`
 - Animated bars: double-`requestAnimationFrame` pattern; start `width:0%` | Spring easing: `cubic-bezier(.34,1.56,.64,1)`
 
+## ML Module — Player Overall Rating
+- **Location**: `ml/` at project root (sits alongside `JGaffer/` and `frontend/`)
+- **Notebook**: `ml/research/player_research.ipynb` — full pipeline, run cell by cell
+- **Raw data**: `ml/data/raw/player_season_24_25_data.csv` — FBref merged stats, Top 5 leagues, 2024/25 (~267 cols)
+- **Output**: `ml/output/player_overalls.csv` — schema: `name, team, league, position, role, overall, minutes, 90s`
+
+### Pipeline (in notebook cell order)
+1. Load CSV → strip FBref duplicate metadata cols (all cols containing `_stats_*` suffixes)
+2. `df_clean = df_clean.copy()` after strip to defragment
+3. Extract `PrimaryPos` = first token of `Pos` (e.g. `"DF,MF"` → `"DF"`)
+4. Dedup: keep stint with most `Min` per player (handles mid-season transfers)
+5. Filter: `Min >= 300`
+6. Per-90 normalize all `COUNT_FEATURES` by dividing by `90s` column → `col_p90`
+7. Z-score scale full feature matrix, `fillna(0)` before scaling
+8. PCA(n=20) → keep first 10 components (~85% variance) → `X_reduced`
+9. K-Means(k=12, random_state=42) on `X_reduced`
+10. t-SNE(perplexity=40) for visualization
+11. Map clusters → role labels → `df_feat['role']`
+12. PCA(n=1) within each role group → flip check via `ROLE_ANCHORS` → MinMaxScaler(0–100) → `df_feat['overall']`
+
+### Dataset stats (after filter)
+- **1,896 players** | La Liga: 419 | Serie A: 409 | PL: 379 | Ligue 1: 351 | Bundesliga: 338
+- `Comp` values: `"eng Premier League"`, `"es La Liga"`, `"it Serie A"`, `"fr Ligue 1"`, `"de Bundesliga"`
+
+### Feature sets
+- **RATE_FEATURES** (already per-90): `Sh/90, SoT/90, SCA90, GCA90, G/Sh, G/SoT`
+- **COUNT_FEATURES** (divided by `90s`): goals, assists, xG, xAG, progressive actions, shooting, passing, defensive actions, recoveries, aerials, carries, touches
+- **GK_FEATURES** (used as-is): `GA90, Save%, CS%, PSxG+/-, #OPA/90, Stp%, AvgDist`
+- **PCT_FEATURES** (no division needed): `Cmp%, Tkl%, Succ%, Won%, SoT%`
+- Confirmed missing after strip (removed from lists): `Blocks_stats_defense`, `Lost_stats_misc`
+
+### 12 Player Roles (k=12 K-Means)
+| Cluster | Role | Key signal |
+|---------|------|------------|
+| 0 | Ball-playing Centre-back | Int/90 high, Cmp% ~85 |
+| 1 | Goalkeeper | 100% GK (merged with cluster 8) |
+| 2 | Clinical Striker | Gls/90 ~0.55, Cmp% ~70 |
+| 3 | Creative Attacking Midfielder | Gls+Ast ~0.49, mixed FW/MF |
+| 4 | Defensive Midfielder | Tkl/90 ~2.31 (highest), large cluster |
+| 5 | Defensive Centre-back | Int/90 ~1.12, Cmp% ~86, 97% DF |
+| 6 | Wide Midfielder / Winger | Moderate Gls+Ast, Tkl/90 ~1.48 |
+| 7 | Target Man / Physical Striker | Gls/90 ~0.27, Cmp% ~69 |
+| 8 | Goalkeeper | 100% GK (merged label with cluster 1) |
+| 9 | Fullback / Wing-back | Tkl/90 ~1.79, Ast/90 ~0.13, Cmp% ~75 |
+| 10 | Elite Wide Forward | Gls/90 ~0.49, Ast/90 ~0.31 — only 39 players |
+| 11 | Box-to-box Midfielder | Tkl/90 ~2.18, Cmp% ~85 |
+
+### Role Anchors (PC1 flip detection)
+```
+Clinical Striker / Elite Wide Forward / Target Man  → Gls_p90
+Creative Attacking Midfielder                        → xAG_p90
+Wide Midfielder / Winger & Box-to-box               → SCA90
+Defensive Midfielder                                 → Tkl_p90
+Ball-playing CB & Defensive CB                      → Int_p90
+Fullback / Wing-back                                 → PrgP_p90
+Goalkeeper                                           → Save%
+```
+If `pca_grp.components_[0][anchor_idx] < 0` → negate scores before MinMaxScaler.
+
 ## User Preferences
 - Edit files in MAIN branch | project root: `C:\Users\sriva\OneDrive\Desktop\java-tactic-recommendation-system\java-tactical-recommendation-engine\`
 - Tests must pass before any feature is done | Keep solutions minimal — no extra abstractions, no speculative features

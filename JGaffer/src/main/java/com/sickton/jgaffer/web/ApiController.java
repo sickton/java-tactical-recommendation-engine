@@ -116,6 +116,8 @@ public class ApiController {
         resp.put("context", ctx);
         resp.put("tactics", tactics);
         resp.put("isHome", isHome);
+        resp.put("homeFormation", context.getHome().getFormation().getLabel());
+        resp.put("awayFormation", context.getAway().getFormation().getLabel());
         return ResponseEntity.ok(resp);
     }
 
