@@ -1,4 +1,4 @@
-package com.sickton.jgaffer.demoUI;
+package com.sickton.jgaffer.loader;
 
 import com.sickton.jgaffer.domain.*;
 import com.sickton.jgaffer.utility.ApplicationParser;
