@@ -49,79 +49,8 @@ export interface RecommendResult {
   league: string;
 }
 
-export interface MatchEvent {
-  minute: number;
-  type: 'GOAL_HOME' | 'GOAL_AWAY' | 'PHASE_CHANGE' | 'TACTIC_NOTE' | 'ATMOSPHERE';
-  label: string;
-}
-
-export interface SimulationData {
-  teamName: string;
-  opponentName: string;
-  teamId: number;
-  matchId: number;
-  league: string;
-  startMinute: number;
-  startTactic: string;
-  startHomeGoals: number;
-  startAwayGoals: number;
-  isHome: boolean;
-  tacticFidelityScore: number;
-  managerRating: string;
-  matchingPhases: number;
-  totalPhases: number;
-  finalHomeGoals: number;
-  finalAwayGoals: number;
-  events: MatchEvent[];
-}
-
-export interface PhaseResult {
-  events: MatchEvent[];
-  finalHomeGoals: number;
-  finalAwayGoals: number;
-  finalTeamGoals: number;
-  finalOpponentGoals: number;
-  tacticFidelityScore: number;
-  managerRating: string;
-  matchingPhases: number;
-  totalPhases: number;
-}
-
 export interface Fixture {
   id: number;
   title: string;
 }
 
-export interface TacticAnalytics {
-  startTactic: string;
-  total: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  winRate: number;
-}
-
-export interface LeagueNormalizerResult {
-  league: string;
-  tactic: string;
-  totalSimulations: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  winRate: number;
-}
-
-export interface PhasePerformance {
-  phase: string;
-  totalSimulations: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  winRate: number;
-}
-
-export interface PhaseNormalizerResult {
-  league: string;
-  tactic: string;
-  phases: PhasePerformance[];
-}

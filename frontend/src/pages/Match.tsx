@@ -85,23 +85,6 @@ export default function Match() {
     }
   }
 
-  async function handleSimulate() {
-    if (!selectedTactic || !matchData) return;
-    setSubmitting(true);
-    try {
-      const body = new URLSearchParams({
-        teamId: String(teamId), matchId: String(matchId),
-        minute: String(matchData.minute), userTactic: selectedTactic, league,
-      });
-      const resp = await fetch('/api/simulate', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-      const data = await resp.json();
-      navigate('/simulation', { state: data });
-    } catch {
-      setError('Failed to start simulation.');
-      setSubmitting(false);
-    }
-  }
-
   const displayedTactic = hoveredTactic || (selectedTactic ? selectedTactic : null);
   const guideData       = displayedTactic ? TACTIC_GUIDE[displayedTactic] : null;
 
@@ -205,13 +188,6 @@ export default function Match() {
                   onClick={handleRecommend}
                 >
                   Get Recommendation →
-                </button>
-                <button
-                  className="btn-simulate"
-                  disabled={!selectedTactic || submitting}
-                  onClick={handleSimulate}
-                >
-                  Simulate Match ▶
                 </button>
               </div>
             </div>
