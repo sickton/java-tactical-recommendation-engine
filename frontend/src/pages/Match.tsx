@@ -77,10 +77,15 @@ export default function Match() {
         minute: String(matchData.minute), userTactic: selectedTactic, league,
       });
       const resp = await fetch('/api/recommend', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+      if (!resp.ok) {
+        setError('JGaffer 2.0 is under development — the recommendation engine is being reworked.');
+        setSubmitting(false);
+        return;
+      }
       const data = await resp.json();
       navigate('/result', { state: { ...data, matchId, teamId, league } });
     } catch {
-      setError('Failed to get recommendation.');
+      setError('JGaffer 2.0 is under development — the recommendation engine is being reworked.');
       setSubmitting(false);
     }
   }

@@ -241,7 +241,4 @@ Give exactly 5 bullet points using a dash (-):
         return List.of(Tactic.values());
     }
 
-    public Set<Integer> getAllMatchIds(String league) {
-        return titlesFor(league).keySet();
-    }
 }

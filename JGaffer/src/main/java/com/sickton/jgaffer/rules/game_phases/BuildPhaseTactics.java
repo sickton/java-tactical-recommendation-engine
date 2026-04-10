@@ -3,162 +3,20 @@ package com.sickton.jgaffer.rules.game_phases;
 import com.sickton.jgaffer.domain.*;
 import com.sickton.jgaffer.rules.TacticalRule;
 
-import java.util.Map;
-
 /**
- * Tactical rule for the Build Phase (minutes 51-60).
+ * Tactical rule for the Build Phase (minutes 51–60).
  *
- * <p>Covers the early second-half period where halftime adjustments are implemented.
- * Factors in both stamina and adaptability — highly adaptable teams receive amplified
- * control adjustments, reflecting their ability to execute tactical changes effectively.</p>
- *
- * @see TacticalRule
  * @see GamePhase#BUILD_PHASE
- * @author sickton
  */
 public class BuildPhaseTactics extends TacticalRule {
-    protected static final double ADJUST_ONE = 0.03;
-    protected static final double ADJUST_TWO = 0.05;
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param context the current match context containing the match minute
-     * @param team    the team being evaluated
-     * @return {@code true} if the current minute falls within the Build Phase (51-60)
-     */
     @Override
     public boolean applies(MatchContext context, Team team) {
-        GamePhase phase = checkGamePhase(context.getMinute());
-        return phase == GamePhase.BUILD_PHASE;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Factors in both stamina and adaptability for the early second-half period.
-     * Highly adaptable teams receive amplified control adjustments, reflecting their
-     * ability to execute tactical changes effectively after halftime.</p>
-     *
-     * @param context  the current match context including score and team information
-     * @param team     the team for which a tactic is being recommended
-     * @param tacticMap the tactic lookup map keyed by {@link TacticKey}
-     * @return the recommended {@link Tactic} for the build phase
-     * @throws IllegalArgumentException if the match situation is invalid or no tactic mapping exists
-     */
-    @Override
-    public Tactic recommend(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
-        TeamIntent intent = team.getIntent();
-        double attack  = intent.getAttack();
-        double control = intent.getControl();
-        double defence = intent.getDefence();
-        double dAttack  = 0.0;
-        double dControl = 0.0;
-        double dDefence = 0.0;
-        if (isTeamWinning(context, team)) {
-            // Control the restart, avoid gifting momentum
-            dAttack  -= ADJUST_ONE;
-            dControl += ADJUST_TWO;
-            dDefence += ADJUST_ONE;
-        }
-        else if (isTeamDrawing(context, team)) {
-            // Assert second-half identity
-            dAttack  += ADJUST_ONE;
-            dControl += ADJUST_TWO;
-            dDefence += ADJUST_ONE;
-        }
-        else if (isTeamLosing(context, team)) {
-            // Start pushing, but remain structured
-            dAttack  += ADJUST_TWO;
-            dControl += ADJUST_TWO;
-            dDefence -= ADJUST_ONE;
-        }
-        else {
-            throw new IllegalArgumentException("Invalid match situation in build phase");
-        }
-        int goalDiff = getGoalDifference(context);
-        if (goalDiff >= 2) {
-            if (isTeamWinning(context, team)) {
-                dAttack  -= ADJUST_ONE;
-                dDefence += ADJUST_ONE;
-            }
-            else if (isTeamLosing(context, team)) {
-                dAttack  += ADJUST_ONE;
-                dDefence -= ADJUST_ONE;
-            }
-        }
-        // Opponent-aware counter-adjustment: applied before stamina/adaptability scaling
-        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
-        double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_BUILD);
-        dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
-        double staminaFactor = switch (getTeamStamina(team)) {
-            case HIGH -> 1.05;
-            case MEDIUM -> 1.00;
-            case LOW -> 0.85;
-        };
-        dAttack  *= staminaFactor;
-        dControl *= staminaFactor;
-        dDefence *= staminaFactor;
-        double adaptabilityFactor = switch (getTeamAdaptability(team)) {
-            case HIGH -> 1.05;
-            case MEDIUM -> 1.00;
-            case LOW -> 0.90;
-        };
-        dControl *= adaptabilityFactor;
-        dAttack  *= adaptabilityFactor;
-        attack  += dAttack;
-        control += dControl;
-        defence += dDefence;
-        WeightCombination combo = adjustWeights(clamp(attack), clamp(control), clamp(defence));
-        TacticKey key = new TacticKey(team.getSquad().getTeamStyle(), combo, GamePhase.BUILD_PHASE);
-        TacticSuggestion suggestion = tacticMap.get(key);
-        if (suggestion == null) {
-            throw new IllegalArgumentException("No tactic found for build-phase state");
-        }
-        return suggestion.getSuggestedTactic();
+        return checkGamePhase(context.getMinute()) == GamePhase.BUILD_PHASE;
     }
 
     @Override
-    public TacticRecommendation recommendWithConfidence(MatchContext context, Team team, Map<TacticKey, TacticSuggestion> tacticMap) {
-        TeamIntent intent = team.getIntent();
-        double attack = intent.getAttack(), control = intent.getControl(), defence = intent.getDefence();
-        double dAttack = 0.0, dControl = 0.0, dDefence = 0.0;
-        if (isTeamWinning(context, team)) {
-            dAttack -= ADJUST_ONE; dControl += ADJUST_TWO; dDefence += ADJUST_ONE;
-        } else if (isTeamDrawing(context, team)) {
-            dAttack += ADJUST_ONE; dControl += ADJUST_TWO; dDefence += ADJUST_ONE;
-        } else if (isTeamLosing(context, team)) {
-            dAttack += ADJUST_TWO; dControl += ADJUST_TWO; dDefence -= ADJUST_ONE;
-        } else {
-            throw new IllegalArgumentException("Invalid match situation in build phase");
-        }
-        int goalDiff = getGoalDifference(context);
-        if (goalDiff >= 2) {
-            if (isTeamWinning(context, team)) { dAttack -= ADJUST_ONE; dDefence += ADJUST_ONE; }
-            else if (isTeamLosing(context, team)) { dAttack += ADJUST_ONE; dDefence -= ADJUST_ONE; }
-        }
-        Style opponentStyle = getOpponent(context, team).getSquad().getTeamStyle();
-        double[] deltas = {dAttack, dControl, dDefence};
-        applyOpponentStyleAdjustments(opponentStyle, deltas, OPP_SCALE_BUILD);
-        dAttack = deltas[0]; dControl = deltas[1]; dDefence = deltas[2];
-        double staminaFactor = switch (getTeamStamina(team)) {
-            case HIGH -> 1.05; case MEDIUM -> 1.00; case LOW -> 0.85;
-        };
-        dAttack *= staminaFactor; dControl *= staminaFactor; dDefence *= staminaFactor;
-        double adaptabilityFactor = switch (getTeamAdaptability(team)) {
-            case HIGH -> 1.05; case MEDIUM -> 1.00; case LOW -> 0.90;
-        };
-        dControl *= adaptabilityFactor;
-        dAttack  *= adaptabilityFactor;
-        attack += dAttack; control += dControl; defence += dDefence;
-        double ca = clamp(attack), cc = clamp(control), cd = clamp(defence);
-        int confidence = computeConfidence(ca, cc, cd);
-        TacticKey key = new TacticKey(team.getSquad().getTeamStyle(), adjustWeights(ca, cc, cd), GamePhase.BUILD_PHASE);
-        TacticSuggestion suggestion = tacticMap.get(key);
-        if (suggestion == null)
-            throw new IllegalArgumentException("No tactic found for build-phase state");
-        Formation formation = suggestFormation(suggestion.getSuggestedTactic(), team.getFormation());
-        return new TacticRecommendation(suggestion.getSuggestedTactic(), confidence, formation);
+    public TacticRecommendation recommendWithConfidence(MatchContext context, Team team) {
+        throw new UnsupportedOperationException("JGaffer 2.0 — BuildPhaseTactics not yet implemented");
     }
 }

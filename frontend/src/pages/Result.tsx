@@ -67,7 +67,10 @@ export default function Result() {
       <>
         <Header />
         <main className="result-page">
-          <p style={{ padding: '2rem', color: 'var(--ac)' }}>No result data found. <Link to="/">Play Again</Link></p>
+          <p style={{ padding: '2rem', color: '#fff' }}>
+            JGaffer 2.0 is under development — the recommendation engine is being reworked.{' '}
+            <Link to="/" style={{ color: 'var(--ac)' }}>Go back</Link>
+          </p>
         </main>
         <Footer />
       </>
