@@ -1,8 +1,20 @@
 # JGaffer
 
-A rule-driven tactical recommendation engine for football, served as a full-stack web application.
+A contextual football intelligence engine for casual fans.
 
-Given a match snapshot — scoreline, minute, team style, stamina, and PCA-derived tactical weights — the engine evaluates phase-specific rules and recommends the most appropriate tactic. An AI explanation (OpenAI) is generated to justify the decision.
+Football has a massive casual audience — people who watch but don't fully understand what they're seeing. Every football app is built for people who already know the game. JGaffer is built for everyone else.
+
+---
+
+## What It Does
+
+Pick a match. Pick a moment. JGaffer tells you three things:
+
+- **The Story** — what is happening right now and why, in plain English
+- **The Tension Score** — a single number (0–100) showing how much is at stake, driven by the minute, scoreline, game phase, and team styles
+- **What to Watch** — one specific thing to look for next on the pitch
+
+No jargon. No tactic names. Just football made human.
 
 ---
 
@@ -10,19 +22,19 @@ Given a match snapshot — scoreline, minute, team style, stamina, and PCA-deriv
 
 | Layer | Tech |
 |---|---|
-| Backend | Java 23, Spring Boot, Maven |
-| Engine | Rule-based strategy pattern (7 game phases × 7 tactics) |
+| Backend | Java 23, Spring Boot 3, Maven |
+| Engine | Contextual match state builder + tension scoring model |
 | Frontend | React, TypeScript, Vite |
-| Database | PostgreSQL |
-| AI | OpenAI GPT-4.1 (tactical explanations) |
+| AI | OpenAI GPT-4.1 (match narration) |
+| Data | 2024/25 Premier League + Serie A |
 
 ---
 
 ## Project Structure
 
 ```
-JGaffer/          Spring Boot backend + CSV data
-frontend/         React frontend (builds into JGaffer/src/main/resources/static/)
+JGaffer/      Spring Boot backend + match data
+frontend/     React frontend (builds into JGaffer/src/main/resources/static/)
 ```
 
 ---
@@ -33,17 +45,16 @@ frontend/         React frontend (builds into JGaffer/src/main/resources/static/
 - Java 23
 - Maven
 - Node.js
-- PostgreSQL running on `localhost:5432` with database `jgaffer`
-- OpenAI API key (optional — explanations fall back gracefully without it)
+- OpenAI API key (optional — narration falls back gracefully without it)
 
 ### Backend
 
 ```bash
 cd JGaffer
-JAVA_HOME="C:\Program Files\Java\jdk-23" mvn spring-boot:run
+mvn spring-boot:run
 ```
 
-The app starts on `http://localhost:8080`.
+App starts on `http://localhost:8080`.
 
 ### Frontend (dev mode)
 
@@ -53,54 +64,28 @@ npm install
 npm run dev
 ```
 
+Runs on `http://localhost:5173` — proxies `/api` to the backend.
+
 ### Frontend (production build)
 
 ```bash
 cd frontend
 npm run build
-# Outputs to JGaffer/src/main/resources/static/ — served by Spring Boot
 ```
+
+Outputs to `JGaffer/src/main/resources/static/` — served by Spring Boot.
 
 ---
 
 ## Leagues
 
-| League | Teams | IDs |
+| League | Teams | Season |
 |---|---|---|
-| Premier League | 20 teams, 2024/25 | 1–20 |
-| Serie A | 20 teams, 2024/25 | 21–40 |
+| Premier League | 20 teams | 2024/25 |
+| Serie A | 20 teams | 2024/25 |
 
 ---
 
-## How the Engine Works
+## Status
 
-1. Team tactical weights are derived from PCA analysis of season stats (attack / defence / control)
-2. Weights are mapped to a `WeightCombination` bucket (LOW / MEDIUM / HIGH per dimension)
-3. The engine looks up `Style × WeightCombination × GamePhase → Tactic` via `tactics.csv`
-4. Opponent adjustments shift the weights slightly before the lookup
-5. Confidence is computed from the strength of the best rule match
-
-### Game Phases
-
-| Phase | Minutes |
-|---|---|
-| Early Minutes | 0–15 |
-| Closing Half | 16–44 |
-| Half Time | 45–50 |
-| Build Phase | 51–60 |
-| Tension Time | 61–70 |
-| Late Game | 71–87 |
-| Stoppage Time | 88+ |
-
-### Tactics
-
-`GEGENPRESSING` · `HIGH_PRESS` · `TIKI_TAKA` · `CONTROL` · `COUNTER_ATTACK` · `DIRECT_PLAY` · `LOW_BLOCK`
-
----
-
-## Tests
-
-```bash
-cd JGaffer
-JAVA_HOME="C:\Program Files\Java\jdk-23" mvn test
-```
+**JGaffer 2.0 is under active development.** The engine is being reworked from the ground up.
