@@ -54,3 +54,26 @@ export interface Fixture {
   title: string;
 }
 
+export interface Moment {
+  headline: string;
+  minute: number;
+  match: string;
+  score: string;
+  narrative: string;
+  concept: string;
+}
+
+export interface StoryResponse {
+  team: string;
+  query_type: string;
+  moments: Moment[];
+}
+
+export interface ExplainResponse {
+  headline: string;
+  match: string;
+  minute: number;
+  concept: string;
+  explanation: string;
+}
+

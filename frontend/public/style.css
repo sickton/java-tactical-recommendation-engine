@@ -245,15 +245,41 @@ body.league-sa .header-league-badge-sa { display: block; }
     text-align: center;
     font-size: 0.8rem;
     color: #8b949e;
-    margin-top: auto;
+    flex-shrink: 0;
 }
+
+/* ========== Scroll wrapper (main element) ========== */
+main {
+    flex: 1;
+    overflow-y: auto;
+    width: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: #3D195B transparent;
+}
+
+main::-webkit-scrollbar { width: 5px; }
+main::-webkit-scrollbar-track { background: transparent; }
+main::-webkit-scrollbar-thumb { background: #3D195B; border-radius: 4px; }
+
+body.league-pl main { scrollbar-color: #e8668c transparent; }
+body.league-pl main::-webkit-scrollbar-thumb { background: #e8668c; }
+body.league-sa main { scrollbar-color: #e8b84b transparent; }
+body.league-sa main::-webkit-scrollbar-thumb { background: #e8b84b; }
 
 /* ========== Container ========== */
 .container {
     max-width: 1080px;
     margin: 0 auto;
-    padding: 0 24px;
-    flex: 1;
+    padding: 0 24px 48px;
+}
+
+/* When main IS the container, override max-width so scrollbar hits viewport edge.
+   Use padding to center content instead. */
+main.container {
+    max-width: 100%;
+    padding-left: max(24px, calc((100% - 1080px) / 2));
+    padding-right: max(24px, calc((100% - 1080px) / 2));
+    padding-bottom: 48px;
 }
 
 h1 {
@@ -352,15 +378,33 @@ h2 {
 }
 
 .btn-back {
-    display: inline-block;
-    color: #8b949e;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #c9d1d9;
     text-decoration: none;
-    font-size: 0.9rem;
-    margin-top: 20px;
-    transition: color 0.2s;
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    padding: 10px 20px;
+    border-radius: 9px;
+    border: 1px solid rgba(48, 54, 61, 0.8);
+    background: rgba(22, 27, 34, 0.7);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.18s var(--spring);
+    margin-top: 0;
 }
 
-.btn-back:hover { color: #e6edf3; }
+.btn-back:hover {
+    color: #e6edf3;
+    border-color: rgba(123, 94, 167, 0.6);
+    background: rgba(26, 13, 41, 0.85);
+    transform: translateY(-1px);
+}
+
+body.league-pl .btn-back:hover { border-color: rgba(232, 102, 140, 0.6); }
+body.league-sa .btn-back:hover { border-color: rgba(232, 184, 75, 0.6); }
 
 /* ========== Fixtures ========== */
 .fixtures-page {
@@ -2163,6 +2207,517 @@ body.league-sa .fixture-row:hover {
     padding: 0 8px;
 }
 
+/* ========== Mode Select ========== */
+.mode-team-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.mode-team-crest {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.mode-team-name {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e6edf3;
+    letter-spacing: 0.5px;
+}
+
+.mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 32px;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.mode-card {
+    background: rgba(19, 10, 30, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(123, 94, 167, 0.28);
+    border-radius: 16px;
+    padding: 36px 28px;
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.22s, transform 0.22s var(--spring), box-shadow 0.22s;
+    color: #e6edf3;
+}
+
+.mode-card:hover {
+    border-color: rgba(160, 125, 214, 0.7);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(61, 25, 91, 0.45);
+}
+
+.mode-icon {
+    font-size: 2.4rem;
+}
+
+.mode-label {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #e6edf3;
+}
+
+.mode-count {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #7B5EA7;
+    background: rgba(123, 94, 167, 0.12);
+    border: 1px solid rgba(123, 94, 167, 0.3);
+    padding: 3px 12px;
+    border-radius: 20px;
+}
+
+.mode-description {
+    font-size: 0.88rem;
+    color: #8b949e;
+    line-height: 1.6;
+    margin-top: 4px;
+}
+
+/* ========== Query Select ========== */
+.query-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.query-card {
+    background: rgba(19, 10, 30, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(123, 94, 167, 0.22);
+    border-radius: 14px;
+    padding: 28px 20px;
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.22s, transform 0.22s var(--spring), box-shadow 0.22s;
+    color: #e6edf3;
+}
+
+.query-card:hover {
+    border-color: rgba(160, 125, 214, 0.65);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(61, 25, 91, 0.4);
+}
+
+.query-emoji {
+    font-size: 2rem;
+}
+
+.query-label {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #e6edf3;
+}
+
+.query-description {
+    font-size: 0.82rem;
+    color: #8b949e;
+    line-height: 1.55;
+}
+
+/* ========== Moments Page ========== */
+.moments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+    margin-top: 24px;
+}
+
+.moment-card {
+    background: rgba(19, 10, 30, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(123, 94, 167, 0.22);
+    border-radius: 14px;
+    padding: 24px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.22s, transform 0.22s var(--spring), box-shadow 0.22s;
+    color: #e6edf3;
+}
+
+.moment-card:hover {
+    border-color: rgba(160, 125, 214, 0.65);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(61, 25, 91, 0.4);
+}
+
+.moment-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.moment-minute {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #7B5EA7;
+    letter-spacing: 0.5px;
+}
+
+.moment-concept {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #a07dd6;
+    background: rgba(123, 94, 167, 0.12);
+    border: 1px solid rgba(123, 94, 167, 0.3);
+    padding: 2px 10px;
+    border-radius: 20px;
+}
+
+.moment-headline {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #e6edf3;
+    line-height: 1.3;
+}
+
+.moment-match {
+    font-size: 0.82rem;
+    color: #8b949e;
+    font-weight: 500;
+}
+
+.moment-score {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #c9d1d9;
+}
+
+.moment-narrative {
+    font-size: 0.85rem;
+    color: #8b949e;
+    line-height: 1.6;
+    flex: 1;
+}
+
+.moment-cta {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #7B5EA7;
+    margin-top: 4px;
+    letter-spacing: 0.3px;
+}
+
+.moments-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 64px 0;
+    color: #8b949e;
+    font-size: 0.9rem;
+}
+
+.moments-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(33, 38, 45, 0.6);
+    border-top-color: #a07dd6;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    box-shadow: 0 0 12px rgba(160, 125, 214, 0.3);
+}
+
+.moments-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 48px 0;
+    color: #8b949e;
+    font-size: 0.9rem;
+}
+
+/* ========== Moment Detail ========== */
+.detail-card {
+    background: rgba(19, 10, 30, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(123, 94, 167, 0.28);
+    border-radius: 16px;
+    padding: 36px;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.detail-headline {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: clamp(1.3rem, 3vw, 1.9rem);
+    font-weight: 700;
+    color: #e6edf3;
+    line-height: 1.2;
+}
+
+.detail-match {
+    font-size: 0.9rem;
+    color: #8b949e;
+    font-weight: 500;
+}
+
+.detail-score {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #c9d1d9;
+}
+
+.detail-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(123, 94, 167, 0.2);
+    margin: 8px 0;
+}
+
+.detail-section-title {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #7B5EA7;
+    margin-top: 8px;
+}
+
+.detail-narrative {
+    font-size: 0.95rem;
+    color: #c9d1d9;
+    line-height: 1.75;
+}
+
+.detail-explanation {
+    font-size: 0.95rem;
+    color: #c9d1d9;
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+
+/* ========== Page fade-in transition ========== */
+@keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+main.container {
+    animation: pageFadeIn 0.35s ease both;
+}
+
+/* ========== Skeleton loading cards ========== */
+@keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position: 600px 0; }
+}
+
+.moment-card-skeleton {
+    background: rgba(19, 10, 30, 0.5);
+    border: 1px solid rgba(123, 94, 167, 0.15);
+    border-radius: 14px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeleton-row {
+    display: flex;
+    gap: 10px;
+}
+
+.skeleton-line {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(
+        90deg,
+        rgba(123, 94, 167, 0.08) 25%,
+        rgba(123, 94, 167, 0.18) 50%,
+        rgba(123, 94, 167, 0.08) 75%
+    );
+    background-size: 600px 100%;
+    animation: shimmer 1.4s infinite linear;
+}
+
+/* ========== Moment number badge ========== */
+.moment-number {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.06);
+    line-height: 1;
+    letter-spacing: -1px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ========== Narrative text clamp ========== */
+.moment-narrative {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ========== Typewriter cursor ========== */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+.typewriter-cursor {
+    display: inline-block;
+    margin-left: 2px;
+    color: #a07dd6;
+    animation: blink 0.8s step-end infinite;
+    font-weight: 300;
+}
+
+/* ========== Moment card background images ========== */
+.moment-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.moment-card-bg {
+    position: absolute;
+    inset: 0;
+    background-image: var(--moment-bg);
+    background-size: cover;
+    background-position: center;
+    filter: blur(3px) brightness(0.22);
+    transform: scale(1.06); /* prevents blur edge bleed */
+    z-index: 0;
+    transition: filter 0.3s ease;
+    border-radius: inherit;
+}
+
+.moment-card:hover .moment-card-bg {
+    filter: blur(2px) brightness(0.32);
+}
+
+.moment-card > *:not(.moment-card-bg) {
+    position: relative;
+    z-index: 1;
+}
+
+/* ========== Moment detail hero banner ========== */
+.detail-hero-banner {
+    position: relative;
+    width: 100%;
+    height: 240px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 16px;
+}
+
+.detail-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+.detail-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(10, 5, 20, 0.35) 0%,
+        rgba(10, 5, 20, 0.75) 100%
+    );
+}
+
+.detail-hero-content {
+    position: absolute;
+    bottom: 20px;
+    left: 24px;
+}
+
+@media (max-width: 768px) {
+    .detail-hero-banner { height: 180px; }
+}
+
+/* ========== Responsive additions ========== */
+@media (max-width: 768px) {
+    .mode-grid { grid-template-columns: 1fr; }
+    .query-grid { grid-template-columns: repeat(2, 1fr); }
+    .moments-grid { grid-template-columns: 1fr; }
+    .detail-card { padding: 24px; }
+}
+
+@media (max-width: 480px) {
+    .query-grid { grid-template-columns: 1fr; }
+}
+
+/* ========== League color overrides — new v2 components ========== */
+
+/* Premier League */
+body.league-pl .mode-card:hover { border-color: rgba(232, 102, 140, 0.7); box-shadow: 0 12px 40px rgba(55, 0, 60, 0.45); }
+body.league-pl .query-card:hover { border-color: rgba(232, 102, 140, 0.65); box-shadow: 0 8px 32px rgba(55, 0, 60, 0.4); }
+body.league-pl .moment-card:hover { border-color: rgba(232, 102, 140, 0.65); box-shadow: 0 8px 32px rgba(55, 0, 60, 0.4); }
+body.league-pl .moment-minute { color: #e8668c; }
+body.league-pl .moment-concept { color: #e8668c; background: rgba(232, 102, 140, 0.1); border-color: rgba(232, 102, 140, 0.3); }
+body.league-pl .moment-cta { color: #e8668c; }
+body.league-pl .mode-count { color: #e8668c; background: rgba(232, 102, 140, 0.1); border-color: rgba(232, 102, 140, 0.3); }
+body.league-pl .detail-section-title { color: #e8668c; }
+body.league-pl .detail-card { border-color: rgba(232, 102, 140, 0.28); }
+body.league-pl .moments-spinner { border-top-color: #e8668c; box-shadow: 0 0 12px rgba(232, 102, 140, 0.3); }
+
+/* Serie A */
+body.league-sa .mode-card:hover { border-color: rgba(232, 184, 75, 0.7); box-shadow: 0 12px 40px rgba(0, 30, 60, 0.45); }
+body.league-sa .query-card:hover { border-color: rgba(232, 184, 75, 0.65); box-shadow: 0 8px 32px rgba(0, 30, 60, 0.4); }
+body.league-sa .moment-card:hover { border-color: rgba(232, 184, 75, 0.65); box-shadow: 0 8px 32px rgba(0, 30, 60, 0.4); }
+body.league-sa .moment-minute { color: #e8b84b; }
+body.league-sa .moment-concept { color: #e8b84b; background: rgba(232, 184, 75, 0.1); border-color: rgba(232, 184, 75, 0.3); }
+body.league-sa .moment-cta { color: #e8b84b; }
+body.league-sa .mode-count { color: #e8b84b; background: rgba(232, 184, 75, 0.1); border-color: rgba(232, 184, 75, 0.3); }
+body.league-sa .detail-section-title { color: #e8b84b; }
+body.league-sa .detail-card { border-color: rgba(232, 184, 75, 0.28); }
+body.league-sa .moments-spinner { border-top-color: #e8b84b; box-shadow: 0 0 12px rgba(232, 184, 75, 0.3); }
+
 /* Goal flash animation on the score digit */
 .sim-goal-flash {
     animation: goalFlash 1.4s ease;
@@ -2280,9 +2835,9 @@ body.league-sa .fixture-row:hover {
     height: 38px;
 }
 
-/* ========== Container — no overflow scroll ========== */
+/* ========== Container — scrollable ========== */
 .container {
-    overflow: hidden;
+    padding-bottom: 48px;
 }
 
 /* ========== League themes ========== */
