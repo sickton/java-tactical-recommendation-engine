@@ -23,3 +23,6 @@ JGaffer/src/main/resources/application.properties
 
 chroma_store/
 .env
+
+__pycache__/
+*.pyc
