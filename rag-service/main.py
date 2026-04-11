@@ -110,3 +110,51 @@ def get_story(request: StoryRequest):
     moments = generate_moments(request.team, sampled, n_results)
 
     return {"team": request.team, "query_type": request.query_type, "moments": moments}
+
+class ExplainRequest(BaseModel):
+    headline: str
+    match: str
+    minute: int
+    score: str
+    concept: str
+    team: str
+
+@app.post("/explain")
+def explain_moment(request: ExplainRequest):
+    prompt = f"""
+You are a football teacher explaining the game to someone who is watching 
+for the first time.
+
+A key moment just happened in a match:
+- Match: {request.match}
+- Minute: {request.minute}
+- Score: {request.score}
+- Headline: {request.headline}
+- Football concept: {request.concept}
+- Team being followed: {request.team}
+
+Write a 4-5 sentence explanation of:
+1. What is physically happening on the pitch right now
+2. Why this moment matters in the context of the match
+3. What the "{request.concept}" concept means in plain English
+4. What the team should do next and why
+
+No jargon. No stats. Write like you are explaining to a friend 
+who loves drama but does not know football.
+"""
+
+    response = openai_client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7
+    )
+
+    explanation = response.choices[0].message.content
+
+    return {
+        "headline": request.headline,
+        "match": request.match,
+        "minute": request.minute,
+        "concept": request.concept,
+        "explanation": explanation
+    }
