@@ -57,7 +57,7 @@ export default function ClubSelect() {
             <button
               key={team.id}
               className="club-card"
-              onClick={() => navigate(`/fixtures?teamId=${team.id}&league=${league}`)}
+              onClick={() => navigate(`/mode?teamId=${team.id}&teamName=${encodeURIComponent(team.name)}&league=${league}`)}
             >
               <div className="crest-badge">
                 <img
