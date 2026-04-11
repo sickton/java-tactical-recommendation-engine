@@ -405,6 +405,85 @@ h2 {
 
 body.league-pl .btn-back:hover { border-color: rgba(232, 102, 140, 0.6); }
 body.league-sa .btn-back:hover { border-color: rgba(232, 184, 75, 0.6); }
+.btn-back:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* ========== Moments — tab switcher ========== */
+.moments-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 0 20px;
+}
+
+.moments-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid rgba(48, 54, 61, 0.8);
+    background: rgba(22, 27, 34, 0.6);
+    color: #8b949e;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.18s, background 0.18s, color 0.18s, transform 0.18s var(--spring);
+}
+
+.moments-tab:hover:not(:disabled) {
+    border-color: rgba(123, 94, 167, 0.5);
+    color: #c9d1d9;
+    transform: translateY(-1px);
+}
+
+.moments-tab.active {
+    border-color: rgba(123, 94, 167, 0.85);
+    background: rgba(61, 25, 91, 0.45);
+    color: #e6edf3;
+}
+
+.moments-tab:disabled { opacity: 0.4; cursor: not-allowed; }
+
+body.league-pl .moments-tab.active { border-color: rgba(232, 102, 140, 0.85); background: rgba(96, 25, 55, 0.35); }
+body.league-sa .moments-tab.active { border-color: rgba(232, 184, 75, 0.85); background: rgba(96, 75, 20, 0.35); }
+
+/* Green dot: indicates this type is already cached */
+.moments-tab-dot {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3fb950;
+    box-shadow: 0 0 5px #3fb95088;
+}
+
+/* ========== Moments — footer bar ========== */
+.moments-footer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 32px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.moments-regen-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.moments-cache-label {
+    font-size: 0.78rem;
+    color: #6e7681;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+}
 
 /* ========== Fixtures ========== */
 .fixtures-page {
