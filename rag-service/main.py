@@ -91,7 +91,7 @@ def generate_moments(team: str, sampled: list, n_results: int) -> list:
             """
 
     response = openai_client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.8,
         response_format={"type": "json_object"}
@@ -150,7 +150,7 @@ who loves drama but does not know football.
 """
 
     response = openai_client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7
     )

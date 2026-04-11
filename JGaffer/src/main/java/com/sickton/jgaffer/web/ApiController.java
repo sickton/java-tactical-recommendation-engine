@@ -4,9 +4,11 @@ import com.sickton.jgaffer.domain.MatchContext;
 import com.sickton.jgaffer.domain.Tactic;
 import com.sickton.jgaffer.domain.TacticRecommendation;
 import com.sickton.jgaffer.domain.Team;
+import com.sickton.jgaffer.service.RagService;
 import com.sickton.jgaffer.service.matches.MatchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,11 +27,12 @@ import java.util.Random;
 public class ApiController {
 
     private static final Logger log = LoggerFactory.getLogger(ApiController.class);
-    private final MatchService matchService;
 
-    public ApiController(MatchService matchService) {
-        this.matchService = matchService;
-    }
+    @Autowired
+    private MatchService matchService;
+
+    @Autowired
+    private RagService ragService;
 
     /** GET /api/clubs?league=PL — Returns list of teams for the given league. */
     @GetMapping("/clubs")
@@ -174,5 +177,22 @@ public class ApiController {
         m.put("staminaLevel", t.getStaminaLevel().name());
         m.put("adaptabilityLevel", t.getAdaptabilityLevel().name());
         return m;
+    }
+
+    @GetMapping("/story")
+    public ResponseEntity<Object> getStory(
+            @RequestParam String team,
+            @RequestParam String league,
+            @RequestParam String mode,
+            @RequestParam String queryType
+    ) {
+        Object results = ragService.getStory(team, league, mode, queryType);
+        return ResponseEntity.ok(results);
+    }
+
+    @PostMapping("/explain")
+    public ResponseEntity<Object> explainMoment(@RequestBody Map<String, Object> momentsData) {
+        Object results =  ragService.explainMoment(momentsData);
+        return ResponseEntity.ok(results);
     }
 }
