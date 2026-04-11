@@ -46,7 +46,7 @@ def retrieve_moments(team: str, league: str, query: str, n_results: int) -> list
 
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=50,
+        n_results=200,
         where={
             "$or": [
                 {"home_team": team},
@@ -57,11 +57,17 @@ def retrieve_moments(team: str, league: str, query: str, n_results: int) -> list
 
     documents = results["documents"][0]
     metadatas = results["metadatas"][0]
-
     combined = list(zip(documents, metadatas))
-    sampled = random.sample(combined, min(n_results, len(combined)))
 
-    return sampled
+    from collections import defaultdict
+    matches = defaultdict(list)
+    for doc, meta in combined:
+        matches[meta["match_id"]].append((doc, meta))
+
+    diverse_pool = [random.choice(moments) for moments in matches.values()]
+    random.shuffle(diverse_pool)
+
+    return diverse_pool[:n_results]
 
 def generate_moments(team: str, sampled: list, n_results: int) -> list:
     context = "\n".join([doc for doc, meta in sampled])
