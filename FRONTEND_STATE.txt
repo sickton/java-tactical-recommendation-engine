@@ -1,0 +1,79 @@
+FRONTEND STATE — JGaffer Tactical Recommendation Engine
+Branch: v2/layer-5-frontend
+Last updated: 2026-04-11
+
+=============================================================
+TECH STACK
+=============================================================
+- React 18 + TypeScript
+- React Router v6 (client-side routing)
+- Vite (dev server + build)
+- CSS custom properties + league theming (no UI framework)
+
+=============================================================
+USER FLOW
+=============================================================
+/ (LeagueSelect)
+  → /clubs?league=PL|SA (ClubSelect)
+    → /mode?teamId=&teamName=&league= (ModeSelect)
+      → /query?...&mode=simple|indepth (QuerySelect)
+        → /moments?...&queryType=dramatic|dominant|... (Moments)
+          → /moment [via router state] (MomentDetail)
+
+Legacy tactical flow (still accessible):
+  /fixtures → /match → /result
+
+=============================================================
+PAGES
+=============================================================
+LeagueSelect     — Pick Premier League or Serie A
+ClubSelect       — Search + pick a club, fetches /api/clubs
+ModeSelect       — Simple (5 moments) or In-Depth (10 moments)
+QuerySelect      — Pick a theme: Dramatic, Dominant, Comeback,
+                   Under Pressure, Turning Points, Surprise Me
+Moments          — Fetches /api/story, renders moment cards
+                   with blurred football background images
+MomentDetail     — Fetches /api/explain, shows full moment with
+                   typewriter-animated explanation
+
+Legacy:
+Fixtures         — Pick a match fixture
+Match            — Live tactical simulation
+Result           — Tactical recommendation result
+
+=============================================================
+API ENDPOINTS CONSUMED
+=============================================================
+GET  /api/clubs?league=PL|SA           → team list
+GET  /api/story?team=&league=&mode=&queryType=  → moments array
+POST /api/explain                      → deep tactical explanation
+GET  /api/fixtures?teamId=&league=     → fixture list (legacy)
+POST /api/recommend                    → tactic recommendation (legacy)
+
+=============================================================
+UI FEATURES (v2)
+=============================================================
+- League theming: body class switches CSS variables per league
+  (Premier League = pink/purple, Serie A = gold/blue)
+- Background images: 6 football photos in
+  public/images/moments/ cycle across moment cards
+  (blurred + darkened via CSS, unique per card)
+- Skeleton loading: shimmer ghost cards while /api/story loads
+- Page transitions: fade-in + slide-up on every route change
+- Moment number badge: large faint 01–10 on each card
+- Narrative clamp: 3-line cutoff on card previews
+- Typewriter effect: explanation in MomentDetail types in live
+- Cinematic hero banner: football image header on MomentDetail
+- Navigation: back buttons carry full query params through flow
+
+=============================================================
+KEY FILES
+=============================================================
+frontend/src/App.tsx                   — route definitions
+frontend/src/pages/                    — all page components
+frontend/src/constants/crests.ts       — club crest image map
+frontend/src/constants/momentImages.ts — background image paths
+frontend/src/hooks/useLeagueTheme.ts   — applies league CSS class
+frontend/src/types.ts                  — shared TypeScript types
+frontend/public/style.css             — all styles (single file)
+frontend/public/images/moments/        — match-1.jpg to match-6.jpg
