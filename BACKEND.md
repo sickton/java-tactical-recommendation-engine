@@ -1,7 +1,7 @@
 # JGaffer — Backend Reference
 
-Last updated: 2026-04-15
-Branch: dev
+Last updated: 2026-04-16
+Branch: v2/layer-6-statsbomb-pipeline
 
 ---
 
@@ -284,5 +284,9 @@ Response: `{ "headline", "match", "minute", "concept", "explanation": "string" }
 | ChromaDB knowledge base (68k moments, both leagues) | Done |
 | Tactical recommendation engine (`/api/recommend`) | Stubbed — all 7 phase rules throw |
 | OpenAI tactical explanation (legacy flow) | Done but only reachable via legacy route |
+| StatsBomb pass extraction (`extract_passes.py`) | Done — 143,349 rows, 1,162 matches |
+| Formation probability matrices (`build_matrices.py`) | Not started |
+| Press escape outcome model (`train_escape_model.py`) | Not started |
+| `/api/network` endpoint (graph generation) | Not started |
 | Tension Score (0–100 model) | Not started |
 | "What to Watch" as a distinct API field | Not started |

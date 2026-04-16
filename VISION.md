@@ -1,5 +1,5 @@
 # JGaffer — Vision Document
-*Last updated: 2026-04-16 | Branch: dev*
+*Last updated: 2026-04-16 | Branch: v2/layer-6-statsbomb-pipeline*
 
 ---
 
@@ -164,7 +164,7 @@ The plan is to ship Option A first, and migrate to Option B as a later iteration
 | Moment explanation (GPT-4o-mini) | Done |
 | React frontend (full navigation flow, theming) | Done |
 | Tactical recommendation engine | Stubbed — not used |
-| StatsBomb extraction pipeline | Not started |
+| StatsBomb extraction pipeline | Done — 143,349 pressured pass rows across 1,162 matches |
 | Formation probability matrices | Not started |
 | Press escape outcome model | Not started |
 | Context adjustment layer | Not started |
