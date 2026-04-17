@@ -1,5 +1,5 @@
 # JGaffer — Vision Document
-*Last updated: 2026-04-16 | Branch: v2/layer-6-statsbomb-pipeline*
+*Last updated: 2026-04-17 | Branch: v2/layer-7-network-api*
 
 ---
 
@@ -165,8 +165,8 @@ The plan is to ship Option A first, and migrate to Option B as a later iteration
 | React frontend (full navigation flow, theming) | Done |
 | Tactical recommendation engine | Stubbed — not used |
 | StatsBomb extraction pipeline | Done — 143,349 pressured pass rows across 1,162 matches |
-| Formation probability matrices | Not started |
-| Press escape outcome model | Not started |
+| Formation probability matrices | Done — 5 formations, all probabilities verified |
+| Press escape outcome model | Done — ROC-AUC 0.84, CV 0.8333 ± 0.005, 79% fail recall |
 | Context adjustment layer | Not started |
 | Graph generator + `/api/network` endpoint | Not started |
 | Pitch visualization (SVG) | Not started |

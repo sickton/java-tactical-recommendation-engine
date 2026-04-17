@@ -1,7 +1,7 @@
 # JGaffer — Backend Reference
 
-Last updated: 2026-04-16
-Branch: v2/layer-6-statsbomb-pipeline
+Last updated: 2026-04-17
+Branch: v2/layer-7-network-api
 
 ---
 
@@ -285,8 +285,8 @@ Response: `{ "headline", "match", "minute", "concept", "explanation": "string" }
 | Tactical recommendation engine (`/api/recommend`) | Stubbed — all 7 phase rules throw |
 | OpenAI tactical explanation (legacy flow) | Done but only reachable via legacy route |
 | StatsBomb pass extraction (`extract_passes.py`) | Done — 143,349 rows, 1,162 matches |
-| Formation probability matrices (`build_matrices.py`) | Not started |
-| Press escape outcome model (`train_escape_model.py`) | Not started |
-| `/api/network` endpoint (graph generation) | Not started |
+| Formation probability matrices (`build_matrices.py`) | Done — 5 formations (F_4_3_3, F_4_2_3_1, F_4_4_2, F_3_5_2, F_3_4_3) |
+| Press escape outcome model (`train_escape_model.py`) | Done — HistGradientBoosting, ROC-AUC 0.84, CV 0.8333 ± 0.005 |
+| `/api/network` endpoint (graph generation) | In progress |
 | Tension Score (0–100 model) | Not started |
 | "What to Watch" as a distinct API field | Not started |
