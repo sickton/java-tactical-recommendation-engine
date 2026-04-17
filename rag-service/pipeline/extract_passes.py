@@ -1,6 +1,7 @@
 import json
 import csv
 import os
+import math
 from pathlib import Path
 
 STATSBOMB_DIR = Path(r"C:\Users\sriva\UserssrivaDesktopopen-data\data")
@@ -92,6 +93,24 @@ def load_json(path: Path) -> list | dict:
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
+def get_pitch_zone(x) -> str:
+    if x is None:
+        return "unknown"
+    if x < 40:
+        return "defensive_third"
+    elif x < 80:
+        return "middle_third"
+    else:
+        return "attacking_third"
+
+def get_pass_direction(angle: float) -> str:
+    if -math.pi / 4 < angle < math.pi / 4:
+        return "forward"
+    elif angle > 3 * math.pi / 4 or angle < -3 * math.pi / 4:
+        return "backward"
+    else:
+        return "sideways"
+
 def get_pass_outcome(pass_data: dict) -> str:
     outcome = pass_data.get("outcome")
     if outcome is None:
@@ -178,18 +197,20 @@ def extract_from_match(match_id: int, competition_label: str) -> list[dict]:
             continue
 
         rows.append({
-            "match_id":     match_id,
-            "competition":  competition_label,
-            "minute":       minute,
-            "game_phase":   get_game_phase(minute),
-            "formation":    formation,
-            "from_pos":     from_pos,
-            "to_pos":       to_pos,
-            "pass_length":  round(pass_length, 4),
-            "pass_angle":   round(pass_angle, 4),
-            "pitch_x":      location[0],
-            "pitch_y":      location[1],
-            "pass_outcome": get_pass_outcome(pass_data),
+            "match_id":       match_id,
+            "competition":    competition_label,
+            "minute":         minute,
+            "game_phase":     get_game_phase(minute),
+            "formation":      formation,
+            "from_pos":       from_pos,
+            "to_pos":         to_pos,
+            "pass_length":    round(pass_length, 4),
+            "pass_angle":     round(pass_angle, 4),
+            "pitch_x":        location[0],
+            "pitch_y":        location[1],
+            "pitch_zone":     get_pitch_zone(location[0]),
+            "pass_direction": get_pass_direction(pass_angle),
+            "pass_outcome":   get_pass_outcome(pass_data),
         })
 
     return rows
@@ -200,7 +221,7 @@ def main():
     fieldnames = [
         "match_id", "competition", "minute", "game_phase", "formation",
         "from_pos", "to_pos", "pass_length", "pass_angle",
-        "pitch_x", "pitch_y", "pass_outcome",
+        "pitch_x", "pitch_y", "pitch_zone", "pass_direction", "pass_outcome",
     ]
 
     total_rows    = 0
