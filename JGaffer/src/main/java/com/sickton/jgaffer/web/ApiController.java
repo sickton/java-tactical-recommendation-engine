@@ -195,4 +195,38 @@ public class ApiController {
         Object results =  ragService.explainMoment(momentsData);
         return ResponseEntity.ok(results);
     }
+
+    /**
+     * GET /api/network?escapingTeam=Liverpool&pressingTeam=Arsenal&league=PL&minute=67&homeGoals=1&awayGoals=2
+     * Looks up both teams' formations from squad data, then delegates graph
+     * generation and escape probability scoring to the Python service.
+     */
+    @GetMapping("/network")
+    public ResponseEntity<Object> getNetwork(
+            @RequestParam String escapingTeam,
+            @RequestParam String pressingTeam,
+            @RequestParam(defaultValue = "PL") String league,
+            @RequestParam int minute,
+            @RequestParam(defaultValue = "0") int homeGoals,
+            @RequestParam(defaultValue = "0") int awayGoals) {
+
+        Team escaping = matchService.getTeam(league, escapingTeam);
+        Team pressing = matchService.getTeam(league, pressingTeam);
+
+        if (escaping == null || pressing == null) {
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "One or both teams not found in league: " + league)
+            );
+        }
+
+        String escapingFormation = escaping.getFormation().name();
+        String pressingFormation = pressing.getFormation().name();
+
+        Object result = ragService.getNetwork(
+                escapingTeam, escapingFormation,
+                pressingTeam, pressingFormation,
+                league, minute, homeGoals, awayGoals
+        );
+        return ResponseEntity.ok(result);
+    }
 }

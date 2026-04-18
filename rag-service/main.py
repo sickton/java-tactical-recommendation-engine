@@ -1,12 +1,64 @@
 import os
+import re
+import json
+import math
 import random
+import numpy as np
+import joblib
 import chromadb
+from pathlib import Path
 from fastapi import FastAPI
 from openai import OpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from sklearn.preprocessing import LabelEncoder
 
 load_dotenv()
+
+# ── Pipeline artefacts (loaded once at startup) ───────────────────────────────
+_PIPELINE_DIR = Path(__file__).parent / "pipeline" / "output"
+
+escape_model = joblib.load(_PIPELINE_DIR / "escape_model.joblib")
+
+with open(_PIPELINE_DIR / "escape_model_meta.json") as f:
+    _meta = json.load(f)
+
+THRESHOLD = _meta["threshold"]
+
+encoders: dict[str, LabelEncoder] = {}
+for col, classes in _meta["encoders"].items():
+    le = LabelEncoder()
+    le.classes_ = np.array(classes)
+    encoders[col] = le
+
+matrices: dict[str, dict] = {}
+for path in (_PIPELINE_DIR / "matrices").glob("*.json"):
+    with open(path) as f:
+        data = json.load(f)
+    matrices[data["formation"]] = data["matrix"]
+
+# ── Pitch coordinates (normalised 0–1, origin = bottom-left) ─────────────────
+# x: 0 = own goal end, 1 = opponent goal end
+# y: 0 = left touchline, 1 = right touchline
+POSITION_COORDS: dict[str, tuple[float, float]] = {
+    "GK":  (0.05, 0.50),
+    "CB":  (0.20, 0.50),
+    "RB":  (0.22, 0.82),
+    "LB":  (0.22, 0.18),
+    "RWB": (0.40, 0.88),
+    "LWB": (0.40, 0.12),
+    "CDM": (0.38, 0.50),
+    "CM":  (0.50, 0.50),
+    "RM":  (0.50, 0.82),
+    "LM":  (0.50, 0.18),
+    "CAM": (0.62, 0.50),
+    "RW":  (0.72, 0.82),
+    "LW":  (0.72, 0.18),
+    "CF":  (0.80, 0.65),
+    "ST":  (0.85, 0.50),
+}
+
+FALLBACK_FORMATION = "F_4_3_3"
 
 app = FastAPI()
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -163,4 +215,122 @@ who loves drama but does not know football.
         "minute": request.minute,
         "concept": request.concept,
         "explanation": explanation
+    }
+
+
+# ── Network helpers ───────────────────────────────────────────────────────────
+
+def get_game_phase(minute: int) -> str:
+    if minute <= 15:  return "EARLY_MINUTES"
+    elif minute <= 44: return "CLOSING_HALF"
+    elif minute <= 50: return "HALF_TIME"
+    elif minute <= 60: return "BUILD_PHASE"
+    elif minute <= 70: return "TENSION_TIME"
+    elif minute <= 87: return "LATE_GAME"
+    else:              return "STOPPAGE_TIME"
+
+def get_pitch_zone(norm_x: float) -> str:
+    x = norm_x * 120
+    if x < 40:   return "defensive_third"
+    elif x < 80: return "middle_third"
+    else:        return "attacking_third"
+
+def get_pass_direction(angle: float) -> str:
+    if -math.pi / 4 < angle < math.pi / 4:
+        return "forward"
+    elif angle > 3 * math.pi / 4 or angle < -3 * math.pi / 4:
+        return "backward"
+    else:
+        return "sideways"
+
+def encode_value(col: str, val: str) -> int:
+    classes = list(encoders[col].classes_)
+    return classes.index(val) if val in classes else 0
+
+def score_edge(from_pos: str, to_pos: str, formation: str, game_phase: str,
+               from_coords: tuple, to_coords: tuple) -> float:
+    dx = (to_coords[0] - from_coords[0]) * 120
+    dy = (to_coords[1] - from_coords[1]) * 80
+    pass_length    = math.sqrt(dx ** 2 + dy ** 2)
+    pass_angle     = math.atan2(dy, dx)
+    pitch_x        = from_coords[0] * 120
+    pitch_y        = from_coords[1] * 80
+    pitch_zone     = get_pitch_zone(from_coords[0])
+    pass_direction = get_pass_direction(pass_angle)
+
+    features = np.array([[
+        encode_value("from_pos",       from_pos),
+        encode_value("to_pos",         to_pos),
+        encode_value("formation",      formation),
+        encode_value("game_phase",     game_phase),
+        encode_value("pitch_zone",     pitch_zone),
+        encode_value("pass_direction", pass_direction),
+        pass_length,
+        pass_angle,
+        pitch_x,
+        pitch_y,
+    ]])
+
+    proba = escape_model.predict_proba(features)[0][1]
+    return round(float(proba), 4)
+
+def build_graph(formation: str, game_phase: str, score_edges: bool) -> dict:
+    matrix = matrices.get(formation) or matrices.get(FALLBACK_FORMATION, {})
+
+    positions_used: set[str] = set()
+    for from_pos, targets in matrix.items():
+        positions_used.add(from_pos)
+        positions_used.update(targets.keys())
+
+    nodes = [
+        {"id": pos, "x": POSITION_COORDS[pos][0], "y": POSITION_COORDS[pos][1]}
+        for pos in positions_used if pos in POSITION_COORDS
+    ]
+
+    edges = []
+    for from_pos, targets in matrix.items():
+        from_coords = POSITION_COORDS.get(from_pos)
+        if not from_coords:
+            continue
+        for to_pos, weight in targets.items():
+            if weight < 0.05:
+                continue
+            to_coords = POSITION_COORDS.get(to_pos)
+            if not to_coords:
+                continue
+            edge: dict = {"from": from_pos, "to": to_pos, "weight": round(weight, 4)}
+            if score_edges:
+                edge["escape_prob"] = score_edge(
+                    from_pos, to_pos, formation, game_phase, from_coords, to_coords
+                )
+            edges.append(edge)
+
+    return {"nodes": nodes, "edges": edges}
+
+
+# ── /network endpoint ─────────────────────────────────────────────────────────
+
+class NetworkRequest(BaseModel):
+    escaping_team:      str
+    escaping_formation: str
+    pressing_team:      str
+    pressing_formation: str
+    league:             str
+    minute:             int
+    home_goals:         int
+    away_goals:         int
+
+@app.post("/network")
+def get_network(request: NetworkRequest):
+    game_phase = get_game_phase(request.minute)
+
+    escape_graph   = build_graph(request.escaping_formation, game_phase, score_edges=True)
+    pressing_graph = build_graph(request.pressing_formation, game_phase, score_edges=False)
+
+    return {
+        "escape_graph":        escape_graph,
+        "pressing_graph":      pressing_graph,
+        "game_phase":          game_phase,
+        "escaping_formation":  request.escaping_formation,
+        "pressing_formation":  request.pressing_formation,
     }

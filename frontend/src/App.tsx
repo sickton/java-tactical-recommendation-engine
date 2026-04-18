@@ -8,6 +8,7 @@ import ModeSelect from './pages/ModeSelect';
 import QuerySelect from './pages/QuerySelect';
 import Moments from './pages/Moments';
 import MomentDetail from './pages/MomentDetail';
+import Puzzle from './pages/Puzzle';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/query" element={<QuerySelect />} />
         <Route path="/moments" element={<Moments />} />
         <Route path="/moment" element={<MomentDetail />} />
+        <Route path="/puzzle" element={<Puzzle />} />
       </Routes>
     </BrowserRouter>
   );

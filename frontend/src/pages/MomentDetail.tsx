@@ -136,6 +136,19 @@ export default function MomentDetail() {
 
         <div style={{ display: 'flex', gap: 16, marginTop: 32, flexWrap: 'wrap' }}>
           <button
+            className="btn-puzzle-cta"
+            onClick={() =>
+              navigate('/puzzle', {
+                state: { moment, teamName, league, teamId, mode, queryType, imageIndex },
+              })
+            }
+          >
+            ⚽ Try the Tactical Puzzle
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
+          <button
             className="btn-back"
             onClick={() =>
               navigate(`/moments?teamId=${teamId}&teamName=${encodeURIComponent(teamName)}&league=${league}&mode=${mode}&queryType=${queryType}`)

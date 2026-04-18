@@ -77,3 +77,29 @@ export interface ExplainResponse {
   explanation: string;
 }
 
+export interface NetworkNode {
+  id: string;
+  x: number;
+  y: number;
+}
+
+export interface NetworkEdge {
+  from: string;
+  to: string;
+  weight: number;
+  escape_prob?: number;
+}
+
+export interface NetworkGraph {
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+}
+
+export interface NetworkResponse {
+  escape_graph: NetworkGraph;
+  pressing_graph: NetworkGraph;
+  game_phase: string;
+  escaping_formation: string;
+  pressing_formation: string;
+}
+
