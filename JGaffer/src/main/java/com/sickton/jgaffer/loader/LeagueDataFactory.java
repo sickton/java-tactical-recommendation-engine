@@ -93,9 +93,11 @@ public class LeagueDataFactory {
     }
 
     /** Builds a Team domain object from the given team name and data map.
-     *  Uses PCA-derived weights when present; falls back to style-bias otherwise. */
+     *  Uses PCA-derived weights when present; falls back to style-bias otherwise.
+     *  Returns null if the team name is not found in the data map. */
     public static Team buildTeamFromName(String name, Map<String, FileStorage> teamData) {
         FileStorage file = teamData.get(name);
+        if (file == null) return null;
         return file.hasCustomWeights()
                 ? new Team(file.getSquadData(), file.getStaminaData(), file.getAdaptabilityData(),
                            file.getAtkWeight(), file.getDefWeight(), file.getCtrlWeight())

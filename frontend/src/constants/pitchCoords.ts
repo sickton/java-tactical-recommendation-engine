@@ -1,97 +1,133 @@
-// Formation-aware display coordinates for each position.
-// The backend positions all central mids at y=0.50 (abstract roles).
-// These override that with realistic pitch spread per formation.
-// x: 0 = own goal, 1 = opponent goal
-// y: 0 = left touchline, 1 = right touchline
+// Formation-aware display coordinates for each position node.
+// x: 0 = own goal end  →  1 = opponent goal end
+// y: 0 = left touchline  →  1 = right touchline
+//
+// Where a formation uses two nodes with different abstract labels at the same
+// tactical depth (e.g. CDM + CM as a double pivot, LM + RM as wide mids),
+// they are placed symmetrically on either side of y=0.50.
 
 type Coords = [number, number];
 
-// Fallback when formation is unknown
+// Fallback used when formation is unknown
 const BASE_COORDS: Record<string, Coords> = {
   GK:  [0.05, 0.50],
-  CB:  [0.18, 0.38],
-  CB2: [0.18, 0.62],
-  LB:  [0.20, 0.22],
-  RB:  [0.20, 0.78],
-  LWB: [0.38, 0.14],
-  RWB: [0.38, 0.86],
-  CDM: [0.38, 0.50],
+  CB:  [0.20, 0.36],
+  CB2: [0.20, 0.64],
+  LB:  [0.22, 0.14],
+  RB:  [0.22, 0.86],
+  LWB: [0.40, 0.10],
+  RWB: [0.40, 0.90],
+  CDM: [0.42, 0.50],
   CM:  [0.52, 0.32],
-  LM:  [0.50, 0.18],
-  RM:  [0.50, 0.82],
-  CAM: [0.62, 0.68],
-  LW:  [0.72, 0.18],
-  RW:  [0.72, 0.82],
-  CF:  [0.78, 0.62],
+  LM:  [0.50, 0.16],
+  RM:  [0.50, 0.84],
+  CAM: [0.62, 0.50],
+  LW:  [0.74, 0.14],
+  RW:  [0.74, 0.86],
+  CF:  [0.80, 0.38],
   ST:  [0.84, 0.50],
 };
 
-// Per-formation overrides — only positions that need to move from the base
 const FORMATION_OVERRIDES: Record<string, Partial<Record<string, Coords>>> = {
+
+  // ── 4-3-3 ──────────────────────────────────────────────────────────────────
+  // Row 1 (def):    LB  CB  CB  RB
+  // Row 2 (mid):    CM  CAM  CM   ← flat three; CDM fills left CM slot
+  // Row 3 (att):    LW  ST  RW
   F_4_3_3: {
-    CB:  [0.18, 0.38],
-    CB2: [0.18, 0.62],
-    CDM: [0.40, 0.50],
-    CM:  [0.54, 0.28],
-    CAM: [0.54, 0.72],
-    LW:  [0.73, 0.16],
-    RW:  [0.73, 0.84],
+    LB:  [0.22, 0.13],
+    CB:  [0.22, 0.35],
+    CB2: [0.22, 0.65],
+    RB:  [0.22, 0.87],
+    CDM: [0.50, 0.24],   // left CM of flat three
+    CAM: [0.52, 0.50],   // centre of flat three
+    CM:  [0.50, 0.76],   // right CM of flat three
+    LW:  [0.78, 0.13],
     ST:  [0.84, 0.50],
+    RW:  [0.78, 0.87],
   },
+
+  // ── 4-2-3-1 ────────────────────────────────────────────────────────────────
+  // Row 1 (def):    LB  CB  CB  RB
+  // Row 2 (pivot):  CDM  CDM      ← double pivot; CDM + CM side by side
+  // Row 3 (AM):     RW  CAM  LW
+  // Row 4 (att):    ST
   F_4_2_3_1: {
-    CB:  [0.18, 0.38],
-    CB2: [0.18, 0.62],
-    CDM: [0.38, 0.36],
-    CM:  [0.38, 0.64],
-    CAM: [0.60, 0.50],
-    LW:  [0.68, 0.20],
-    RW:  [0.68, 0.80],
+    LB:  [0.22, 0.13],
+    CB:  [0.22, 0.35],
+    CB2: [0.22, 0.65],
+    RB:  [0.22, 0.87],
+    CDM: [0.40, 0.34],   // left of double pivot
+    CM:  [0.40, 0.66],   // right of double pivot
+    LW:  [0.65, 0.13],
+    CAM: [0.67, 0.50],
+    RW:  [0.65, 0.87],
     ST:  [0.84, 0.50],
   },
-  F_3_4_3: {
-    // Four midfielders across: CDM left, CM right, LW/RW wide
-    CB:  [0.18, 0.50],
-    LWB: [0.40, 0.14],
-    RWB: [0.40, 0.86],
-    CDM: [0.46, 0.36],
-    CM:  [0.46, 0.64],
-    LW:  [0.73, 0.18],
-    RW:  [0.73, 0.82],
-    CF:  [0.80, 0.50],
-    ST:  [0.84, 0.50],
-  },
-  F_3_5_2: {
-    // Five midfielders: wingbacks wide, CDM center, two CMs inside
-    CB:  [0.18, 0.50],
-    LWB: [0.40, 0.10],
-    RWB: [0.40, 0.90],
-    CDM: [0.44, 0.50],
-    CM:  [0.54, 0.33],
-    LM:  [0.54, 0.18],
-    RM:  [0.54, 0.82],
-    CF:  [0.78, 0.38],
-    ST:  [0.78, 0.62],
-  },
+
+  // ── 4-4-2 ──────────────────────────────────────────────────────────────────
+  // Row 1 (def):    LB  CB  CB  RB
+  // Row 2 (mid):    RM  CM  CM  LM   ← flat four; CDM fills inner-left slot
+  // Row 3 (att):    ST  ST
   F_4_4_2: {
-    // Flat four in midfield
-    LM:  [0.50, 0.16],
-    CDM: [0.50, 0.38],
-    CM:  [0.50, 0.62],
-    RM:  [0.50, 0.84],
+    LB:  [0.22, 0.13],
+    CB:  [0.22, 0.35],
+    CB2: [0.22, 0.65],
+    RB:  [0.22, 0.87],
+    LM:  [0.50, 0.12],   // wide left mid
+    CDM: [0.50, 0.38],   // inner left mid
+    CM:  [0.50, 0.62],   // inner right mid
+    RM:  [0.50, 0.88],   // wide right mid
     CF:  [0.80, 0.36],
     ST:  [0.80, 0.64],
   },
+
+  // ── 3-4-3 ──────────────────────────────────────────────────────────────────
+  // Row 1 (def):    CB  CB  CB   ← CB=left, CB2=right; centre implied
+  // Row 2 (mid):    CM  CDM  CDM  CM  ← LM + CDM + CM + RM
+  // Row 3 (att):    LW  ST  RW
+  F_3_4_3: {
+    CB:  [0.20, 0.28],   // left CB
+    CB2: [0.20, 0.72],   // right CB (centre implied between)
+    LM:  [0.48, 0.12],   // wide left mid
+    CDM: [0.48, 0.38],   // inner left mid
+    CM:  [0.48, 0.62],   // inner right mid
+    RM:  [0.48, 0.88],   // wide right mid
+    LW:  [0.78, 0.13],
+    ST:  [0.84, 0.50],
+    RW:  [0.78, 0.87],
+  },
+
+  // ── 3-5-2 ──────────────────────────────────────────────────────────────────
+  // Row 1 (def):    CB centred (represents the back three)
+  // Row 2 (mid):    LWB  LM  CDM  RM  RWB
+  // Row 3 (att):    CF  ST
+  F_3_5_2: {
+    CB:  [0.20, 0.50],   // centred — represents the entire back three
+    LWB: [0.40, 0.10],
+    RWB: [0.40, 0.90],
+    LM:  [0.52, 0.28],
+    CDM: [0.54, 0.50],
+    RM:  [0.52, 0.72],
+    CF:  [0.80, 0.36],
+    ST:  [0.80, 0.64],
+  },
+
+  // ── 5-3-2 ──────────────────────────────────────────────────────────────────
+  // Row 1 (def):    RWB  CB  CB  CB  LWB  ← LB + CB + RB fill the three CB slots
+  // Row 2 (mid):    CM  CAM  CM           ← CDM fills left CM slot
+  // Row 3 (att):    ST  ST
   F_5_3_2: {
-    LB:  [0.22, 0.16],
-    RB:  [0.22, 0.84],
-    LWB: [0.42, 0.12],
-    RWB: [0.42, 0.88],
-    CB:  [0.18, 0.50],
-    CDM: [0.44, 0.50],
-    CM:  [0.54, 0.30],
-    CAM: [0.54, 0.70],
-    CF:  [0.78, 0.38],
-    ST:  [0.78, 0.62],
+    LWB: [0.28, 0.08],   // left wingback (attacking)
+    LB:  [0.22, 0.26],   // left CB
+    CB:  [0.20, 0.50],   // centre CB
+    RB:  [0.22, 0.74],   // right CB
+    RWB: [0.28, 0.92],   // right wingback (attacking)
+    CDM: [0.54, 0.27],   // left of midfield three
+    CAM: [0.56, 0.50],   // centre of midfield three
+    CM:  [0.54, 0.73],   // right of midfield three
+    CF:  [0.80, 0.36],
+    ST:  [0.80, 0.64],
   },
 };
 
@@ -99,6 +135,5 @@ export function getDisplayCoords(positionId: string, formation: string): Coords 
   const overrides = FORMATION_OVERRIDES[formation] ?? {};
   if (overrides[positionId]) return overrides[positionId]!;
   if (BASE_COORDS[positionId]) return BASE_COORDS[positionId];
-  // If position unknown, fall back to backend coords passed in
   return [0.5, 0.5];
 }

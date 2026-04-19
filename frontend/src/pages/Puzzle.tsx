@@ -18,15 +18,30 @@ interface LocationState {
   imageIndex: number;
 }
 
-// Canonical positions for each formation — ~10 roles representing 11 players
-// (CB covers both center backs as one positional role)
+// Canonical positions rendered per formation.
+// Label notes:
+//   4-back: CB = LCB, CB2 = RCB (synthetic twin injected by filterGraph)
+//   3-back: CB (left) + CB2 (right) represent the outer CBs; centre CB implied
+//   Where a formation needs two of the same abstract role (e.g. two CDMs),
+//   CDM fills one slot and CM fills the other at matching depth.
 const FORMATION_POSITIONS: Record<string, string[]> = {
-  F_4_3_3:   ['GK', 'CB', 'CB2', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LW', 'RW', 'ST'],
-  F_4_2_3_1: ['GK', 'CB', 'CB2', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LW', 'RW', 'ST'],
-  F_4_4_2:   ['GK', 'CB', 'CB2', 'LB', 'RB', 'LM',  'CDM', 'CM', 'RM', 'CF', 'ST'],
-  F_3_5_2:   ['GK', 'CB', 'LWB', 'RWB', 'CDM', 'CM', 'LM', 'RM', 'CF', 'ST'],
-  F_3_4_3:   ['GK', 'CB', 'LWB', 'RWB', 'CDM', 'CM', 'LW', 'RW', 'CF', 'ST'],
-  F_5_3_2:   ['GK', 'CB', 'LWB', 'RWB', 'LB', 'RB', 'CDM', 'CM', 'CF', 'ST'],
+  // 4 def: LB CB CB2 RB | 3 mid flat: CDM(L) CAM(C) CM(R) | 3 att: LW ST RW
+  F_4_3_3:   ['GK', 'LB', 'CB', 'CB2', 'RB', 'CDM', 'CAM', 'CM', 'LW', 'ST', 'RW'],
+
+  // 4 def: LB CB CB2 RB | double pivot: CDM CM | 3 AM: LW CAM RW | 1 ST
+  F_4_2_3_1: ['GK', 'LB', 'CB', 'CB2', 'RB', 'CDM', 'CM', 'LW', 'CAM', 'RW', 'ST'],
+
+  // 4 def: LB CB CB2 RB | flat four: LM CDM CM RM | 2 att: CF ST
+  F_4_4_2:   ['GK', 'LB', 'CB', 'CB2', 'RB', 'LM', 'CDM', 'CM', 'RM', 'CF', 'ST'],
+
+  // 3 def: CB(L) CB2(R) | 4 mid: LM CDM CM RM | 3 att: LW ST RW
+  F_3_4_3:   ['GK', 'CB', 'CB2', 'LM', 'CDM', 'CM', 'RM', 'LW', 'ST', 'RW'],
+
+  // 3 def: CB centred | 5 mid: LWB LM CDM RM RWB | 2 att: CF ST
+  F_3_5_2:   ['GK', 'CB', 'LWB', 'RWB', 'LM', 'CDM', 'RM', 'CF', 'ST'],
+
+  // 5 def: LWB LB CB RB RWB | 3 mid: CDM(L) CAM(C) CM(R) | 2 att: CF ST
+  F_5_3_2:   ['GK', 'LWB', 'LB', 'CB', 'RB', 'RWB', 'CDM', 'CAM', 'CM', 'CF', 'ST'],
 };
 
 function filterGraph(graph: NetworkGraph, formation: string): NetworkGraph {
@@ -150,7 +165,10 @@ export default function Puzzle() {
     fetch(
       `/api/network?escapingTeam=${encodeURIComponent(teamName)}&pressingTeam=${encodeURIComponent(pressingTeam)}&league=${league}&minute=${moment.minute}&homeGoals=${homeGoals}&awayGoals=${awayGoals}`
     )
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`Network error: ${r.status}`);
+        return r.json();
+      })
       .then((data: NetworkResponse) => {
         const filteredEscape = filterGraph(data.escape_graph, data.escaping_formation);
         const filteredPress = filterGraph(data.pressing_graph, data.pressing_formation);
@@ -326,12 +344,11 @@ export default function Puzzle() {
                 </p>
                 <PitchGraph
                   graph={escapeGraph}
+                  formation={networkData.escaping_formation}
                   interactive={!submitted}
                   highlightSequence={userSequence}
                   onNodeClick={handleNodeClick}
-                  mode="escape"
                   ballNodeId={ballCarrier}
-                  jitter={false}
                 />
                 {!submitted && (
                   <>

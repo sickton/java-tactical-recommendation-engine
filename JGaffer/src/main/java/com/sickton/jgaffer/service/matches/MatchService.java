@@ -154,9 +154,33 @@ public class MatchService {
         return contextsFor(league).get(matchTitle + "_" + minute);
     }
 
-    /** Returns the Team object for a given team name in the given league. */
+    /** Returns the Team object for a given team name in the given league.
+     *  Tries exact match first, then falls back to case-insensitive prefix/contains
+     *  to handle GPT-generated names like "Newcastle" matching "Newcastle United". */
     public Team getTeam(String league, String teamName) {
-        return LeagueDataFactory.buildTeamFromName(teamName, teamDataFor(league));
+        Map<String, com.sickton.jgaffer.utility.FileStorage> teamData = teamDataFor(league);
+
+        // 1. Exact match
+        if (teamData.containsKey(teamName)) {
+            return LeagueDataFactory.buildTeamFromName(teamName, teamData);
+        }
+
+        // 2. Case-insensitive starts-with (e.g. "Newcastle" → "Newcastle United")
+        String lower = teamName.toLowerCase();
+        for (String key : teamData.keySet()) {
+            if (key.toLowerCase().startsWith(lower) || lower.startsWith(key.toLowerCase())) {
+                return LeagueDataFactory.buildTeamFromName(key, teamData);
+            }
+        }
+
+        // 3. Case-insensitive contains as last resort
+        for (String key : teamData.keySet()) {
+            if (key.toLowerCase().contains(lower) || lower.contains(key.toLowerCase())) {
+                return LeagueDataFactory.buildTeamFromName(key, teamData);
+            }
+        }
+
+        return null;
     }
 
     /** Runs the engine and returns the full recommendation (tactic + formation + confidence). */

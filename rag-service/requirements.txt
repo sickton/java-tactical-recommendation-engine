@@ -3,3 +3,7 @@ uvicorn
 chromadb
 openai
 python-dotenv
+numpy
+scikit-learn
+joblib
+pandas

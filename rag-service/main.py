@@ -247,6 +247,23 @@ def encode_value(col: str, val: str) -> int:
     classes = list(encoders[col].classes_)
     return classes.index(val) if val in classes else 0
 
+# How much a pass direction contributes to escaping a press.
+# Backward passes are penalised because completing a pass is not the same
+# as escaping pressure — the model was trained on pass completion, not progression.
+_DIRECTION_WEIGHT: dict[str, float] = {
+    "forward":  1.0,
+    "sideways": 0.75,
+    "backward": 0.35,
+}
+
+# Extra multiplier applied to backward passes depending on where the ball is.
+# Going backward from midfield or the attacking third undoes the escape entirely.
+_ZONE_BACKWARD_PENALTY: dict[str, float] = {
+    "defensive_third":  0.9,
+    "middle_third":     0.5,
+    "attacking_third":  0.2,
+}
+
 def score_edge(from_pos: str, to_pos: str, formation: str, game_phase: str,
                from_coords: tuple, to_coords: tuple) -> float:
     dx = (to_coords[0] - from_coords[0]) * 120
@@ -272,7 +289,14 @@ def score_edge(from_pos: str, to_pos: str, formation: str, game_phase: str,
     ]])
 
     proba = escape_model.predict_proba(features)[0][1]
-    return round(float(proba), 4)
+
+    # Apply progression weighting so the optimal path favours moving the ball
+    # forward rather than recycling possession backwards under pressure.
+    direction_w = _DIRECTION_WEIGHT[pass_direction]
+    if pass_direction == "backward":
+        direction_w *= _ZONE_BACKWARD_PENALTY[pitch_zone]
+
+    return round(float(proba * direction_w), 4)
 
 def build_graph(formation: str, game_phase: str, score_edges: bool) -> dict:
     matrix = matrices.get(formation) or matrices.get(FALLBACK_FORMATION, {})
