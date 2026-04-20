@@ -21,7 +21,7 @@ export default function Header() {
         <div className="header-right">
           <img
             className="header-league-badge header-league-badge-pl"
-            src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/200px-Premier_League_Logo.svg.png"
+            src="/pl-logo.svg"
             alt="Premier League"
           />
           <img

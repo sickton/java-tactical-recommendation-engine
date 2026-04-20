@@ -1,13 +1,13 @@
 # JGaffer — Backend Reference
 
-Last updated: 2026-04-17
+Last updated: 2026-04-20
 Branch: v2/layer-7-network-api
 
 ---
 
 ## Architecture Overview
 
-Two services run in parallel:
+Three services:
 
 ```
 React frontend (port 5173 dev / served by Spring Boot in prod)
@@ -15,11 +15,15 @@ React frontend (port 5173 dev / served by Spring Boot in prod)
 Spring Boot — port 8080   ←→   FastAPI RAG service — port 8000
        |
   In-memory CSV data (loaded at startup)
+  + /api/network endpoint (graph generation, active)
 ```
 
 Spring Boot owns the HTTP surface. It proxies `/api/story` and `/api/explain`
 to the Python FastAPI service via `RestTemplate`. The Python service owns all
 AI interactions (embeddings + GPT calls) and the ChromaDB vector store.
+
+The `/api/network` endpoint is implemented directly in Spring Boot and returns
+the passing + pressing network graphs used by the Tactical Puzzle UI.
 
 ---
 
@@ -50,7 +54,7 @@ atk_weight, def_weight, ctrl_weight`
 - `style` → maps to `Style` enum (POSSESSION, COUNTER_ATTACK, HIGH_PRESS, DEFENSIVE, BALANCED)
 - `team_stamina` → `StaminaLevel` enum (LOW / MEDIUM / HIGH)
 - `team_adaptability` → `TeamAdaptability` enum (LOW / MEDIUM / HIGH)
-- `formation` → `Formation` enum (F_4_3_3, F_3_4_3, F_4_2_3_1, F_3_5_2, F_5_3_2)
+- `formation` → `Formation` enum (F_4_3_3, F_3_4_3, F_4_2_3_1, F_3_5_2, F_5_3_2, F_4_4_2)
 - `atk_weight / def_weight / ctrl_weight` → PCA-derived floats (optional; -1.0 = not set)
 
 **MatchMinuteContext.csv columns:**
@@ -110,32 +114,43 @@ Public API used by the controller:
 
 ---
 
-### Tactical Recommendation Engine (Legacy — partially stubbed for v2)
+### `/api/network` Endpoint (Active)
+
+**`GET /api/network`**
+
+Query params: `escapingTeam`, `pressingTeam`, `league`, `minute`, `homeGoals`, `awayGoals`
+
+Returns two NetworkGraph objects:
+
+```json
+{
+  "escape_graph": {
+    "nodes": [{ "id": "LB", "x": 0.18, "y": 0.12 }],
+    "edges": [{ "from": "LB", "to": "CDM", "escape_prob": 0.72 }]
+  },
+  "pressing_graph": {
+    "nodes": [...],
+    "edges": [...]
+  },
+  "escaping_formation": "F_4_3_3",
+  "pressing_formation": "F_4_3_3",
+  "game_phase": "BUILD_PHASE"
+}
+```
+
+- Node `x,y` are normalized pitch coordinates (x: 0=own goal → 1=opponent goal, y: 0=left → 1=right)
+- `escape_prob` on each edge is the predicted probability from the trained HistGradientBoosting model
+- Formations are looked up from SquadInformation.csv per team
+- Game phase is derived from the minute parameter
+
+---
+
+### Tactical Recommendation Engine (Legacy — stubbed)
 
 **`TacticalRecommendationEngine`**:
-Holds 7 `TacticalRule` instances (one per game phase). On `recommendWithDetails(context, team)`,
-finds the single rule whose `applies()` returns true, then calls `recommendWithConfidence()`.
-Throws if zero or more than one rule applies.
-
-**`TacticalRule`** (abstract base):
-- `applies(context, team)` → boolean (checks minute range via `checkGamePhase()`)
-- `recommendWithConfidence(context, team)` → TacticRecommendation
-
-**Game phase rules and minute ranges:**
-
-| Class | Phase | Minutes | Status |
-|---|---|---|---|
-| `EarlyMinuteTactics` | EARLY_MINUTES | 0–15 | **Stubbed** (throws UnsupportedOperationException) |
-| `ClosingHalfTactics` | CLOSING_HALF | 16–44 | **Stubbed** |
-| `HalfTimeTactics` | HALF_TIME | 45–50 | **Stubbed** |
-| `BuildPhaseTactics` | BUILD_PHASE | 51–60 | **Stubbed** |
-| `TensionTimeTactics` | TENSION_TIME | 61–70 | **Stubbed** |
-| `LateGameTactics` | LATE_GAME | 71–87 | **Stubbed** |
-| `StoppageTimeTactics` | STOPPAGE_TIME | 88+ | **Stubbed** |
-
-All 7 phase rules are registered but throw `UnsupportedOperationException` — the engine
-structure is in place but the rule logic was not ported to v2. The `/api/recommend`
-endpoint that uses this engine is considered legacy.
+Holds 7 `TacticalRule` instances (one per game phase). All 7 phase rules are registered
+but throw `UnsupportedOperationException` — the engine structure is in place but rule
+logic was not ported to v2. The `/api/recommend` endpoint is considered legacy.
 
 ---
 
@@ -145,14 +160,11 @@ endpoint that uses this engine is considered legacy.
 Reads key from `@Value("${openai.api.key:}")`.
 
 **`TacticalExplanationService`** — takes a pre-built prompt string, calls `OpenAIClient`,
-returns explanation text. Called by `MatchService.getExplanation()`.
-
-Prompt format: coach-voice briefing, 5 bullet points, plain ASCII, no markdown.
-Inputs: tactic, formation, opponent, styles, stamina, adaptability, phase, minute, score, goal diff.
+returns explanation text.
 
 ---
 
-### RAG Proxy (Active — used by new casual fan flow)
+### RAG Proxy (Active — used by casual fan flow)
 
 **`RagService`** (`@Service`):
 Thin proxy using `RestTemplate`. Calls `http://localhost:8000` (Python FastAPI).
@@ -171,11 +183,12 @@ No transformation — the Python response is forwarded as-is to the frontend.
 | Method | Path | Parameters | Handler | Active |
 |---|---|---|---|---|
 | GET | `/api/clubs` | `league=PL\|SA` | `matchService.getTeams()` | Yes |
-| GET | `/api/fixtures` | `teamId, league` | `matchService.getFixtures()` | Legacy |
-| GET | `/api/match` | `matchId, teamId, league` | `matchService.getMatchContext()` at random minute | Legacy |
-| POST | `/api/recommend` | `teamId, matchId, minute, userTactic, league` | Engine + OpenAI explanation | Legacy |
+| GET | `/api/network` | `escapingTeam, pressingTeam, league, minute, homeGoals, awayGoals` | Graph generator | Yes |
 | GET | `/api/story` | `team, league, mode, queryType` | `ragService.getStory()` | Yes |
 | POST | `/api/explain` | JSON body (moment fields) | `ragService.explainMoment()` | Yes |
+| GET | `/api/fixtures` | `teamId, league` | `matchService.getFixtures()` | Legacy |
+| GET | `/api/match` | `matchId, teamId, league` | `matchService.getMatchContext()` | Legacy |
+| POST | `/api/recommend` | `teamId, matchId, minute, userTactic, league` | Engine + OpenAI | Legacy |
 
 **`SpaController`** — catch-all for React Router; forwards unmapped paths to `index.html`.
 
@@ -225,27 +238,24 @@ Request body:
 
 Flow:
 1. `n_results` = 5 (simple) or 10 (indepth)
-2. Build semantic query from `QUERY_TEMPLATES[query_type]` + team name.
-   `surprise` picks a random non-surprise query type.
+2. Build semantic query from `QUERY_TEMPLATES[query_type]` + team name
 3. Embed query with `text-embedding-3-small`
 4. Query ChromaDB: top 200 results filtered to `home_team == team OR away_team == team`
 5. Group by `match_id`, pick one random moment per match → diverse pool
 6. Shuffle and take `n_results`
-7. Send sampled context to GPT-4o-mini with a storyteller prompt
+7. Send sampled context to GPT-4o-mini with storyteller prompt
 
-GPT output format (JSON object):
+GPT output format:
 ```json
 {
-  "moments": [
-    {
-      "headline": "string (max 8 words)",
-      "minute": int,
-      "match": "Home vs Away",
-      "score": "string",
-      "narrative": "2-3 sentences, plain English, no jargon",
-      "concept": "football concept name (e.g. High Press)"
-    }
-  ]
+  "moments": [{
+    "headline": "string (max 8 words)",
+    "minute": int,
+    "match": "Home vs Away",
+    "score": "string",
+    "narrative": "2-3 sentences, plain English, no jargon",
+    "concept": "football concept name (e.g. High Press)"
+  }]
 }
 ```
 
@@ -261,16 +271,7 @@ Request body:
 ```
 
 Flow: Builds a teacher-voice prompt, calls GPT-4o-mini (temp 0.7).
-
-Prompt instructs GPT to write 4-5 sentences covering:
-1. What is physically happening on the pitch
-2. Why this moment matters in the match
-3. What the concept means in plain English
-4. What the team should do next and why
-
-Rules: no jargon, no stats, explain to a friend who loves drama but not football.
-
-Response: `{ "headline", "match", "minute", "concept", "explanation": "string" }`
+Returns: `{ "headline", "match", "minute", "concept", "explanation": "string" }`
 
 ---
 
@@ -282,11 +283,12 @@ Response: `{ "headline", "match", "minute", "concept", "explanation": "string" }
 | RAG story retrieval (`/api/story`) | Done |
 | Moment explanation (`/api/explain`) | Done |
 | ChromaDB knowledge base (68k moments, both leagues) | Done |
-| Tactical recommendation engine (`/api/recommend`) | Stubbed — all 7 phase rules throw |
-| OpenAI tactical explanation (legacy flow) | Done but only reachable via legacy route |
+| `/api/network` endpoint (graph generation) | Done |
 | StatsBomb pass extraction (`extract_passes.py`) | Done — 143,349 rows, 1,162 matches |
-| Formation probability matrices (`build_matrices.py`) | Done — 5 formations (F_4_3_3, F_4_2_3_1, F_4_4_2, F_3_5_2, F_3_4_3) |
+| Formation probability matrices (`build_matrices.py`) | Done — 5 formations |
 | Press escape outcome model (`train_escape_model.py`) | Done — HistGradientBoosting, ROC-AUC 0.84, CV 0.8333 ± 0.005 |
-| `/api/network` endpoint (graph generation) | In progress |
-| Tension Score (0–100 model) | Not started |
-| "What to Watch" as a distinct API field | Not started |
+| Tactical puzzle frontend (`/puzzle`) | Done |
+| Tactical recommendation engine (`/api/recommend`) | Stubbed — all 7 phase rules throw |
+| Context adjustment layer | Not started |
+| Tension Score model (0–100) | Not started |
+| "What to Watch" as distinct API field | Not started |

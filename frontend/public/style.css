@@ -3987,19 +3987,28 @@ body.league-sa .btn-puzzle-cta:hover { border-color: rgba(232, 184, 75, 0.9); bo
     gap: 6px;
     padding: 10px 22px;
     border-radius: 9px;
-    border: 1.5px solid rgba(63, 185, 80, 0.55);
-    background: rgba(63, 185, 80, 0.14);
-    color: #3fb950;
+    border: 1.5px solid rgba(63, 185, 80, 0.35);
+    background: rgba(63, 185, 80, 0.08);
+    color: rgba(63, 185, 80, 0.55);
     font-size: 0.88rem;
     font-weight: 700;
     font-family: 'Space Grotesk', 'Inter', sans-serif;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.18s var(--spring);
+    transition: border-color 0.25s, background 0.25s, color 0.25s,
+                box-shadow 0.25s, transform 0.18s var(--spring);
 }
-.btn-puzzle-submit:hover:not(:disabled) {
+/* Ready state — lights up once the user has made at least one pass */
+.btn-puzzle-submit--ready {
+    border-color: rgba(63, 185, 80, 0.75);
+    background: rgba(63, 185, 80, 0.16);
+    color: #3fb950;
+    box-shadow: 0 0 14px rgba(63, 185, 80, 0.25), inset 0 0 12px rgba(63, 185, 80, 0.06);
+}
+.btn-puzzle-submit--ready:hover {
     border-color: #3fb950;
-    background: rgba(63, 185, 80, 0.26);
+    background: rgba(63, 185, 80, 0.28);
     color: #ffffff;
+    box-shadow: 0 0 22px rgba(63, 185, 80, 0.45);
     transform: translateY(-1px);
 }
 .btn-puzzle-submit:disabled { opacity: 0.38; cursor: not-allowed; }
@@ -4007,12 +4016,28 @@ body.league-sa .btn-puzzle-cta:hover { border-color: rgba(232, 184, 75, 0.9); bo
 /* ── Context bar ──────────────────────────────────────────────────────── */
 .puzzle-context-bar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px 24px;
     align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 14px 0 10px;
     border-bottom: 1px solid rgba(48, 54, 61, 0.5);
     margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+/* Left group: Match · Minute · Score · Phase */
+.puzzle-context-left {
+    display: flex;
+    align-items: center;
+    gap: 6px 18px;
+    flex-wrap: wrap;
+}
+
+.puzzle-context-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(48, 54, 61, 0.7);
+    flex-shrink: 0;
 }
 
 .puzzle-context-item {
@@ -4036,14 +4061,36 @@ body.league-sa .btn-puzzle-cta:hover { border-color: rgba(232, 184, 75, 0.9); bo
     font-family: 'Space Grotesk', 'Inter', sans-serif;
 }
 
-.puzzle-concept-pill {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 999px;
-    background: rgba(88, 166, 255, 0.12);
-    border: 1px solid rgba(88, 166, 255, 0.28);
-    color: #79c0ff;
+/* Score gets extra size — it drives the urgency of the moment */
+.puzzle-context-score {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: #e6edf3 !important;
+    letter-spacing: 0.04em;
+}
+
+/* Phase item is secondary info — keep it small */
+.puzzle-context-item--phase .puzzle-context-label { color: #484f58; }
+.puzzle-context-item--phase .puzzle-context-value {
     font-size: 0.78rem;
+    font-weight: 500;
+    color: #6e7681;
+}
+
+/* Concept pill sits on the right as a tag */
+.puzzle-concept-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(88, 166, 255, 0.08);
+    border: 1px solid rgba(88, 166, 255, 0.22);
+    color: #58a6ff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+    opacity: 0.85;
 }
 
 /* ── Page headings ────────────────────────────────────────────────────── */
@@ -4099,56 +4146,98 @@ body.league-sa .btn-puzzle-cta:hover { border-color: rgba(232, 184, 75, 0.9); bo
     font-size: 0.9em;
 }
 
-/* ── How-to instruction strip ─────────────────────────────────────────── */
+/* ── Mission stepper ──────────────────────────────────────────────────── */
 .puzzle-howto {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 18px;
-    background: rgba(88, 166, 255, 0.06);
-    border: 1px solid rgba(88, 166, 255, 0.18);
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    background: rgba(22, 27, 34, 0.55);
+    border: 1px solid rgba(48, 54, 61, 0.7);
     border-radius: 10px;
     margin-bottom: 20px;
-    flex-wrap: wrap;
+    overflow: hidden;
 }
 
 .puzzle-howto-step {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
-    color: #8b949e;
-    line-height: 1.4;
+    gap: 10px;
+    padding: 11px 16px;
+    font-size: 0.78rem;
+    color: #484f58;
+    line-height: 1.35;
     flex: 1;
-    min-width: 160px;
+    border-right: 1px solid rgba(48, 54, 61, 0.6);
+    transition: background 0.2s, color 0.2s;
+    position: relative;
+}
+.puzzle-howto-step:last-child { border-right: none; }
+
+/* Active step — glows and shows full text */
+.puzzle-howto-step--active {
+    background: rgba(88, 166, 255, 0.07);
+    color: #c9d1d9;
+}
+.puzzle-howto-step--active .puzzle-howto-num {
+    background: rgba(88, 166, 255, 0.28);
+    border-color: rgba(88, 166, 255, 0.7);
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(88, 166, 255, 0.45);
 }
 
-.puzzle-howto-step strong { color: #c9d1d9; }
+/* Completed step — dimmed check */
+.puzzle-howto-step--done {
+    background: transparent;
+    color: #3d444d;
+}
+.puzzle-howto-step--done .puzzle-howto-num {
+    background: rgba(63, 185, 80, 0.14);
+    border-color: rgba(63, 185, 80, 0.35);
+    color: #3fb950;
+}
+
+.puzzle-howto-step-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.puzzle-howto-step-title {
+    font-weight: 700;
+    font-size: 0.78rem;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+}
+
+.puzzle-howto-step-hint {
+    font-size: 0.7rem;
+    opacity: 0.75;
+}
+
+.puzzle-howto-step strong { color: inherit; }
 
 .puzzle-howto-num {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    background: rgba(88, 166, 255, 0.18);
-    border: 1px solid rgba(88, 166, 255, 0.35);
-    color: #79c0ff;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #484f58;
     font-size: 0.72rem;
     font-weight: 700;
     flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
-.puzzle-howto-divider {
-    color: rgba(88, 166, 255, 0.3);
-    font-size: 1rem;
-    flex-shrink: 0;
-}
+.puzzle-howto-divider { display: none; }
 
 @media (max-width: 720px) {
-    .puzzle-howto { flex-direction: column; align-items: flex-start; }
-    .puzzle-howto-divider { display: none; }
+    .puzzle-howto { flex-direction: column; }
+    .puzzle-howto-step { border-right: none; border-bottom: 1px solid rgba(48, 54, 61, 0.6); }
+    .puzzle-howto-step:last-child { border-bottom: none; }
 }
 
 .puzzle-panel-badge {
@@ -4207,8 +4296,12 @@ body.league-sa .btn-puzzle-cta:hover { border-color: rgba(232, 184, 75, 0.9); bo
     align-items: center;
     gap: 0;
     flex-wrap: wrap;
-    margin-top: 10px;
-    margin-bottom: 2px;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    padding: 8px 12px;
+    background: rgba(22, 27, 34, 0.45);
+    border: 1px solid rgba(48, 54, 61, 0.5);
+    border-radius: 8px;
 }
 
 .puzzle-breadcrumb-item {
@@ -4218,36 +4311,43 @@ body.league-sa .btn-puzzle-cta:hover { border-color: rgba(232, 184, 75, 0.9); bo
 }
 
 .puzzle-breadcrumb-arrow {
-    font-size: 0.7rem;
-    color: #3d444d;
-    margin: 0 2px;
+    font-size: 0.75rem;
+    color: #484f58;
+    margin: 0 4px;
 }
 
 .puzzle-breadcrumb-slot {
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 3px 9px;
-    border-radius: 12px;
-    border: 1px dashed rgba(255,255,255,0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px dashed rgba(255,255,255,0.14);
     color: #3d444d;
     background: rgba(255,255,255,0.03);
-    min-width: 32px;
+    min-width: 44px;
     text-align: center;
     transition: all 0.2s ease;
+    letter-spacing: 0.02em;
 }
 
 .puzzle-breadcrumb-slot.filled {
     border-style: solid;
-    border-color: rgba(88,166,255,0.35);
-    color: #58a6ff;
-    background: rgba(88,166,255,0.08);
+    border-color: rgba(88,166,255,0.5);
+    color: #79c0ff;
+    background: rgba(88,166,255,0.12);
+    box-shadow: 0 0 6px rgba(88,166,255,0.15);
 }
 
 .puzzle-breadcrumb-slot.active {
-    border-color: rgba(0,230,180,0.6);
+    border-color: rgba(0,230,180,0.75);
     color: #00e6b4;
-    background: rgba(0,230,180,0.1);
-    box-shadow: 0 0 8px rgba(0,230,180,0.2);
+    background: rgba(0,230,180,0.14);
+    box-shadow: 0 0 10px rgba(0,230,180,0.3);
+    transform: scale(1.06);
 }
 
 /* ── Click feedback flash ─────────────────────────────────────────────── */
@@ -4342,12 +4442,49 @@ body.league-sa .btn-puzzle-cta:hover { border-color: rgba(232, 184, 75, 0.9); bo
     transition: color 0.4s ease;
 }
 
-/* ── Controls row ─────────────────────────────────────────────────────── */
+/* ── Dual meters (safety + forward threat) ────────────────────────────── */
+.puzzle-meters {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    margin-bottom: 2px;
+}
+
+/* ── Breadcrumb per-pass stat ─────────────────────────────────────────── */
+.puzzle-breadcrumb-stat {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin-top: 1px;
+    line-height: 1;
+}
+
+/* ── Full-width submit after 4 passes ─────────────────────────────────── */
+.btn-puzzle-submit--fullwidth {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.95rem;
+    padding: 12px 28px;
+    box-shadow: 0 0 24px rgba(63, 185, 80, 0.4), inset 0 0 16px rgba(63, 185, 80, 0.08);
+}
+
+/* ── Controls row — floating action bar ──────────────────────────────── */
 .puzzle-controls {
     display: flex;
     gap: 10px;
     align-items: center;
-    margin-top: 4px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(13, 17, 23, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(48, 54, 61, 0.6);
+    border-radius: 10px;
+    position: sticky;
+    bottom: 12px;
+    z-index: 5;
 }
 
 /* ── Result section ───────────────────────────────────────────────────── */

@@ -6,7 +6,8 @@ import PitchGraph from '../components/PitchGraph';
 import PressureMap from '../components/PressureMap';
 import { useLeagueTheme } from '../hooks/useLeagueTheme';
 import { usePageTitle } from '../hooks/usePageTitle';
-import type { Moment, NetworkResponse, NetworkGraph, NetworkEdge } from '../types';
+import type { Moment, NetworkResponse, NetworkGraph, NetworkEdge, NetworkNode } from '../types';
+import { getDisplayCoords } from '../constants/pitchCoords';
 
 interface LocationState {
   moment: Moment;
@@ -128,6 +129,62 @@ function sequenceVerdict(userScore: number, optimalScore: number): string {
   return 'The pressing team would likely win the ball here. Try starting deeper or switching flanks.';
 }
 
+// Maps each escape node → the presser most likely blocking a pass to it
+function computeBlockerMap(pGraph: NetworkGraph, eGraph: NetworkGraph, ballId: string): Record<string, string> {
+  const map: Record<string, string> = {};
+  pGraph.nodes.forEach(pn => {
+    const mx = 1 - pn.x;
+    let nearest: string | null = null;
+    let minD = Infinity;
+    eGraph.nodes.forEach(en => {
+      if (en.id === ballId) return;
+      const d = Math.sqrt((mx - en.x) ** 2 + (pn.y - en.y) ** 2);
+      if (d < minD) { minD = d; nearest = en.id; }
+    });
+    if (nearest) map[nearest] = pn.id;
+  });
+  return map;
+}
+
+// Fraction of passes that gain forward ground (x increases)
+function computeProgression(nodes: NetworkNode[], seq: string[]): number {
+  if (seq.length < 2) return 0;
+  let forward = 0;
+  for (let i = 0; i < seq.length - 1; i++) {
+    const from = nodes.find(n => n.id === seq[i]);
+    const to   = nodes.find(n => n.id === seq[i + 1]);
+    if (from && to && to.x > from.x) forward++;
+  }
+  return forward / (seq.length - 1);
+}
+
+// Best reachable node from the current carrier — used to render the predictive arc
+function computeOptimalNodeId(edges: NetworkEdge[], carrierId: string): string | null {
+  const best = [...edges]
+    .filter(e => e.from === carrierId && e.escape_prob !== undefined)
+    .sort((a, b) => (b.escape_prob ?? 0) - (a.escape_prob ?? 0))[0];
+  return best?.to ?? null;
+}
+
+// Pressing players whose base position is far from the ball laterally have "vacated" that zone.
+// Returns their base (mirrored) coords so PitchGraph can render a green wake glow there.
+function computeVacatedZones(
+  pressGraph: NetworkGraph,
+  pressingFormation: string,
+  ballY: number,
+): Array<{ x: number; y: number }> {
+  return pressGraph.nodes
+    .map(n => {
+      const [fx, fy] = getDisplayCoords(n.id, pressingFormation);
+      const baseX = 1 - fx;
+      const baseY = fy;
+      const lateralGap = Math.abs(ballY - baseY);
+      if (lateralGap < 0.22) return null;
+      return { x: baseX, y: baseY };
+    })
+    .filter(Boolean) as Array<{ x: number; y: number }>;
+}
+
 function getMedal(userScore: number, optimalScore: number): { label: string; color: string; bg: string } {
   if (optimalScore === 0) return { label: '—', color: '#8b949e', bg: 'rgba(139,148,158,0.12)' };
   const ratio = userScore / optimalScore;
@@ -153,6 +210,7 @@ export default function Puzzle() {
   const [pressGraph, setPressGraph] = useState<NetworkGraph | null>(null);
   const [ballCarrier, setBallCarrier] = useState<string>('');
   const [clickFeedback, setClickFeedback] = useState<'safe' | 'risky' | 'avoid' | null>(null);
+  const [hoveredEdge, setHoveredEdge] = useState<{ from: string; to: string } | null>(null);
 
   useLeagueTheme(league ?? null);
   usePageTitle('Tactical Puzzle');
@@ -188,15 +246,11 @@ export default function Puzzle() {
     if (submitted || userSequence.includes(nodeId) || userSequence.length >= 5) return;
     const current = userSequence[userSequence.length - 1];
     const edge = escapeGraph?.edges.find(e => e.from === current && e.to === nodeId);
-    const p = edge?.escape_prob ?? 0.5;
+    // No edge in graph means the pass data is absent — treat as a low-probability attempt
+    const p = edge?.escape_prob ?? 0.25;
     const feedback: 'safe' | 'risky' | 'avoid' = p >= 0.65 ? 'safe' : p >= 0.35 ? 'risky' : 'avoid';
-    if (feedback === 'avoid') {
-      setClickFeedback('avoid');
-      setTimeout(() => setClickFeedback(null), 900);
-      return; // blocked — ball intercepted
-    }
     setClickFeedback(feedback);
-    setTimeout(() => setClickFeedback(null), 700);
+    setTimeout(() => setClickFeedback(null), 900);
     setUserSequence(prev => [...prev, nodeId]);
   }
 
@@ -243,6 +297,23 @@ export default function Puzzle() {
     ? networkData.game_phase.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
     : '';
 
+  const blockerMap = (escapeGraph && pressGraph)
+    ? computeBlockerMap(pressGraph, escapeGraph, ballCarrier)
+    : {} as Record<string, string>;
+  const highlightedPresserId = hoveredEdge ? (blockerMap[hoveredEdge.to] ?? null) : null;
+  const progressionValue = escapeGraph
+    ? computeProgression(escapeGraph.nodes, userSequence)
+    : 0;
+
+  const currentCarrierInSeq = userSequence[userSequence.length - 1] || ballCarrier;
+  const optimalNodeId = escapeGraph
+    ? computeOptimalNodeId(escapeGraph.edges, currentCarrierInSeq)
+    : null;
+  const ballNode = escapeGraph?.nodes.find(n => n.id === currentCarrierInSeq);
+  const vacatedZones = (pressGraph && networkData && ballNode)
+    ? computeVacatedZones(pressGraph, networkData.pressing_formation, ballNode.y)
+    : [];
+
 
   return (
     <>
@@ -251,28 +322,32 @@ export default function Puzzle() {
 
         {/* Context bar */}
         <div className="puzzle-context-bar">
-          <div className="puzzle-context-item">
-            <span className="puzzle-context-label">Match</span>
-            <span className="puzzle-context-value">{moment.match}</span>
-          </div>
-          <div className="puzzle-context-item">
-            <span className="puzzle-context-label">Minute</span>
-            <span className="puzzle-context-value">{moment.minute}'</span>
-          </div>
-          <div className="puzzle-context-item">
-            <span className="puzzle-context-label">Score</span>
-            <span className="puzzle-context-value">{moment.score}</span>
-          </div>
-          {gamePhaseLabel && (
+          <div className="puzzle-context-left">
             <div className="puzzle-context-item">
-              <span className="puzzle-context-label">Phase</span>
-              <span className="puzzle-context-value">{gamePhaseLabel}</span>
+              <span className="puzzle-context-label">Match</span>
+              <span className="puzzle-context-value">{moment.match}</span>
             </div>
-          )}
-          <div className="puzzle-context-item">
-            <span className="puzzle-context-label">Concept</span>
-            <span className="puzzle-context-value puzzle-concept-pill">{moment.concept}</span>
+            <div className="puzzle-context-divider" />
+            <div className="puzzle-context-item">
+              <span className="puzzle-context-label">Score</span>
+              <span className="puzzle-context-value puzzle-context-score">{moment.score}</span>
+            </div>
+            <div className="puzzle-context-divider" />
+            <div className="puzzle-context-item">
+              <span className="puzzle-context-label">Minute</span>
+              <span className="puzzle-context-value">{moment.minute}'</span>
+            </div>
+            {gamePhaseLabel && (
+              <>
+                <div className="puzzle-context-divider" />
+                <div className="puzzle-context-item puzzle-context-item--phase">
+                  <span className="puzzle-context-label">Phase</span>
+                  <span className="puzzle-context-value">{gamePhaseLabel}</span>
+                </div>
+              </>
+            )}
           </div>
+          <span className="puzzle-concept-pill">{moment.concept}</span>
         </div>
 
         <h1 className="puzzle-headline">{moment.headline}</h1>
@@ -281,25 +356,39 @@ export default function Puzzle() {
           Build <strong>{teamName}</strong>'s escape route through their structure.
         </p>
 
-        {/* How-to instruction strip */}
-        {!submitted && ballCarrier && (
-          <div className="puzzle-howto">
-            <div className="puzzle-howto-step">
-              <span className="puzzle-howto-num">1</span>
-              <span>Left panel shows <strong>{pressingTeam}</strong>'s players converging on the ball — read their pressure</span>
+        {/* Mission stepper */}
+        {!submitted && ballCarrier && (() => {
+          const activeStep = userSequence.length >= 2 ? 3 : userSequence.length === 1 ? 2 : 1;
+          const stepClass = (n: number) =>
+            n < activeStep ? 'puzzle-howto-step puzzle-howto-step--done'
+            : n === activeStep ? 'puzzle-howto-step puzzle-howto-step--active'
+            : 'puzzle-howto-step';
+          return (
+            <div className="puzzle-howto">
+              <div className={stepClass(1)}>
+                <span className="puzzle-howto-num">{activeStep > 1 ? '✓' : '1'}</span>
+                <div className="puzzle-howto-step-body">
+                  <span className="puzzle-howto-step-title">Read the Press</span>
+                  <span className="puzzle-howto-step-hint">{pressingTeam}'s pressing shape</span>
+                </div>
+              </div>
+              <div className={stepClass(2)}>
+                <span className="puzzle-howto-num">{activeStep > 2 ? '✓' : '2'}</span>
+                <div className="puzzle-howto-step-body">
+                  <span className="puzzle-howto-step-title">Pick Your Route</span>
+                  <span className="puzzle-howto-step-hint">Ball at <strong className="puzzle-carrier-highlight">{label(ballCarrier)}</strong> — click to pass</span>
+                </div>
+              </div>
+              <div className={stepClass(3)}>
+                <span className="puzzle-howto-num">3</span>
+                <div className="puzzle-howto-step-body">
+                  <span className="puzzle-howto-step-title">Map the Sequence</span>
+                  <span className="puzzle-howto-step-hint">Max 4 passes, then Submit</span>
+                </div>
+              </div>
             </div>
-            <div className="puzzle-howto-divider">→</div>
-            <div className="puzzle-howto-step">
-              <span className="puzzle-howto-num">2</span>
-              <span>Ball is at <strong className="puzzle-carrier-highlight">{label(ballCarrier)}</strong> — the most pressured position. Click the next position to pass to</span>
-            </div>
-            <div className="puzzle-howto-divider">→</div>
-            <div className="puzzle-howto-step">
-              <span className="puzzle-howto-num">3</span>
-              <span>Chain up to 4 passes, then hit <strong>Submit</strong></span>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {loading && (
           <div className="moments-loading" style={{ marginTop: 48 }}>
@@ -325,7 +414,12 @@ export default function Puzzle() {
                 <PressureMap
                   pressingGraph={pressGraph}
                   escapeGraph={escapeGraph}
-                  ballCarrierId={ballCarrier}
+                  ballCarrierId={userSequence[userSequence.length - 1] || ballCarrier}
+                  escapeFormation={networkData.escaping_formation}
+                  pressingFormation={networkData.pressing_formation}
+                  highlightedPresserId={highlightedPresserId}
+                  threatLayerVisible={userSequence.length > 1}
+                  pressingTeamLabel={pressingTeam}
                 />
               </div>
 
@@ -349,20 +443,36 @@ export default function Puzzle() {
                   highlightSequence={userSequence}
                   onNodeClick={handleNodeClick}
                   ballNodeId={ballCarrier}
+                  onEdgeHover={setHoveredEdge}
+                  optimalNodeId={submitted ? null : optimalNodeId}
+                  vacatedZones={submitted ? [] : vacatedZones}
                 />
                 {!submitted && (
                   <>
-                    {/* Breadcrumb trail — shows sequence slots up to 5 */}
+                    {/* Breadcrumb trail — shows sequence slots with per-pass stats */}
                     <div className="puzzle-breadcrumb">
                       {Array.from({ length: 5 }).map((_, i) => {
                         const node = userSequence[i];
                         const isActive = node && i === userSequence.length - 1;
                         const isBall = i === 0;
+                        // Per-pass edge stat (between slot i-1 and i)
+                        const passEdge = i > 0 && userSequence[i - 1] && node
+                          ? edges.find(e => e.from === userSequence[i - 1] && e.to === node)
+                          : null;
+                        const pct = passEdge?.escape_prob !== undefined
+                          ? Math.round(passEdge.escape_prob * 100)
+                          : null;
+                        const pctColor = pct === null ? '' : pct >= 65 ? '#58a6ff' : pct >= 35 ? '#e3b341' : '#f85149';
                         return (
                           <span key={i} className="puzzle-breadcrumb-item">
                             {i > 0 && <span className="puzzle-breadcrumb-arrow">→</span>}
                             <span className={`puzzle-breadcrumb-slot${node ? ' filled' : ''}${isActive ? ' active' : ''}`}>
                               {node ? (isBall ? `⚽ ${label(node)}` : label(node)) : '?'}
+                              {pct !== null && (
+                                <span className="puzzle-breadcrumb-stat" style={{ color: pctColor }}>
+                                  {pct}%
+                                </span>
+                              )}
                             </span>
                           </span>
                         );
@@ -379,28 +489,48 @@ export default function Puzzle() {
                     )}
 
                     {userSequence.length >= 2 && (
-                      <div className="puzzle-prob-bar-wrap">
-                        <span className="puzzle-prob-bar-label">Escape probability</span>
-                        <div className="puzzle-prob-bar-track">
-                          <div
-                            className="puzzle-prob-bar-fill"
-                            style={{
-                              width: `${Math.round(userScore * 100)}%`,
-                              background: scoreColor(userScore),
-                            }}
-                          />
+                      <div className="puzzle-meters">
+                        <div className="puzzle-prob-bar-wrap">
+                          <span className="puzzle-prob-bar-label">Escape safety</span>
+                          <div className="puzzle-prob-bar-track">
+                            <div
+                              className="puzzle-prob-bar-fill"
+                              style={{
+                                width: `${Math.round(userScore * 100)}%`,
+                                background: scoreColor(userScore),
+                              }}
+                            />
+                          </div>
+                          <span className="puzzle-prob-bar-pct" style={{ color: scoreColor(userScore) }}>
+                            {Math.round(userScore * 100)}%
+                          </span>
                         </div>
-                        <span className="puzzle-prob-bar-pct" style={{ color: scoreColor(userScore) }}>
-                          {Math.round(userScore * 100)}%
-                        </span>
+                        <div className="puzzle-prob-bar-wrap">
+                          <span className="puzzle-prob-bar-label">Forward threat</span>
+                          <div className="puzzle-prob-bar-track">
+                            <div
+                              className="puzzle-prob-bar-fill"
+                              style={{
+                                width: `${Math.round(progressionValue * 100)}%`,
+                                background: `rgba(163,110,255,${0.5 + progressionValue * 0.5})`,
+                              }}
+                            />
+                          </div>
+                          <span className="puzzle-prob-bar-pct" style={{ color: '#a36eff' }}>
+                            {Math.round(progressionValue * 100)}%
+                          </span>
+                        </div>
                       </div>
                     )}
                     <div className="puzzle-controls">
                       <button className="btn-back" onClick={handleUndo} disabled={userSequence.length <= 1}>
                         ↩ Undo
                       </button>
+                      <button className="btn-back" onClick={handleReset} disabled={userSequence.length <= 1}>
+                        ✕ Clear
+                      </button>
                       <button
-                        className="btn-puzzle-submit"
+                        className={`btn-puzzle-submit${userSequence.length >= 2 ? ' btn-puzzle-submit--ready' : ''}${userSequence.length >= 5 ? ' btn-puzzle-submit--fullwidth' : ''}`}
                         onClick={handleSubmit}
                         disabled={userSequence.length < 2}
                       >
