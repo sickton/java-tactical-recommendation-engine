@@ -1,10 +1,37 @@
-# IntelliJ files
-.idea
+# IntelliJ / IDE
+.idea/
 *.iml
 out/
+.vscode/
 
-# Maven
+# Maven / Java
 target/
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+rag-service/venv/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+JGaffer/src/main/resources/application.properties
+
+# Retrieval / generated data
+chroma_store/
+rag-service/chroma_store/
 
 # Logs
 *.log
@@ -13,16 +40,5 @@ target/
 .DS_Store
 Thumbs.db
 
-# Node / Vite
-frontend/node_modules/
-
-# Claude internal tooling
-.claude/worktrees/
-
-JGaffer/src/main/resources/application.properties
-
-chroma_store/
-.env
-
-__pycache__/
-*.pyc
+# Local assistant / tooling state
+.claude/
