@@ -1,224 +1,402 @@
-# JGaffer — Vision Document
-*Last updated: 2026-04-20 | Branch: v2/layer-7-network-api*
+# JGaffer - Vision Document
+*Last updated: 2026-04-20*
 
 ---
 
 ## What JGaffer Is
 
-JGaffer is an AI-powered football intelligence system for casual fans. It does not predict match results or produce statistics. It explains **why moments in a football match feel the way they do** — and then lets the user participate in solving the tactical problem.
+JGaffer is an **expert guide for a casual football fan**.
 
-The core belief: casual fans understand football more deeply when they can *feel* the tactical tension, not just read about it.
+It is not a prediction engine, a stat dashboard, or a coaching platform for professionals.
+It is a product for people who enjoy football, feel the emotion of big moments, but do not always understand the tactical story underneath them.
+
+The goal is simple:
+
+**Help a casual fan experience a real match moment, understand the tactical problem inside it, try to solve that problem, and come away seeing the game more clearly.**
+
+---
+
+## The Core Product Idea
+
+The clearest version of JGaffer is:
+
+**Moment -> Mission -> Puzzle -> Coaching**
+
+1. **Moment**
+The user sees a real moment from their team's season.
+
+2. **Mission**
+The system explains the tactical problem in one clear sentence.
+
+3. **Puzzle**
+The user interacts with the moment by trying to solve that problem on the pitch.
+
+4. **Coaching**
+JGaffer explains why the user's choice worked or failed, and what football idea they should learn from it.
+
+This is the heart of the product.
+
+JGaffer should feel less like "reading football analysis" and more like:
+
+**"Let me show you what was really happening here - now you try it."**
 
 ---
 
 ## The Problem
 
-Football is difficult to understand for casual fans because:
-- Tactical patterns are subtle and build gradually
-- Broadcasts rarely explain structural shifts
-- Most analytics tools assume expert knowledge
+Casual fans often love football emotionally before they understand it structurally.
 
-Casual fans see players passing randomly.
-Experts see patterns of pressure, control, and space creation.
+They can feel:
+- tension
+- momentum swings
+- danger
+- pressure
+- relief
 
-JGaffer bridges that gap — not by lecturing, but by making the fan an active participant.
+But they often cannot yet see:
+- why a team looked trapped
+- why a pass was not actually on
+- why the far side was open
+- why a press worked
+- why one small movement changed the whole phase
 
----
+Most football analysis tools fail casual fans because they:
+- assume too much tactical vocabulary
+- explain too much before the user cares
+- rely on reading instead of interaction
 
-## The Full User Experience
-
-### Step 1 — Pick your team and moment type
-User selects a league, a club, and a theme (dramatic, dominant, comeback, under pressure, turning point, surprise). The system surfaces 5–10 real match moments matching that theme.
-
-### Step 2 — Select a moment
-Each moment shows:
-- A headline (e.g. "Arsenal's relentless press suffocates Liverpool")
-- The match, minute, and score
-- A short narrative in plain English
-- A football concept being illustrated (e.g. "High Press")
-
-A **Dive** button takes the user deeper into a full tactical explanation.
-
-### Step 3 — The Tactical Puzzle
-The screen splits into two panels rendered as SVG pitch diagrams:
-
-**Left panel — Opposition's press structure (PressureMap)**
-Shows how the pressing team is organised. Nodes = player positions. Players are
-role-differentiated:
-- **Harasser** (closest to ball): bright, pulsing halo, charge arrow toward ball carrier
-- **Shadowers** (next 3): medium, body-pointer toward their nearest mark, patrol ring
-- **Anchors** (rest): dim, lock icon if close enough to intercept
-
-The entire block dynamically shifts toward the ball side when play moves wide:
-the far-side winger tucks in, the CDM steps to cut the back-pass lane, and the
-full defensive line adjusts — all animated with CSS spring transitions (0.48s
-cubic-bezier). Ghost dashed circles mark vacated positions.
-
-Cover shadows (blurred red wedges) show which passing lanes each presser deletes.
-The **high line** is marked by a dashed orange line; the dark grass zone behind it
-is labelled "SPACE IN BEHIND" — the visual win condition for the puzzle.
-
-When the user makes their first pass, a **lure mechanic** activates: the freest
-escape player gets a teal dashed run arrow pointing into open space, with a faint
-red reaction arrow showing the presser who would follow — communicating "make the
-run, the space opens behind."
-
-**Right panel — Escape route builder (PitchGraph)**
-The user's team is displayed with position nodes. The user builds a passing
-sequence by clicking through nodes. Visual aids:
-
-- **Predictive arc**: a marching-dashes teal arc curves to a lead point 28px ahead
-  of the optimal target (not to the player's feet — to the space)
-- **Crosshair**: pulsing target icon at the lead point ("pass here")
-- **Vacated zone glows**: green pulsing circles at positions the pressing block
-  has shifted away from — the "holes" opened up
-- **Passing window brackets**: perpendicular markers at each edge midpoint; gap
-  width scales with escape_prob (open lane = wide gap, closed = narrow)
-- **Floating tooltip**: on edge hover, shows Risk%, forward Gain in metres,
-  and lane status ("Lane open / Lane narrowing / Lane closed — wait")
-- **Optimal node**: pulsing gold ring on the highest-probability target
-- **Covered nodes**: dimmed to 45% opacity when escape_prob < 0.28
-- **Exposed zone**: green ellipse behind target node when hovered (the space
-  they'd run into on receiving)
-- **Lead pass extension**: dashed line 22px past target for safe forward passes
-
-All passes are allowed — including risky ones and "no edge" attempts. The click
-registers with color feedback (blue/yellow/red flash) regardless of escape_prob.
-
-### Step 4 — The Result
-After submitting, the user sees:
-- Their sequence vs. the system's optimal path
-- A medal (GOLD/SILVER/BRONZE/MISS) based on ratio of user score to optimal score
-- A plain English verdict
-- Two meters: escape safety + forward progression percentage
+JGaffer solves this by making the fan a participant.
 
 ---
 
-## Technical Pipeline
+## The Mission
 
+**Turn football understanding into an interactive experience guided by an expert voice for a casual fan.**
+
+That means JGaffer should:
+- start with a real emotional hook
+- reduce reading friction
+- ask the user to do something quickly
+- teach one football concept at a time
+- give immediate feedback in plain English
+
+The product should not feel like homework.
+It should feel like:
+
+**"I finally understand why that moment mattered."**
+
+---
+
+## The Ideal User Experience
+
+### Step 1 - Pick a team
+The user starts with a club they care about.
+
+This is important because interest comes first.
+We are not asking them to study football in the abstract.
+We are helping them understand *their team*.
+
+### Step 2 - Experience a real moment
+The system surfaces a real moment from the season that matches a theme:
+- dramatic
+- dominant
+- comeback
+- under pressure
+- turning point
+- surprise
+
+The moment card should be short and emotionally legible.
+It should make the user think:
+
+**"What actually happened here?"**
+
+### Step 3 - Get the tactical problem
+Instead of forcing the user into a long explanation page, JGaffer should quickly frame the problem:
+
+- "They were trapped on the left and needed a safe exit."
+- "The press had shifted too far. Could they find the switch?"
+- "They needed one route through midfield before the defense recovered."
+- "They had to protect the lead without simply giving the ball back."
+
+This is the bridge that connects the moment to the puzzle.
+
+This is the most important connective tissue in the product.
+
+### Step 4 - Solve the puzzle
+The user then interacts with the moment.
+
+They are not just told what happened.
+They try to solve the exact tactical problem inside the moment.
+
+Examples:
+- escape the press
+- find the free player
+- choose the best switch
+- trigger the right pressing trap
+- protect the lead with the right sequence
+
+The puzzle is where understanding becomes active.
+
+### Step 5 - Learn through coaching
+After the attempt, JGaffer acts like an expert guide:
+- what the user saw correctly
+- what they missed
+- why the better option worked
+- what football concept the moment teaches
+
+This should be short, visual, and coach-like.
+
+The key outcome is not just "you were right" or "you were wrong."
+The key outcome is:
+
+**"Now I understand the football idea behind the moment."**
+
+---
+
+## Product Principles
+
+### 1. Start with emotion, then teach structure
+Fans care about moments before they care about theory.
+
+So the product should begin with:
+- tension
+- drama
+- danger
+- pressure
+- comeback energy
+
+Then reveal the tactical structure underneath.
+
+### 2. Minimize reading before interaction
+If the user must read too much before doing anything, energy drops.
+
+So JGaffer should prefer:
+- one strong sentence
+- one clear mission
+- one visible tactical cue
+
+instead of large blocks of explanation upfront.
+
+### 3. Teach one concept at a time
+Each moment should have a main lesson:
+- Press Resistance
+- High Press
+- Weak-Side Switch
+- Third-Man Run
+- Counter Attack
+- Game Management
+- Cover Shadow
+
+Users learn better when the lesson is singular and clear.
+
+### 4. Make the user participate
+A fan remembers more when they try to solve the same problem themselves.
+
+The puzzle is not a decorative add-on.
+It is the core teaching mechanic.
+
+### 5. Use expert guidance, not expert language
+JGaffer should sound smart without sounding intimidating.
+
+The tone should be:
+- confident
+- clear
+- plain English
+- visually guided
+
+The product should help casual fans feel included, not tested.
+
+---
+
+## What Connects The Dots Cleanly
+
+The project becomes much cleaner when every surface serves the same loop:
+
+### Discovery
+Find a real moment worth caring about.
+
+### Briefing
+State the tactical problem in one sentence.
+
+### Interaction
+Let the user solve the problem.
+
+### Reflection
+Explain the result and teach the concept.
+
+This means the detail page is no longer just an explanation page.
+It becomes a **mission briefing** page.
+
+The user should not have to infer why a puzzle exists.
+The system should tell them directly:
+
+- what the problem is
+- why it matters
+- what they are being asked to solve
+
+---
+
+## The Role of the Backend
+
+To support this vision, the backend should eventually generate a structured "moment brief" rather than separate disconnected blobs.
+
+A strong moment brief would include:
+- headline
+- match context
+- tactical problem
+- mission
+- concept
+- puzzle type
+- explanation hooks
+
+Example:
+
+```json
+{
+  "headline": "Late Pressure on Inter",
+  "concept": "Press Resistance",
+  "tactical_problem": "Inter are trapped on the left and need a safe route out.",
+  "mission": "Find the best three-pass escape.",
+  "puzzle_type": "escape_press",
+  "match_context": {
+    "minute": 89,
+    "score": "Inter Milan 1-2 AC Milan"
+  }
+}
 ```
-StatsBomb open event data
-        ↓
-Pass extraction pipeline
-(from_position → to_position, labeled by formation and game phase)
-        ↓
-Formation-based pass probability matrices
-(one per formation: F_4_3_3.json, F_4_2_3_1.json, etc.)
-        ↓
-Press escape outcome model
-(trained on: did this sequence successfully escape pressure?)
-        ↓
-Context adjustment layer  [not yet built]
-(modifies base matrix using: style, stamina, game phase, score diff)
-        ↓
-Graph generator → /api/network
-(outputs: escape_graph + pressing_graph with nodes + weighted edges)
-        ↓
-React puzzle visualization
-(PressureMap SVG + PitchGraph SVG, click-to-connect interaction)
-        ↓
-LLM explanation
-(narrates structural reasoning in plain English via GPT-4o-mini)
-```
+
+This is the object that connects:
+- retrieval
+- explanation
+- puzzle generation
+- coaching feedback
 
 ---
 
-## The Data Foundation
+## The Role of Retrieval
 
-### StatsBomb Open Data
-Used exclusively to learn **how passing works positionally** — not league-specific, not team-specific. The question answered: given a formation and game phase, how do positions connect to each other?
+Retrieval should not exist just to produce themed cards.
 
-Pass events are extracted and labeled:
-- `from_position` → `to_position` (abstract roles: CB, CDM, LW, ST, etc.)
-- Formation detected from tactics events in the same match
-- Outcome labeled: did the sequence escape pressure successfully, or did possession break down?
+Its job is to find:
+- real moments
+- tactically teachable moments
+- emotionally legible moments
+- moments that are good seeds for puzzles
 
-Two artefacts:
-1. **Probability matrices** — for each formation, `P(to_position | from_position)`
-2. **Labeled training dataset** — for the outcome model
+The retrieval system is valuable when it helps answer:
 
-### Why StatsBomb data transfers across leagues
-The matrices are formation-conditioned, not league-conditioned. A 4-3-3 POSSESSION team passes with the same structural logic whether in La Liga or the Premier League. Formation is the abstraction that makes the data portable.
+**"What real moment would best teach this football idea to this fan?"**
 
-### Existing Squad/Match Data (PL and Serie A)
-Used for the moment discovery layer (RAG) and for the context adjustment layer. Team style, stamina, adaptability, and formation are already ingested. These attributes will modify the base probability matrices at query time once the context adjustment layer is built.
+That makes the RAG layer part of the teaching system, not just a search feature.
 
 ---
 
-## The Press Escape Outcome Model
+## The Role of the Puzzle
 
-StatsBomb pass events include an `under_pressure` boolean. By tracking what happens in the 3–5 events following a pressured pass, sequences can be labeled as:
-- **Successful escape** — possession continues, ball moves to unpressured area
-- **Failed escape** — turnover, clearance, press wins the ball
+The puzzle is the central mechanic of learning.
 
-A gradient boosted classifier (HistGradientBoosting) is trained on:
-```
-from_position, to_position, formation,
-game_phase, score_diff, pass_length,
-pass_angle, pressure_intensity
-→ escape_success (true / false)
-```
+It should not feel detached from the moment.
+It should feel like the user is stepping into the exact problem the team faced.
 
-Metrics: ROC-AUC 0.84, CV 0.8333 ± 0.005, 79% fail recall.
+The current escape puzzle is a strong foundation because it already teaches:
+- how pressure works
+- how shape creates or removes options
+- how space opens when the press shifts
 
-The system's suggested sequence is the greedy path through the graph maximising this model's predicted success probability — "what tends to work" rather than "what teams usually do."
+Over time, the puzzle system can expand to cover:
+- find the free man
+- break the low block
+- trigger the press
+- choose the best switch
+- protect the lead
+- counterattack or control
 
----
+But every puzzle type should still follow the same structure:
 
-## Architectural Decision: Ground Truth Panel
-
-The result screen ideally shows a third panel — what actually happened in the real match. This requires linking a moment back to its actual event sequence.
-
-**The constraint:** The RAG knowledge base uses PL and Serie A CSV data. StatsBomb open data does not include PL or Serie A. Direct match-level lookup is not possible.
-
-**Option A — Formation-level ground truth (current plan)**
-Show: "In similar situations — same formation, same game phase, similar score — teams escaped press successfully X% of the time. The most common successful sequence was CB → CDM → LW."
-Statistically honest, buildable without changing the ingestion architecture.
-
-**Option B — Pivot to StatsBomb competitions**
-Rebuild moment discovery around StatsBomb matches (La Liga, Champions League). Every moment would have a real match ID with retrievable event sequences. Tradeoff: loses PL and Serie A moments.
-
-The plan is to ship Option A first, migrate to Option B if the core feature validates well.
+**Here is the moment. Here is the problem. Now solve it.**
 
 ---
 
-## Current System State
+## The Role of Coaching Feedback
 
-| Component | Status |
-|---|---|
-| League + club selection | Done |
-| RAG moment retrieval (ChromaDB, 68k moments) | Done |
-| Moment explanation (GPT-4o-mini) | Done |
-| React frontend (full navigation flow, theming) | Done |
-| StatsBomb extraction pipeline | Done — 143,349 pressured pass rows, 1,162 matches |
-| Formation probability matrices | Done — 5 formations, all probabilities verified |
-| Press escape outcome model | Done — ROC-AUC 0.84, CV 0.8333 ± 0.005 |
-| `/api/network` endpoint (graph generation) | Done |
-| Tactical puzzle — PressureMap (left panel) | Done — full dynamic press shift, lure mechanic, cover shadows, intel bar |
-| Tactical puzzle — PitchGraph (right panel) | Done — predictive arc, crosshair, vacated zones, passing window, tooltip |
-| Tactical puzzle — interaction + scoring | Done — sequence building, undo, submit, medal, verdict |
-| Context adjustment layer | Not started |
-| Result panel: formation-level ground truth | Not started |
-| Tension Score (0–100 model) | Not started |
-| "What to Watch" as a distinct API field | Not started |
+The final teaching moment comes after the puzzle.
+
+This is where JGaffer becomes the expert guide.
+
+The feedback should answer:
+- what did the user notice correctly?
+- what tactical option was best?
+- what made the losing option tempting?
+- what concept should the user remember next time?
+
+This is more valuable than long pre-puzzle explanation because the user now has a mental model and a personal attempt to compare against.
 
 ---
 
-## What Makes This Technically Strong
+## What JGaffer Should Feel Like
 
-1. **Models domain structure** — football as a graph, passing as a probability distribution, pressing as a dynamic network with role-differentiated players
-2. **Grounds the model in real outcomes** — the optimal path is trained on labeled success/failure data, not arbitrary weights
-3. **Combines multiple layers of intelligence** — data pipeline → probabilistic modeling → learned model → context adjustment → graph → LLM explanation
-4. **Makes the user a participant** — the fan doesn't watch; they attempt to solve the same problem the real team faced, with real tactical feedback
-5. **Validates against reality** — the result screen compares user intuition, model suggestion, and (planned) real-world outcome
+JGaffer should feel:
+- smart, but not academic
+- guided, but not lecture-heavy
+- visual, not text-heavy
+- interactive, not passive
+- grounded in real football moments
 
-The mental model: Google Maps predicts traffic patterns from historical behaviour. JGaffer predicts passing structure from historical tactical patterns — and then asks you to navigate it yourself.
+The ideal user reaction is:
+
+**"I always felt this part of football mattered. Now I finally understand why."**
 
 ---
 
-## Open Questions
+## Current Direction
 
-1. Should the puzzle use real player names (e.g. Trent Alexander-Arnold) or abstract roles (RB)? Real names are more engaging but require a player roster data layer per team.
-2. Should the pressing network also animate after each user pass — the press shifts to respond — rather than only updating the ball-carrier highlight?
-3. Long-term: can the outcome model be personalised — learning which escape routes a specific user tends to miss, and surfacing those as training puzzles?
-4. Option B migration: is it worth rebuilding around StatsBomb matches to unlock the third result panel (what actually happened)?
+The project already contains the right ingredients:
+- team-based moment discovery
+- AI explanation
+- tactical puzzle interaction
+- graph-based football modeling
+
+What now matters most is not adding disconnected features.
+
+What matters is aligning everything around the same learning loop:
+
+**experience -> understand the problem -> solve -> learn**
+
+That is the clean product direction.
+
+---
+
+## Near-Term Product Priorities
+
+1. Reduce reading before action.
+The moment detail experience should become a short tactical briefing, not a long explanation page.
+
+2. Make the mission explicit.
+Every moment should clearly state the tactical problem and the user's task.
+
+3. Connect story to puzzle through backend-generated structure.
+The system should produce a coherent "moment brief" that powers both explanation and interaction.
+
+4. Make post-puzzle coaching the main teaching layer.
+This is where the expert guide voice becomes most valuable.
+
+5. Build the product around one core loop instead of multiple competing flows.
+The moments -> mission -> puzzle -> coaching path should become the center of gravity.
+
+---
+
+## Long-Term Vision
+
+Long-term, JGaffer can become a library of interactive football lessons hidden inside real match moments.
+
+A user should be able to:
+- return daily
+- explore moments from their club
+- learn recurring tactical patterns
+- improve their football eye over time
+
+The ambition is not just to explain football.
+
+The ambition is to help a casual fan **see the game the way a more expert fan sees it** - through participation, guided attention, and repeated exposure to meaningful moments.
+
+That is the vision.

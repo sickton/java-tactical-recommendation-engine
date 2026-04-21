@@ -1,235 +1,287 @@
-FRONTEND STATE — JGaffer Tactical Recommendation Engine
-Branch: v2/layer-7-network-api
+FRONTEND STATE - JGaffer
 Last updated: 2026-04-20
 
 =============================================================
 TECH STACK
 =============================================================
 - React 18 + TypeScript
-- React Router v6 (client-side routing)
-- Vite (dev server + build)
-- CSS custom properties + league theming (no UI framework)
+- React Router v6
+- Vite
+- CSS custom properties + hand-authored styling
+- No UI framework
 
 =============================================================
-USER FLOW
+ACTIVE PRODUCT FLOW
 =============================================================
 / (LeagueSelect)
-  → /clubs?league=PL|SA (ClubSelect)
-    → /mode?teamId=&teamName=&league= (ModeSelect)
-      → /query?...&mode=simple|indepth (QuerySelect)
-        → /moments?...&queryType=dramatic|dominant|... (Moments)
-          → /moment [via router state] (MomentDetail)
-            → /puzzle [via router state] (Puzzle)  ← NEW
+  -> /clubs?league=PL|SA (ClubSelect)
+    -> /mode?teamId=&teamName=&league= (ModeSelect)
+      -> /query?...&mode=simple|indepth (QuerySelect)
+        -> /moments?...&queryType=dramatic|dominant|... (Moments)
+          -> /moment [router state] (MomentDetail)
+            -> /puzzle [router state] (Puzzle)
 
-Legacy tactical flow (still accessible):
-  /fixtures → /match → /result
+The old fixtures -> match -> result flow has been removed from the frontend.
+
+=============================================================
+FRONTEND PRODUCT ROLE
+=============================================================
+The frontend now supports one core loop:
+
+Moment -> Mission -> Puzzle -> Coaching
+
+Current implementation status:
+- discovery exists
+- explanation exists
+- puzzle interaction exists
+- post-puzzle coaching is partial and mostly embedded in puzzle scoring/result UI
+
+The next UX goal is to make the connection between moment and puzzle more explicit,
+so the user quickly understands:
+- what happened
+- what the tactical problem is
+- what they are being asked to solve
 
 =============================================================
 PAGES
 =============================================================
-LeagueSelect     — Pick Premier League or Serie A
-ClubSelect       — Search + pick a club, fetches /api/clubs
-ModeSelect       — Simple (5 moments) or In-Depth (10 moments)
-QuerySelect      — Pick a theme: Dramatic, Dominant, Comeback,
-                   Under Pressure, Turning Points, Surprise Me
-Moments          — Fetches /api/story, renders moment cards
-                   with blurred football background images
-MomentDetail     — Fetches /api/explain, shows full moment with
-                   typewriter-animated explanation + "Try This Puzzle" CTA
-Puzzle           — Two-panel tactical puzzle:
-                   Left: PressureMap (opposing press structure)
-                   Right: PitchGraph (user builds escape sequence)
-                   Bottom: breadcrumb, safety/progression meters, submit
+LeagueSelect
+- Pick Premier League or Serie A
 
-Legacy:
-Fixtures         — Pick a match fixture
-Match            — Live tactical simulation
-Result           — Tactical recommendation result
+ClubSelect
+- Search and select a club
+- Fetches `/api/clubs`
+
+ModeSelect
+- Choose Simple or In-Depth
+- Controls whether `/api/story` returns 5 or 10 moments
+
+QuerySelect
+- Pick a moment type:
+  Dramatic, Dominant, Comeback, Under Pressure, Turning Points, Surprise
+
+Moments
+- Fetches `/api/story`
+- Displays moment cards
+- Caches query results in session storage
+- Supports regenerate and tab switching across themes
+
+MomentDetail
+- Fetches `/api/explain`
+- Shows selected moment plus explanation
+- Currently acts as the bridge from story to puzzle
+- CTA sends the user into `/puzzle`
+
+Puzzle
+- Fetches `/api/network`
+- Renders tactical puzzle using two synchronized pitch views
+- Lets the user build and submit a passing route under pressure
 
 =============================================================
 API ENDPOINTS CONSUMED
 =============================================================
-GET  /api/clubs?league=PL|SA                       → team list
-GET  /api/story?team=&league=&mode=&queryType=     → moments array
-POST /api/explain                                   → deep tactical explanation
-GET  /api/network?escapingTeam=&pressingTeam=      → passing + pressing graphs
-     &league=&minute=&homeGoals=&awayGoals=
-GET  /api/fixtures?teamId=&league=                 → fixture list (legacy)
-POST /api/recommend                                → tactic recommendation (legacy)
+GET  /api/clubs?league=PL|SA
+  -> club selection list
+
+GET  /api/story?team=&league=&mode=&queryType=
+  -> retrieved moments for current team and theme
+
+POST /api/explain
+  -> grounded explanation for selected moment
+
+GET  /api/network?escapingTeam=&pressingTeam=&league=&minute=&homeGoals=&awayGoals=
+  -> escape and pressing graphs for puzzle
 
 =============================================================
-UI FEATURES (v2)
+MOMENTS PAGE
 =============================================================
-- League theming: body class switches CSS variables per league
-  (Premier League = pink/purple, Serie A = gold/blue)
-- Background images: 6 football photos in
-  public/images/moments/ cycle across moment cards
-  (blurred + darkened via CSS, unique per card)
-- Skeleton loading: shimmer ghost cards while /api/story loads
-- Page transitions: fade-in + slide-up on every route change
-- Moment number badge: large faint 01–10 on each card
-- Narrative clamp: 3-line cutoff on card previews
-- Typewriter effect: explanation in MomentDetail types in live
-- Cinematic hero banner: football image header on MomentDetail
-- Navigation: back buttons carry full query params through flow
+File:
+frontend/src/pages/Moments.tsx
 
-=============================================================
-TACTICAL PUZZLE — /puzzle
-=============================================================
-State managed in Puzzle.tsx:
-  userSequence     string[]    — player IDs clicked so far (starts with ballCarrier)
-  ballCarrier      string      — random node from PRESSABLE_POSITIONS at load
-  escapeGraph      NetworkGraph — filtered by formation; injected synthetic CB2
-  pressGraph       NetworkGraph — same
-  submitted        boolean     — locks the pitch, shows result
-  optimalPath      string[]    — computed on submit via computeOptimalPath()
-  hoveredEdge      {from,to}   — lifted from PitchGraph → drives PressureMap highlight
-  clickFeedback    'safe'|'risky'|'avoid'|null — flash feedback on each click
+Current responsibilities:
+- parse URL params
+- fetch and cache `/api/story`
+- render themed moment cards
+- switch between query-type tabs
+- regenerate current set
 
-Derived values:
-  optimalNodeId    — highest escape_prob edge from currentCarrier (→ gold ring)
-  vacatedZones     — pressing base positions laterally far from ball (→ green wakes)
-  blockerMap       — pressing node → nearest escape node (cross-panel highlight)
-  progressionValue — fraction of user passes gaining forward ground
-  userScore        — average escape_prob along user sequence
-  optimalScore     — average escape_prob along computed optimal path
+UI features:
+- blurred football image backgrounds
+- skeleton loading state
+- tab switcher with cached indicators
+- regeneration control
+- page title + league theme
 
-Pass rules:
-  - All nodes are clickable (no blocking on avoid-rated passes)
-  - Passes with no edge in graph default to escape_prob = 0.25
-  - Max 5 nodes in sequence (4 passes)
-  - Cannot revisit a node in the same sequence
+Current card shape:
+- headline
+- minute
+- concept
+- match label
+- score
+- narrative
+
+Recent backend-driven match label behavior:
+- label expresses opponent plus whether the selected team is home or away
 
 =============================================================
-COMPONENT: PressureMap
+MOMENT DETAIL PAGE
 =============================================================
-File: frontend/src/components/PressureMap.tsx
-SVG: W=500, H=320, inner field SVG_W=452, SVG_H=280
+File:
+frontend/src/pages/MomentDetail.tsx
 
-Props:
-  pressingGraph, escapeGraph, ballCarrierId
-  escapeFormation, pressingFormation
-  highlightedPresserId?   — from hoveredEdge in Puzzle (cross-panel link)
-  threatLayerVisible?     — true after user makes first pass
-  pressingTeamLabel?
+Current responsibilities:
+- receive selected moment through router state
+- fetch `/api/explain`
+- render hero image, moment metadata, narrative, and explanation
+- send user to puzzle with the same moment context
 
-Visual layers (bottom to top):
-  1. Mow-stripe grass pattern + pitch lines
-  2. High-line shadow zone (dark rect behind back line) + dashed line + label
-  3. Kill zone hatch (diagonal stripes toward touchline behind isolated escape node)
-  4. High pressure zone (radial red gradient at ball position)
-  5. Trap glow (gold gradient at most-isolated escape node)
-  6. Ghost circles (dashed, at base positions of shifted pressers)
-  7. Pressing cage web (dashed lines connecting harasser + 2 nearest shadowers)
-  8. Cover shadows (blurred red wedge from presser through ball, extending past)
-  9. Escape team ghost nodes (blue circles, dimmed when covered, marked when targeted)
-  10. Lure run arrow (teal dashed arrow on freest escape player → into space)
-  11. Presser reaction arrow (faint red dashed arrow on nearest presser → follows runner)
-  12. Harasser charge arrow (pulsing red arrow toward ball carrier, animated opacity+width)
-  13. Ball icon (yellow circle)
-  14. Pressing nodes (red circles, animated via CSS transform transition)
-      - Harasser: large, bright, pulsing halo ring, charge arrow
-      - Shadower: medium, patrol zone dashed ring, body-pointer toward nearest escape
-      - Anchor: dim, lock icon if close enough to ball
-      - All: 0.48s cubic-bezier spring transition on position changes
-  15. Intel bar (bottom strip: context-sensitive tactical text)
+Current UX characteristics:
+- typewriter explanation effect
+- cinematic hero banner
+- explicit CTA to puzzle
 
-Dynamic press shift (computeShift):
-  - Ball wide (y < 0.28 or y > 0.72): whole block slides 32% laterally toward ball
-  - Far-side winger tucks 42% toward center when wide ball
-  - CDM steps 34% toward ball side + 16% forward to cut back-pass lane
-  - Harasser: 36% toward ball (x) and 36% laterally
-  - Backline: gate closes when central, near-side steps out when wide
-  - Ghost circles appear at base positions when shift magnitude > 0.045
-
-Lure mechanic (visible when threatLayerVisible):
-  - lureRunnerId: escape player with most space (minDist to nearest presser > 0.22)
-  - Run arrow: dashed teal, from lure runner toward open space (away from press cluster)
-  - Reaction arrow: faint red dashed, nearest presser tracks runner's destination
-  - Run destination glow: small teal circle at end of run arrow
+Product gap:
+- this page still leans more toward explanation than a short mission briefing
+- long-term, this should become the clearest bridge between moment and tactical problem
 
 =============================================================
-COMPONENT: PitchGraph
+TACTICAL PUZZLE
 =============================================================
-File: frontend/src/components/PitchGraph.tsx
-SVG: W=500, H=320, PX=24, PY=20
+File:
+frontend/src/pages/Puzzle.tsx
 
-Props:
-  graph, formation, interactive, highlightSequence
-  onNodeClick, ballNodeId, onEdgeHover
-  optimalNodeId?   — pulsing gold ring on best available target
-  vacatedZones?    — green wake glows at positions pressers left
+The puzzle is the main interaction layer of the product.
 
-Edge visual:
-  - Active (from current carrier): colored by escape_prob
-    Safe (≥0.65): rgba(88,166,255) solid
-    Risky (0.35–0.65): rgba(227,179,65) solid
-    Avoid (<0.35): rgba(248,81,73) dashed
-  - Sequence edges: teal solid, numbered badge at midpoint
-  - Ghosted edges: rgba(255,255,255,0.08), opacity 0.30
-  - Nodes with no edge to carrier: faint dashed attempt line
-  - Wide transparent hit area (strokeWidth 16) on active edges for hover
+Current structure:
+- left panel: `PressureMap`
+- right panel: `PitchGraph`
+- bottom/result section: sequence feedback and scoring
 
-On-hover overlays (hoveredEdgeFull):
-  - Exposed zone: green ellipse behind target in direction of travel (prob ≥ 0.35)
-  - Lead pass: dashed teal extension + dot 22px past target (safe forward passes)
-  - Passing window: perpendicular brackets at midpoint; gap = 6 + p*18px
-  - Floating tooltip: "Risk X% | Gain +Ym | Lane open/narrowing/closed"
+Current local state in Puzzle.tsx:
+- `userSequence`
+- `ballCarrier`
+- `escapeGraph`
+- `pressGraph`
+- `submitted`
+- `optimalPath`
+- `hoveredEdge`
+- `clickFeedback`
 
-Predictive arc (optimalNodeId, always visible when interactive):
-  - Marching-dashes teal arc curving to lead point 28px ahead of target
-  - Pulsing crosshair at lead point (r animates 7→14, opacity 0.9→0.4)
+Current frontend-derived values:
+- `optimalNodeId`
+- `vacatedZones`
+- `blockerMap`
+- `progressionValue`
+- `userScore`
+- `optimalScore`
 
-Vacated zones (vacatedZones, always visible when interactive):
-  - Green radial gradient circles pulsing at staggered intervals
-  - Small dashed ring inside, both pulse independently
+Current rules:
+- all nodes are clickable
+- max 5 nodes in sequence
+- cannot revisit a node
+- edges missing from graph fall back to default risk
 
-Node visual:
-  - Ball carrier: gold dashed ring, ball icon offset top-left, pulse ring animation
-  - Sequence nodes: teal (last) or blue (intermediate), numbered badge on edges
-  - Optimal node: pulsing gold outer ring (r 7→14px, 1.4s loop)
-  - Covered node (escape_prob < 0.28, not in sequence): opacity 0.45
-  - Key outlet (inf ≥ 0.65, not carrier, not in sequence): blue outer ring
-  - Size: 11 + nodeInfluence*5 base, min 15 when in sequence
-
-Click feedback (Puzzle.tsx → via CSS class):
-  safe → blue flash, risky → yellow flash, avoid → red flash
+Note:
+The puzzle still contains significant frontend game logic. Long-term,
+more of this should move into backend-owned puzzle state and evaluation.
 
 =============================================================
-KEY FILES
+PRESSUREMAP
 =============================================================
-frontend/src/App.tsx                       — route definitions
-frontend/src/pages/Puzzle.tsx              — puzzle orchestrator
-frontend/src/pages/MomentDetail.tsx        — CTA to puzzle
-frontend/src/components/PressureMap.tsx    — left panel SVG
-frontend/src/components/PitchGraph.tsx     — right panel SVG
-frontend/src/components/Header.tsx         — nav bar
-frontend/src/constants/pitchCoords.ts      — getDisplayCoords(id, formation)
-frontend/src/constants/crests.ts           — club crest image map
-frontend/src/hooks/useLeagueTheme.ts       — applies league CSS class
-frontend/src/types.ts                      — NetworkGraph, NetworkEdge, NetworkNode, etc.
-frontend/public/style.css                  — all styles (single file)
-frontend/public/pl-logo.svg                — Premier League logo (local)
-frontend/public/images/moments/            — match-1.jpg to match-6.jpg
+File:
+frontend/src/components/PressureMap.tsx
+
+Purpose:
+- visualize the opponent press structure
+- show pressure, shifts, cover shadows, trap spaces, and reactions
+
+Key ideas already visualized:
+- harasser / shadower / anchor roles
+- high line
+- shifted press block
+- ghost positions
+- lure mechanic
+- cover shadows
+
+This is one of the strongest visual parts of the app.
 
 =============================================================
-FORMATION POSITION SETS (FORMATION_POSITIONS in Puzzle.tsx)
+PITCHGRAPH
 =============================================================
-F_4_3_3:   GK LB CB CB2 RB CDM CAM CM LW ST RW
-F_4_2_3_1: GK LB CB CB2 RB CDM CM LW CAM RW ST
-F_4_4_2:   GK LB CB CB2 RB LM CDM CM RM CF ST
-F_3_4_3:   GK CB CB2 LM CDM CM RM LW ST RW
-F_3_5_2:   GK CB LWB RWB LM CDM RM CF ST
-F_5_3_2:   GK LWB LB CB RB RWB CDM CAM CM CF ST
+File:
+frontend/src/components/PitchGraph.tsx
 
-CB2 is a synthetic node injected alongside CB for back-four formations.
-DISPLAY_LABELS: CB → LCB, CB2 → RCB
+Purpose:
+- render the active passing graph for the escaping team
+- let the user build a route
+- visualize safe vs risky vs avoid lanes
+
+Key ideas already visualized:
+- escape probability coloring
+- predictive arc
+- optimal node highlight
+- vacated zones
+- lead-pass hinting
+- lane hover tooltips
 
 =============================================================
-SCORING + RESULT
+SUPPORTING FILES
 =============================================================
-sequenceScore:   avg escape_prob across all edges in sequence
-optimalScore:    avg escape_prob of computeOptimalPath (greedy best-first, 4 hops)
-progressionValue: fraction of passes gaining forward x (0–1)
-medal:  GOLD (ratio ≥ 0.9) | SILVER (≥ 0.7) | BRONZE (≥ 0.5) | MISS (<0.5)
-verdict: plain English sentence based on ratio band
+frontend/src/App.tsx
+- active route definitions only
+
+frontend/src/types.ts
+- current frontend API and graph types
+
+frontend/src/constants/pitchCoords.ts
+- display coordinates by formation
+
+frontend/src/constants/crests.ts
+- crest asset lookup
+
+frontend/src/constants/momentImages.ts
+- football background image set for moment cards/detail
+
+frontend/src/hooks/useLeagueTheme.ts
+- sets league-specific body theme class
+
+frontend/src/hooks/usePageTitle.ts
+- updates document title
+
+frontend/src/components/Header.tsx
+- top navigation shell
+
+frontend/src/components/Footer.tsx
+- footer shell
+
+=============================================================
+WHAT WAS REMOVED
+=============================================================
+The old tactical recommendation flow has been deleted:
+- Fixtures page
+- Match page
+- Result page
+- TacticDiagram
+- TeamCrest
+- tacticGuide
+- teamCodes
+- formatTactic helpers
+
+The frontend is now intentionally centered on the moments-and-puzzle product.
+
+=============================================================
+CURRENT FRONTEND DIRECTION
+=============================================================
+The frontend should increasingly optimize for:
+- less reading before interaction
+- clearer tactical mission framing
+- stronger bridge from moment to puzzle
+- better coaching after submission
+
+The ideal experience is:
+- user sees a real moment
+- understands the tactical problem quickly
+- tries to solve it
+- learns one football idea through guided feedback
+
+That is the current product direction for the frontend.

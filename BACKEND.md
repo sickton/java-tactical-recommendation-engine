@@ -1,126 +1,165 @@
-# JGaffer — Backend Reference
+# JGaffer - Backend Reference
 
 Last updated: 2026-04-20
-Branch: v2/layer-7-network-api
 
 ---
 
 ## Architecture Overview
 
-Three services:
+The current backend is a two-service system:
 
-```
-React frontend (port 5173 dev / served by Spring Boot in prod)
+```text
+React frontend (Vite dev / Spring-served in prod)
        |
-Spring Boot — port 8080   ←→   FastAPI RAG service — port 8000
+Spring Boot API gateway (port 8080)
        |
-  In-memory CSV data (loaded at startup)
-  + /api/network endpoint (graph generation, active)
+FastAPI service (port 8000)
 ```
 
-Spring Boot owns the HTTP surface. It proxies `/api/story` and `/api/explain`
-to the Python FastAPI service via `RestTemplate`. The Python service owns all
-AI interactions (embeddings + GPT calls) and the ChromaDB vector store.
+### Responsibility split
 
-The `/api/network` endpoint is implemented directly in Spring Boot and returns
-the passing + pressing network graphs used by the Tactical Puzzle UI.
+**Spring Boot**
+- public `/api` surface for the frontend
+- league and club data loading from CSV
+- team lookup and formation lookup
+- delegates retrieval/explanation/network generation to FastAPI
+
+**FastAPI**
+- moment retrieval (`/story`)
+- moment explanation (`/explain`)
+- graph generation and edge scoring for the puzzle (`/network`)
+- ChromaDB vector store
+- OpenAI calls
+- escape model inference
 
 ---
 
-## Spring Boot Backend
+## Active Spring Boot Surface
 
-**Entry point:** `JGafferWebApplication.java` — standard `@SpringBootApplication`, starts on port 8080.
+**Entry point:** `JGafferWebApplication.java`
 
-**Package root:** `com.sickton.jgaffer`
+**Primary controller:** `ApiController.java`
 
-### Data Files (classpath resources)
+### Active API endpoints
 
-```
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/clubs?league=PL|SA` | Returns clubs for league selection |
+| GET | `/api/story?team=&league=&mode=&queryType=` | Proxies to FastAPI `/story` |
+| POST | `/api/explain` | Proxies to FastAPI `/explain` |
+| GET | `/api/network?escapingTeam=&pressingTeam=&league=&minute=&homeGoals=&awayGoals=` | Looks up formations in Spring and proxies to FastAPI `/network` |
+
+Legacy fixture/match/recommendation endpoints have been removed.
+
+---
+
+## Spring Boot Data Layer
+
+### Classpath resources
+
+```text
 JGaffer/src/main/resources/
   PremierLeague/
-    SquadInformation.csv       — team attributes (one row per team)
-    PremierLeagueMatches.csv   — match ID → match title map (e.g. "ARS-AVL")
-    MatchMinuteContext.csv     — minute-by-minute match rows
+    SquadInformation.csv
+    PremierLeagueMatches.csv
+    MatchMinuteContext.csv
   SerieA/
     SquadInformation.csv
     SerieAMatches.csv
     MatchMinuteContext.csv
 ```
 
-**SquadInformation.csv columns:**
-`team_name, manager, style, team_stamina, team_adaptability, formation, team_code,
-atk_weight, def_weight, ctrl_weight`
+### What is still actively used
 
-- `style` → maps to `Style` enum (POSSESSION, COUNTER_ATTACK, HIGH_PRESS, DEFENSIVE, BALANCED)
-- `team_stamina` → `StaminaLevel` enum (LOW / MEDIUM / HIGH)
-- `team_adaptability` → `TeamAdaptability` enum (LOW / MEDIUM / HIGH)
-- `formation` → `Formation` enum (F_4_3_3, F_3_4_3, F_4_2_3_1, F_3_5_2, F_5_3_2, F_4_4_2)
-- `atk_weight / def_weight / ctrl_weight` → PCA-derived floats (optional; -1.0 = not set)
+For the current product flow, Spring Boot actively uses:
+- `SquadInformation.csv` to load clubs and team attributes
+- team formations for the puzzle `/api/network` endpoint
 
-**MatchMinuteContext.csv columns:**
-`match_id, minute, homeTeam_name, awayTeam_name, homeGoals, awayGoals`
-
-~68,400 rows total across both leagues (every match at every minute).
+The match-minute CSVs still exist in the repo because they are used by the Python retrieval pipeline and ingestion flow, but they are no longer loaded into in-memory Java match contexts.
 
 ---
 
-### Domain Model
+## Active Spring Classes
+
+### `MatchService`
+Current purpose:
+- load league team lists
+- load parsed squad/team data
+- return teams for `/api/clubs`
+- build `Team` objects for `/api/network`
+
+Current public API:
+- `getTeams(league)`
+- `getTeam(league, teamName)`
+
+### `LeagueDataFactory`
+Current purpose:
+- build `Team` domain objects from parsed squad data
+
+### `ApplicationParser`
+Current purpose:
+- parse `SquadInformation.csv`
+- build `teamId -> teamName` maps
+
+### `RagService`
+Current purpose:
+- proxy requests from Spring Boot to FastAPI
+
+Public proxy methods:
+- `getStory(team, league, mode, queryType)`
+- `explainMoment(momentData)`
+- `getNetwork(escapingTeam, escapingFormation, pressingTeam, pressingFormation, league, minute, homeGoals, awayGoals)`
+
+---
+
+## Active Domain Model
+
+The remaining active Java domain layer is mostly about teams and formations.
 
 | Class | Role |
 |---|---|
-| `MatchContext` | Immutable snapshot: home Team, away Team, homeGoals, awayGoals, minute, title |
-| `Team` | name, Squad, StaminaLevel, TeamAdaptability, Formation, TeamIntent |
-| `TeamIntent` | attack/defence/control weights (0.0–1.0). Built from Style or explicit PCA weights |
-| `Squad` | team name, manager name, Style enum, base Formation |
-| `TacticRecommendation` | recommended Tactic, confidence (int), suggested Formation |
-| `Tactic` | enum: 7 tactics (ATTACK, DEFEND, PRESS, COUNTER, POSSESS, PARK_THE_BUS, DIRECT) |
-| `GamePhase` | enum: EARLY_MINUTES, CLOSING_HALF, HALF_TIME, BUILD_PHASE, TENSION_TIME, LATE_GAME, STOPPAGE_TIME |
-| `Formation` | enum: 5 formations with string labels |
-| `StaminaLevel` | LOW / MEDIUM / HIGH |
-| `TeamAdaptability` | LOW / MEDIUM / HIGH |
+| `Team` | Full team object used for backend graph requests |
+| `Squad` | Team name, manager, style, base formation |
+| `TeamIntent` | Attack / defence / control weights |
+| `Formation` | Formation enum used in puzzle graph generation |
+| `Style` | Team style enum |
+| `StaminaLevel` | Team stamina enum |
+| `TeamAdaptability` | Team adaptability enum |
+| `FileStorage` | Intermediate parsed squad-data holder |
+
+Removed from the active backend:
+- `MatchContext`
+- `Tactic`
+- `TacticRecommendation`
+- `GamePhase`
+- tactical recommendation engine and phase rule classes
+- old OpenAI explanation classes used by the removed recommendation flow
 
 ---
 
-### Data Loading
+## `/api/network` Flow
 
-**`ApplicationParser`** (utility) — parses all CSV files from classpath:
-- `parseTitles(path)` → `Map<Integer, String>` (matchId → title)
-- `parseSquadInformation(path)` → `Map<String, FileStorage>` (teamName → FileStorage)
-- `buildTeamMapFromCsv(path)` → `Map<Integer, String>` (teamId → teamName)
-- `getTeamCodeMap(path)` → `Map<String, String>` (teamName → 3-letter code)
+This is the main Spring-owned backend logic beyond simple proxying.
 
-**`FileStorage`** — intermediate holder from CSV parse:
-Bundles Squad, TeamAdaptability, StaminaLevel, Formation, and optional PCA weights.
-`hasCustomWeights()` returns true if all three PCA weights are present (not -1.0).
+### Request
 
-**`LeagueDataFactory`** (static factory):
-- `buildAllContexts(csvPath, titles, teamData)` → `Map<String, MatchContext>`
-  Key format: `"ARS-AVL_47"` (matchTitle + "_" + minute). Holds entire season in memory.
-- `getFixtureList(teamCode, titles)` → all match IDs/titles containing that team code
-- `buildTeamFromName(name, teamData)` → constructs Team using PCA weights if present,
-  style-bias formula otherwise
+`GET /api/network`
 
-**`MatchService`** (`@Service`, `@PostConstruct`):
-Loads all CSV data at startup into memory maps for both leagues (PL and SA).
-Public API used by the controller:
-- `getTeams(league)` → sorted team map
-- `getTeamName(league, teamId)` → team name string
-- `getFixtures(league, teamName)` → `{home: [...], away: [...]}` fixture lists
-- `getMatchContext(league, matchNumber, minute)` → MatchContext or null
-- `getTeam(league, teamName)` → Team domain object
-- `getRecommendation(context, team)` → TacticRecommendation (delegates to engine)
-- `getExplanation(context, team, recommendation)` → String from OpenAI
-- `getAllTactics()` → List of Tactic enum values
+Query params:
+- `escapingTeam`
+- `pressingTeam`
+- `league`
+- `minute`
+- `homeGoals`
+- `awayGoals`
 
----
+### Spring-side work
 
-### `/api/network` Endpoint (Active)
+1. Look up both teams by name from squad data.
+2. Extract their formations from the `Team` domain objects.
+3. Forward the request to FastAPI `/network` with team names, formations, league, and match state.
 
-**`GET /api/network`**
-
-Query params: `escapingTeam`, `pressingTeam`, `league`, `minute`, `homeGoals`, `awayGoals`
-
-Returns two NetworkGraph objects:
+### Response shape
 
 ```json
 {
@@ -129,166 +168,140 @@ Returns two NetworkGraph objects:
     "edges": [{ "from": "LB", "to": "CDM", "escape_prob": 0.72 }]
   },
   "pressing_graph": {
-    "nodes": [...],
-    "edges": [...]
+    "nodes": [],
+    "edges": []
   },
+  "game_phase": "BUILD_PHASE",
   "escaping_formation": "F_4_3_3",
-  "pressing_formation": "F_4_3_3",
-  "game_phase": "BUILD_PHASE"
+  "pressing_formation": "F_4_3_3"
 }
 ```
 
-- Node `x,y` are normalized pitch coordinates (x: 0=own goal → 1=opponent goal, y: 0=left → 1=right)
-- `escape_prob` on each edge is the predicted probability from the trained HistGradientBoosting model
-- Formations are looked up from SquadInformation.csv per team
-- Game phase is derived from the minute parameter
+---
+
+## FastAPI Service
+
+**Location:** `rag-service/main.py`
+
+### Active endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/health` | Health check |
+| POST | `/story` | Retrieve and generate moment cards |
+| POST | `/explain` | Explain a moment with nearby grounded context |
+| POST | `/network` | Build puzzle graphs and score escape edges |
 
 ---
 
-### Tactical Recommendation Engine (Legacy — stubbed)
+## Retrieval Pipeline
 
-**`TacticalRecommendationEngine`**:
-Holds 7 `TacticalRule` instances (one per game phase). All 7 phase rules are registered
-but throw `UnsupportedOperationException` — the engine structure is in place but rule
-logic was not ported to v2. The `/api/recommend` endpoint is considered legacy.
+The retrieval system is no longer just raw minute-level semantic search.
 
----
+### Ingestion (`rag-service/ingest.py`)
 
-### OpenAI Integration (Legacy — used by /api/recommend only)
+The current ingestion flow:
+- reads Premier League and Serie A minute context CSVs
+- joins squad metadata
+- creates richer match windows around each minute
+- stores tactical and narrative retrieval hints in Chroma metadata
 
-**`OpenAIClient`** — wraps raw HTTP call to OpenAI chat completions.
-Reads key from `@Value("${openai.api.key:}")`.
+Examples of enriched metadata:
+- `game_phase`
+- `goal_diff_abs`
+- `close_score`
+- `late_game`
+- `turning_point`
+- `home_state`
+- `away_state`
+- `home_themes`
+- `away_themes`
+- `home_puzzle_score`
+- `away_puzzle_score`
 
-**`TacticalExplanationService`** — takes a pre-built prompt string, calls `OpenAIClient`,
-returns explanation text.
+### Story retrieval (`/story`)
 
----
+Current flow:
+1. Build a theme-aware query from team + query type.
+2. Embed query with `text-embedding-3-small`.
+3. Retrieve candidate windows from Chroma filtered by league and team.
+4. Rerank candidates using:
+   - semantic similarity
+   - theme-fit heuristics
+   - puzzle usefulness
+   - recency interest
+5. Cluster nearby minutes to avoid overcounting one event.
+6. Enforce diversity across matches and contexts.
+7. Ask GPT-4o-mini to turn selected candidates into readable moment cards.
+8. Apply a final post-generation constraint pass so one match does not dominate the result set.
 
-### RAG Proxy (Active — used by casual fan flow)
+### Explanation (`/explain`)
 
-**`RagService`** (`@Service`):
-Thin proxy using `RestTemplate`. Calls `http://localhost:8000` (Python FastAPI).
+Current flow:
+1. Accept selected moment fields from frontend.
+2. Retrieve nearby context from the same match window.
+3. Ask GPT-4o-mini to explain the moment using both the selected card and nearby retrieved context.
 
-- `getStory(team, league, mode, queryType)` → POST `/story` → returns raw Object (JSON passthrough)
-- `explainMoment(momentData)` → POST `/explain` → returns raw Object (JSON passthrough)
-
-No transformation — the Python response is forwarded as-is to the frontend.
-
----
-
-### API Controller
-
-**`ApiController`** (`@RestController`, `/api`):
-
-| Method | Path | Parameters | Handler | Active |
-|---|---|---|---|---|
-| GET | `/api/clubs` | `league=PL\|SA` | `matchService.getTeams()` | Yes |
-| GET | `/api/network` | `escapingTeam, pressingTeam, league, minute, homeGoals, awayGoals` | Graph generator | Yes |
-| GET | `/api/story` | `team, league, mode, queryType` | `ragService.getStory()` | Yes |
-| POST | `/api/explain` | JSON body (moment fields) | `ragService.explainMoment()` | Yes |
-| GET | `/api/fixtures` | `teamId, league` | `matchService.getFixtures()` | Legacy |
-| GET | `/api/match` | `matchId, teamId, league` | `matchService.getMatchContext()` | Legacy |
-| POST | `/api/recommend` | `teamId, matchId, minute, userTactic, league` | Engine + OpenAI | Legacy |
-
-**`SpaController`** — catch-all for React Router; forwards unmapped paths to `index.html`.
-
----
-
-## Python RAG Service
-
-**Location:** `rag-service/`
-**Runtime:** FastAPI on port 8000
-**Dependencies:** fastapi, openai, chromadb, python-dotenv, pydantic
-
-### Knowledge Base (ChromaDB)
-
-**`ingest.py`** — one-time ingestion script (~$0.07 cost, ~68,400 rows):
-
-Reads both `MatchMinuteContext.csv` files, joins with `SquadInformation.csv` per league,
-converts each row to a natural language string, then embeds and stores in ChromaDB.
-
-**Text format per row:**
-```
-"{home} vs {away}, minute {m} ({phase}). Score: {situation}.
-{home} managed by {manager}, playing {style} style, {stamina} stamina, {adaptability} adaptability.
-{away} managed by {manager}, playing {style} style, {stamina} stamina, {adaptability} adaptability."
-```
-
-**ChromaDB collection:** `match_moments` (cosine similarity, persisted to `./chroma_store`)
-
-**Document ID format:** `{LEAGUE}_{match_id}_{minute}` (e.g. `PL_14_67`)
-
-**Stored metadata per document:**
-`league, match_id, minute, home_team, away_team, home_goals, away_goals`
+The intention is to keep the explanation grounded in actual match state instead of generating from the card alone.
 
 ---
 
-### FastAPI Endpoints
+## Puzzle Intelligence Layer
 
-**`GET /health`** → `{"status": "ok"}`
+The network pipeline in FastAPI uses:
+- formation matrices from `rag-service/pipeline/output/matrices/`
+- `escape_model.joblib`
+- current minute to determine game phase
+- team formations supplied by Spring Boot
+
+### Output responsibilities
+
+FastAPI `/network` returns:
+- `escape_graph`
+- `pressing_graph`
+- `game_phase`
+- `escaping_formation`
+- `pressing_formation`
+
+The frontend currently still computes some puzzle-specific derived values locally, but the backend owns graph generation and edge scoring.
 
 ---
 
-**`POST /story`**
+## Pipeline Assets
 
-Request body:
-```json
-{ "team": "Arsenal", "league": "PL", "mode": "simple|indepth", "query_type": "dramatic|dominant|comeback|pressure|turning_point|surprise" }
-```
+Offline pipeline scripts live in:
 
-Flow:
-1. `n_results` = 5 (simple) or 10 (indepth)
-2. Build semantic query from `QUERY_TEMPLATES[query_type]` + team name
-3. Embed query with `text-embedding-3-small`
-4. Query ChromaDB: top 200 results filtered to `home_team == team OR away_team == team`
-5. Group by `match_id`, pick one random moment per match → diverse pool
-6. Shuffle and take `n_results`
-7. Send sampled context to GPT-4o-mini with storyteller prompt
-
-GPT output format:
-```json
-{
-  "moments": [{
-    "headline": "string (max 8 words)",
-    "minute": int,
-    "match": "Home vs Away",
-    "score": "string",
-    "narrative": "2-3 sentences, plain English, no jargon",
-    "concept": "football concept name (e.g. High Press)"
-  }]
-}
+```text
+rag-service/pipeline/
+  extract_passes.py
+  build_matrices.py
+  train_escape_model.py
 ```
 
-Response: `{ "team", "query_type", "moments": [...] }`
+Generated artifacts live in:
 
----
-
-**`POST /explain`**
-
-Request body:
-```json
-{ "headline": "", "match": "", "minute": int, "score": "", "concept": "", "team": "" }
+```text
+rag-service/pipeline/output/
+  escape_model.joblib
+  escape_model_meta.json
+  passes.csv
+  matrices/
 ```
 
-Flow: Builds a teacher-voice prompt, calls GPT-4o-mini (temp 0.7).
-Returns: `{ "headline", "match", "minute", "concept", "explanation": "string" }`
+These scripts are not part of runtime request handling, but they remain part of the backend data and model pipeline.
 
 ---
 
-## What Is and Isn't Built
+## Current Backend Direction
 
-| Feature | Status |
-|---|---|
-| League + club selection (`/api/clubs`) | Done |
-| RAG story retrieval (`/api/story`) | Done |
-| Moment explanation (`/api/explain`) | Done |
-| ChromaDB knowledge base (68k moments, both leagues) | Done |
-| `/api/network` endpoint (graph generation) | Done |
-| StatsBomb pass extraction (`extract_passes.py`) | Done — 143,349 rows, 1,162 matches |
-| Formation probability matrices (`build_matrices.py`) | Done — 5 formations |
-| Press escape outcome model (`train_escape_model.py`) | Done — HistGradientBoosting, ROC-AUC 0.84, CV 0.8333 ± 0.005 |
-| Tactical puzzle frontend (`/puzzle`) | Done |
-| Tactical recommendation engine (`/api/recommend`) | Stubbed — all 7 phase rules throw |
-| Context adjustment layer | Not started |
-| Tension Score model (0–100) | Not started |
-| "What to Watch" as distinct API field | Not started |
+The backend is now aligned to the active product vision:
+
+**experience a real moment -> understand the tactical problem -> solve it -> learn from feedback**
+
+What matters most going forward:
+- improving retrieval quality and moment diversity
+- introducing a structured "moment brief" that connects story to puzzle
+- moving more puzzle truth and evaluation into backend-owned logic
+- making post-puzzle coaching more explicit
+
+The old recommendation simulator architecture has been intentionally removed to reduce clutter and keep the codebase centered on the current product.

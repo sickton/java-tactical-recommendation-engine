@@ -9,7 +9,6 @@ package com.sickton.jgaffer.domain;
  *
  * @author sickton
  * @see Team
- * @see com.sickton.jgaffer.rules.TacticalRule
  */
 public enum StaminaLevel {
     LOW,
