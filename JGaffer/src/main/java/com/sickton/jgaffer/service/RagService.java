@@ -3,6 +3,7 @@ package com.sickton.jgaffer.service;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -38,6 +39,31 @@ public class RagService {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(momentData, headers);
+        ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
+
+        return response.getBody();
+    }
+
+    public Object getNetwork(String escapingTeam, String escapingFormation,
+                             String pressingTeam,  String pressingFormation,
+                             String league, int minute, int homeGoals, int awayGoals)
+    {
+        String url = PYTHON_SERVICE_URL + "/network";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("escaping_team",      escapingTeam);
+        body.put("escaping_formation", escapingFormation);
+        body.put("pressing_team",      pressingTeam);
+        body.put("pressing_formation", pressingFormation);
+        body.put("league",             league);
+        body.put("minute",             minute);
+        body.put("home_goals",         homeGoals);
+        body.put("away_goals",         awayGoals);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
         ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
 
         return response.getBody();

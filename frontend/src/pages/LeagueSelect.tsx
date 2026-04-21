@@ -33,7 +33,7 @@ export default function LeagueSelect() {
             <div className="logo-badge">
               <img
                 className="league-logo"
-                src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/200px-Premier_League_Logo.svg.png"
+                src="/pl-logo.svg"
                 alt="Premier League"
               />
             </div>

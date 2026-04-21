@@ -1,0 +1,85 @@
+{
+  "features": [
+    "from_pos",
+    "to_pos",
+    "formation",
+    "game_phase",
+    "pitch_zone",
+    "pass_direction",
+    "pass_length",
+    "pass_angle",
+    "pitch_x",
+    "pitch_y"
+  ],
+  "label": "pass_outcome",
+  "classes": [
+    "fail",
+    "success"
+  ],
+  "encoders": {
+    "from_pos": [
+      "CAM",
+      "CB",
+      "CDM",
+      "CF",
+      "CM",
+      "GK",
+      "LB",
+      "LM",
+      "LW",
+      "LWB",
+      "RB",
+      "RM",
+      "RW",
+      "RWB",
+      "ST"
+    ],
+    "to_pos": [
+      "CAM",
+      "CB",
+      "CDM",
+      "CF",
+      "CM",
+      "GK",
+      "LB",
+      "LM",
+      "LW",
+      "LWB",
+      "RB",
+      "RM",
+      "RW",
+      "RWB",
+      "ST"
+    ],
+    "formation": [
+      "F_3_4_3",
+      "F_3_5_2",
+      "F_4_2_3_1",
+      "F_4_3_3",
+      "F_4_4_2"
+    ],
+    "game_phase": [
+      "BUILD_PHASE",
+      "CLOSING_HALF",
+      "EARLY_MINUTES",
+      "HALF_TIME",
+      "LATE_GAME",
+      "STOPPAGE_TIME",
+      "TENSION_TIME"
+    ],
+    "pitch_zone": [
+      "attacking_third",
+      "defensive_third",
+      "middle_third"
+    ],
+    "pass_direction": [
+      "backward",
+      "forward",
+      "sideways"
+    ]
+  },
+  "n_estimators": 200,
+  "learning_rate": 0.1,
+  "max_depth": 4,
+  "threshold": 0.5099999999999998
+}
