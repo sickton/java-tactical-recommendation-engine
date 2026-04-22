@@ -44,21 +44,39 @@ for path in (_PIPELINE_DIR / "matrices").glob("*.json"):
 # y: 0 = left touchline, 1 = right touchline
 POSITION_COORDS: dict[str, tuple[float, float]] = {
     "GK":  (0.05, 0.50),
-    "CB":  (0.20, 0.50),
-    "RB":  (0.22, 0.82),
-    "LB":  (0.22, 0.18),
-    "RWB": (0.40, 0.88),
-    "LWB": (0.40, 0.12),
-    "CDM": (0.38, 0.50),
-    "CM":  (0.50, 0.50),
-    "RM":  (0.50, 0.82),
-    "LM":  (0.50, 0.18),
+    "CB":  (0.20, 0.36),  # LCB (4-back) / left CB (3-back)
+    "CB2": (0.20, 0.64),  # RCB (4-back) / right CB (3-back)
+    "CB3": (0.20, 0.50),  # centre CB — only used in 3-back formations
+    "LB":  (0.22, 0.14),
+    "RB":  (0.22, 0.86),
+    "LWB": (0.40, 0.10),
+    "RWB": (0.40, 0.90),
+    "CDM": (0.42, 0.50),
+    "CM":  (0.52, 0.32),
+    "LM":  (0.50, 0.16),
+    "RM":  (0.50, 0.84),
     "CAM": (0.62, 0.50),
-    "RW":  (0.72, 0.82),
-    "LW":  (0.72, 0.18),
-    "CF":  (0.80, 0.65),
-    "ST":  (0.85, 0.50),
+    "LW":  (0.74, 0.14),
+    "RW":  (0.74, 0.86),
+    "CF":  (0.80, 0.38),
+    "ST":  (0.84, 0.50),
 }
+
+# Canonical 11 positions per formation — only these nodes are shown
+FORMATION_NODES: dict[str, list[str]] = {
+    "F_4_3_3":   ["GK", "LB", "CB", "CB2", "RB",  "CDM", "CM",  "CAM", "LW",  "ST",  "RW"],
+    "F_4_2_3_1": ["GK", "LB", "CB", "CB2", "RB",  "CDM", "CM",  "LW",  "CAM", "RW",  "ST"],
+    "F_4_4_2":   ["GK", "LB", "CB", "CB2", "RB",  "LM",  "CDM", "CM",  "RM",  "CF",  "ST"],
+    "F_3_4_3":   ["GK", "CB", "CB2", "CB3", "LM",  "CDM", "CM",  "RM",  "LW",  "ST",  "RW"],
+    "F_3_5_2":   ["GK", "CB", "CB2", "CB3", "LWB", "LM",  "CDM", "RM",  "RWB", "CF",  "ST"],
+    "F_5_3_2":   ["GK", "LWB", "LB", "CB", "RB",  "RWB", "CDM", "CAM", "CM",  "CF",  "ST"],
+}
+
+# Max outgoing edges rendered per node — keeps the graph readable
+MAX_EDGES_PER_NODE = 4
+
+# Minimum pass-frequency weight to include an edge
+EDGE_WEIGHT_THRESHOLD = 0.12
 
 FALLBACK_FORMATION = "F_4_3_3"
 
@@ -402,6 +420,8 @@ Each object must contain exactly these keys:
 - score: exact score string from the candidate
 - narrative: 2-3 sentences in plain English, focused on why the moment matters
 - concept: a football concept a casual fan can learn from this moment
+- tactical_problem: one sentence describing the specific tactical problem {team} faced at this exact moment. Be concrete — reference the score, minute, or game state. Max 20 words.
+- mission: one short action sentence telling the user what they are being asked to solve. Start with a verb. Max 12 words.
 
 Favor diversity across matches and avoid repeating the same storyline.
 """
@@ -430,6 +450,8 @@ Favor diversity across matches and avoid repeating the same storyline.
                     f"It is a useful snapshot for understanding how the match is unfolding."
                 ),
                 "concept": candidate["concept_hint"],
+                "tactical_problem": f"{team} need to hold their shape and find a way through.",
+                "mission": "Find the safest passing route under pressure.",
             })
         return fallback
 
@@ -493,6 +515,8 @@ def enforce_story_constraints(moments: list[dict], candidates: list[dict], n_res
                     f"It stands out as a strong example of this match situation."
                 ),
                 "concept": candidate["concept_hint"],
+                "tactical_problem": f"The team need to find a solution under pressure at {candidate['minute']}'.",
+                "mission": "Find the best route through the press.",
             })
             seen_keys.add(key)
             match_counts[match_id] += 1
@@ -697,27 +721,46 @@ def score_edge(from_pos: str, to_pos: str, formation: str, game_phase: str,
 def build_graph(formation: str, game_phase: str, score_edges: bool) -> dict:
     matrix = matrices.get(formation) or matrices.get(FALLBACK_FORMATION, {})
 
-    positions_used: set[str] = set()
-    for from_pos, targets in matrix.items():
-        positions_used.add(from_pos)
-        positions_used.update(targets.keys())
+    canonical = FORMATION_NODES.get(formation, FORMATION_NODES[FALLBACK_FORMATION])
+    canonical_set = set(canonical)
+    has_cb2 = "CB2" in canonical_set
+    has_cb3 = "CB3" in canonical_set  # centre CB in a 3-back system
 
+    # ── Nodes — only canonical positions that have known coords ──────────────
     nodes = [
         {"id": pos, "x": POSITION_COORDS[pos][0], "y": POSITION_COORDS[pos][1]}
-        for pos in positions_used if pos in POSITION_COORDS
+        for pos in canonical
+        if pos in POSITION_COORDS
     ]
 
-    edges = []
+    # ── Edges ─────────────────────────────────────────────────────────────────
+    edges: list[dict] = []
+
     for from_pos, targets in matrix.items():
+        # Emit edges from canonical positions; treat CB as the template for CB2/CB3 too
+        if from_pos not in canonical_set and from_pos != "CB":
+            continue
         from_coords = POSITION_COORDS.get(from_pos)
         if not from_coords:
             continue
-        for to_pos, weight in targets.items():
-            if weight < 0.05:
-                continue
-            to_coords = POSITION_COORDS.get(to_pos)
-            if not to_coords:
-                continue
+
+        # Filter targets: canonical, have coords, above threshold, not self, not synthetic CBs
+        valid: list[tuple[str, float]] = sorted(
+            [
+                (to_pos, weight)
+                for to_pos, weight in targets.items()
+                if weight >= EDGE_WEIGHT_THRESHOLD
+                and to_pos in canonical_set
+                and to_pos in POSITION_COORDS
+                and to_pos != from_pos
+                and to_pos not in ("CB2", "CB3")   # synthetic — added below
+            ],
+            key=lambda t: t[1],
+            reverse=True,
+        )[:MAX_EDGES_PER_NODE]
+
+        for to_pos, weight in valid:
+            to_coords = POSITION_COORDS[to_pos]
             edge: dict = {"from": from_pos, "to": to_pos, "weight": round(weight, 4)}
             if score_edges:
                 edge["escape_prob"] = score_edge(
@@ -725,7 +768,396 @@ def build_graph(formation: str, game_phase: str, score_edges: bool) -> dict:
                 )
             edges.append(edge)
 
+        # Mirror CB edges onto CB2 and CB3 (all CBs get the same outgoing options)
+        if from_pos == "CB":
+            for synthetic_cb, synthetic_key in [("CB2", has_cb2), ("CB3", has_cb3)]:
+                if not synthetic_key:
+                    continue
+                syn_coords = POSITION_COORDS[synthetic_cb]
+                for to_pos, weight in valid:
+                    to_coords = POSITION_COORDS[to_pos]
+                    edge = {"from": synthetic_cb, "to": to_pos, "weight": round(weight, 4)}
+                    if score_edges:
+                        edge["escape_prob"] = score_edge(
+                            synthetic_cb, to_pos, formation, game_phase, syn_coords, to_coords
+                        )
+                    edges.append(edge)
+
+    # ── Short passes between CBs ───────────────────────────────────────────────
+    # 4-back: CB ↔ CB2
+    # 3-back: CB ↔ CB3, CB3 ↔ CB2  (a chain across the back three)
+    cb_pairs: list[tuple[str, str]] = []
+    if has_cb2:
+        cb_pairs += [("CB", "CB2"), ("CB2", "CB")]
+    if has_cb3:
+        cb_pairs += [("CB", "CB3"), ("CB3", "CB")]
+    if has_cb2 and has_cb3:
+        cb_pairs += [("CB2", "CB3"), ("CB3", "CB2")]
+
+    for frm, to in cb_pairs:
+        fc = POSITION_COORDS.get(frm)
+        tc = POSITION_COORDS.get(to)
+        if not fc or not tc:
+            continue
+        edge = {"from": frm, "to": to, "weight": 0.72}
+        if score_edges:
+            edge["escape_prob"] = score_edge(frm, to, formation, game_phase, fc, tc)
+        edges.append(edge)
+
     return {"nodes": nodes, "edges": edges}
+
+
+# ─── Puzzle models ────────────────────────────────────────────────────────────
+
+class MomentContext(BaseModel):
+    headline: str
+    minute: int
+    match: str
+    score: str
+    concept: str
+    team: str
+    tactical_problem: str = ""
+    mission: str = ""
+
+
+class PuzzleRequest(BaseModel):
+    moment: MomentContext
+    escaping_formation: str
+    pressing_formation: str
+    pressing_team: str
+    league: str
+    home_goals: int
+    away_goals: int
+
+
+class EvaluateRequest(BaseModel):
+    puzzle_type: str
+    answer: dict                  # sequence, direction, formation etc.
+    config: dict                  # the config block returned by /puzzle
+    moment_context: MomentContext
+
+
+# ─── Puzzle type selection ─────────────────────────────────────────────────────
+
+CONCEPT_TO_PUZZLE: dict[str, str] = {
+    "Press Resistance":    "break_the_press",
+    "High Press":          "break_the_press",
+    "Dominant Possession": "break_the_press",
+    "Control":             "break_the_press",
+    "Weak-Side Switch":    "break_the_press",
+    "Third-Man Run":       "break_the_press",
+    "Counter Attack":      "break_the_press",
+    "Cover Shadow":        "break_the_press",
+    "Game Management":     "break_the_press",
+    "Momentum Shift":      "break_the_press",
+    "Turning Point":       "break_the_press",
+    "Tactical Awareness":  "break_the_press",
+}
+
+
+def select_puzzle_type(concept: str, minute: int, score_diff: int) -> str:
+    return CONCEPT_TO_PUZZLE.get(concept, "break_the_press")
+
+
+def parse_score_diff(score: str, team: str, match: str) -> int:
+    nums = re.findall(r"\d+", score)
+    if len(nums) < 2:
+        return 0
+    home_goals, away_goals = int(nums[0]), int(nums[1])
+    # determine if team is home or away from match string
+    home_team = match.split(" vs ")[0].strip() if " vs " in match else ""
+    if home_team.lower() == team.lower():
+        return home_goals - away_goals
+    return away_goals - home_goals
+
+
+# ─── Playstyle classification ──────────────────────────────────────────────────
+
+# Defensive line — all back-four variants + GK
+DEEP_POSITIONS     = {"GK", "CB", "CB2", "CB3", "LCB", "RCB", "LB", "RB", "LWB", "RWB"}
+# Pure midfield engine room
+MIDFIELD_POSITIONS = {"CDM", "CDM2", "CM", "CM2", "LCM", "RCM"}
+# Advanced / creative midfield
+ATK_MID_POSITIONS  = {"CAM", "AM"}
+# Wide channels
+WIDE_POSITIONS     = {"LW", "RW", "LM", "RM"}
+# Pure final-third
+FORWARD_POSITIONS  = {"ST", "CF", "SS"}
+
+
+def classify_playstyle(sequence: list[str], edges: list[dict]) -> dict:
+    if len(sequence) < 2:
+        return {"name": "Incomplete", "description": "Not enough passes to classify."}
+
+    passes = list(zip(sequence, sequence[1:]))
+    n = len(passes)
+
+    # Count passes *received* by each zone
+    to_deep    = sum(1 for _, t in passes if t in DEEP_POSITIONS)
+    to_mid     = sum(1 for _, t in passes if t in MIDFIELD_POSITIONS)
+    to_atk_mid = sum(1 for _, t in passes if t in ATK_MID_POSITIONS)
+    to_wide    = sum(1 for _, t in passes if t in WIDE_POSITIONS)
+    to_forward = sum(1 for _, t in passes if t in FORWARD_POSITIONS)
+
+    wide_ratio    = to_wide    / n
+    mid_ratio     = to_mid     / n
+    atk_mid_ratio = to_atk_mid / n
+    forward_ratio = to_forward / n
+
+    # "Central" = midfield + attacking-mid combined
+    central_ratio = (to_mid + to_atk_mid) / n
+
+    starts_deep = sequence[0] in DEEP_POSITIONS
+    second_deep = len(sequence) > 1 and sequence[1] in DEEP_POSITIONS
+    # Any pass back to a defender counts as a "reset"
+    has_reset   = to_deep > 0
+
+    # A "line-skip" = jumping from deep directly to attack-mid or striker
+    line_skips  = sum(
+        1 for f, t in passes
+        if f in DEEP_POSITIONS and t in (ATK_MID_POSITIONS | FORWARD_POSITIONS)
+    )
+
+    # ── 1. Switch Wide ────────────────────────────────────────────────────
+    if wide_ratio >= 0.40:
+        return {
+            "name": "Switch Wide",
+            "description": (
+                "You moved the ball out to the flanks — making the other team "
+                "run sideways to chase it. When defenders slide across to cover a winger, "
+                "they leave gaps in the middle or on the far side. "
+                "It's like stretching a rubber band: the more they shift, the more room appears elsewhere."
+            ),
+        }
+
+    # ── 2. Go Long ────────────────────────────────────────────────────────
+    if forward_ratio >= 0.40 or line_skips >= 2:
+        return {
+            "name": "Go Long",
+            "description": (
+                "You skipped the midfield completely and sent the ball straight to the forwards. "
+                "It's the riskiest option — the receiving player needs a perfect first touch — "
+                "but it can work brilliantly when the other team is bunched up near your defenders "
+                "and there's room behind them for your attackers to run into."
+            ),
+        }
+
+    # ── 3. Build from the Back ────────────────────────────────────────────
+    if starts_deep and (second_deep or has_reset) and forward_ratio < 0.30:
+        return {
+            "name": "Build from the Back",
+            "description": (
+                "You kept the ball with your defenders and goalkeeper first, "
+                "moving it calmly between them before pushing forward. "
+                "The idea is simple: if you're patient, the other team eventually "
+                "runs towards you — and the moment they do, a gap opens up behind them."
+            ),
+        }
+
+    # ── 4. Quick Combinations ─────────────────────────────────────────────
+    if central_ratio >= 0.40 and forward_ratio < 0.30:
+        return {
+            "name": "Quick Combinations",
+            "description": (
+                "You played lots of short passes through the middle of the pitch, "
+                "keeping the ball moving from player to player. "
+                "The other team has to keep turning and chasing, "
+                "and eventually someone gets caught out of position — that's when you go forward."
+            ),
+        }
+
+    # ── 5. Play Through Quickly ───────────────────────────────────────────
+    return {
+        "name": "Play Through Quickly",
+        "description": (
+            "You moved the ball up the pitch fast — passing forward before "
+            "the other team could get back into position. "
+            "It's direct but not just a long ball: you're using your midfielders "
+            "as stepping stones, getting the ball to dangerous areas while defenders are still scrambling."
+        ),
+    }
+
+
+# ─── Sequence scoring ──────────────────────────────────────────────────────────
+
+def score_sequence(sequence: list[str], edges: list[dict]) -> float:
+    if len(sequence) < 2:
+        return 0.0
+    total, count = 0.0, 0
+    for i in range(len(sequence) - 1):
+        edge = next(
+            (e for e in edges if e["from"] == sequence[i] and e["to"] == sequence[i + 1]),
+            None
+        )
+        if edge and edge.get("escape_prob") is not None:
+            total += edge["escape_prob"]
+            count += 1
+    return round(total / count, 4) if count > 0 else 0.0
+
+
+def compute_optimal_path(edges: list[dict], start: str, max_hops: int = 4) -> list[str]:
+    path = [start]
+    current = start
+    for _ in range(max_hops):
+        candidates = [e for e in edges if e["from"] == current and e["to"] not in path]
+        if not candidates:
+            break
+        best = max(candidates, key=lambda e: e.get("escape_prob", 0))
+        path.append(best["to"])
+        current = best["to"]
+    return path
+
+
+def medal_for(user: float, optimal: float) -> str:
+    if optimal == 0:
+        return "—"
+    ratio = user / optimal
+    if ratio >= 0.9:
+        return "GOLD"
+    if ratio >= 0.7:
+        return "SILVER"
+    if ratio >= 0.5:
+        return "BRONZE"
+    return "MISS"
+
+
+# ─── GPT coaching ──────────────────────────────────────────────────────────────
+
+def generate_coaching(
+    playstyle: dict,
+    user_sequence: list[str],
+    optimal_path: list[str],
+    user_score: float,
+    optimal_score: float,
+    moment: MomentContext,
+) -> str:
+    prompt = f"""
+You are talking to someone who watches football on TV but has never studied tactics.
+They just played a passing puzzle. Write feedback that a 16-year-old football fan could understand immediately.
+
+Situation: {moment.team}, minute {moment.minute}', score {moment.score}.
+Their passes: {" → ".join(user_sequence)} — {round(user_score * 100)}% success chance.
+Best passes: {" → ".join(optimal_path)} — {round(optimal_score * 100)}% success chance.
+
+Write exactly 3 sentences. No more, no less.
+
+Sentence 1: Describe what they actually did — where the ball went and why that's interesting. Use the position names (LCB, RB, CM etc.) since they're shown on screen. Do NOT label it with a style name.
+Sentence 2: If their score was more than 10% below optimal, explain in plain English why the better route was safer (e.g. "Going through RCB first gave GK more room because two defenders had already drawn the runners away"). If within 10%, say the choice was smart and briefly why.
+Sentence 3: One takeaway they'll actually remember — phrased like a friend, not a coach.
+
+BANNED WORDS — using any of these fails the task:
+press, pressing, build-up, positional play, high line, exploit, transition, overload, structure, stretch, shape, defensive block, tactical, unlock, clinical, composure, outlet
+
+Replacements to use instead:
+- "press / pressing" → "the other team running at you to win the ball"
+- "space / exploit space" → "room to move" or "gap to aim for"
+- "build-up" → "working the ball forward"
+- "transition" → "when the ball switches quickly"
+
+Keep the whole response under 75 words. Warm, direct, human.
+"""
+    response = openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.4,
+    )
+    return response.choices[0].message.content.strip()
+
+
+# ─── /puzzle endpoint ──────────────────────────────────────────────────────────
+
+@app.post("/puzzle")
+def get_puzzle(request: PuzzleRequest):
+    moment = request.moment
+    game_phase = get_game_phase(moment.minute)
+    score_diff = parse_score_diff(moment.score, moment.team, moment.match)
+    puzzle_type = select_puzzle_type(moment.concept, moment.minute, score_diff)
+
+    if puzzle_type == "break_the_press":
+        escape_graph  = build_graph(request.escaping_formation, game_phase, score_edges=True)
+        pressing_graph = build_graph(request.pressing_formation, game_phase, score_edges=False)
+
+        # Pick ball carrier — prefer a pressable deep position that exists in graph
+        node_ids = [n["id"] for n in escape_graph["nodes"]]
+        pressable = ["CB", "CDM", "CM", "LB", "RB"]
+        preferred = [p for p in pressable if p in node_ids]
+        ball_carrier = preferred[0] if preferred else (node_ids[0] if node_ids else "CB")
+
+        return {
+            "puzzle_type": puzzle_type,
+            "brief": {
+                "problem": moment.tactical_problem or f"{moment.team} are under pressure and need a way out.",
+                "mission": moment.mission or "Find the best passing route to escape the press.",
+            },
+            "config": {
+                "escape_graph":        escape_graph,
+                "pressing_graph":      pressing_graph,
+                "ball_carrier":        ball_carrier,
+                "escaping_formation":  request.escaping_formation,
+                "pressing_formation":  request.pressing_formation,
+                "game_phase":          game_phase,
+            },
+        }
+
+    # Fallback — default to break_the_press config
+    escape_graph  = build_graph(request.escaping_formation, game_phase, score_edges=True)
+    pressing_graph = build_graph(request.pressing_formation, game_phase, score_edges=False)
+    node_ids = [n["id"] for n in escape_graph["nodes"]]
+    pressable = ["CB", "CDM", "CM", "LB", "RB"]
+    preferred = [p for p in pressable if p in node_ids]
+    ball_carrier = preferred[0] if preferred else (node_ids[0] if node_ids else "CB")
+
+    return {
+        "puzzle_type": "break_the_press",
+        "brief": {
+            "problem": moment.tactical_problem or f"{moment.team} are under pressure.",
+            "mission": moment.mission or "Find the best passing route.",
+        },
+        "config": {
+            "escape_graph":        escape_graph,
+            "pressing_graph":      pressing_graph,
+            "ball_carrier":        ball_carrier,
+            "escaping_formation":  request.escaping_formation,
+            "pressing_formation":  request.pressing_formation,
+            "game_phase":          game_phase,
+        },
+    }
+
+
+# ─── /evaluate endpoint ────────────────────────────────────────────────────────
+
+@app.post("/evaluate")
+def evaluate_puzzle(request: EvaluateRequest):
+    if request.puzzle_type == "break_the_press":
+        sequence = request.answer.get("sequence", [])
+        edges    = request.config.get("escape_graph", {}).get("edges", [])
+        ball_carrier = request.config.get("ball_carrier", "")
+
+        if not sequence or len(sequence) < 2:
+            return {"error": "Sequence too short to evaluate."}
+
+        user_score    = score_sequence(sequence, edges)
+        optimal_path  = compute_optimal_path(edges, ball_carrier)
+        optimal_score = score_sequence(optimal_path, edges)
+        playstyle     = classify_playstyle(sequence, edges)
+        medal         = medal_for(user_score, optimal_score)
+        coaching      = generate_coaching(
+            playstyle, sequence, optimal_path,
+            user_score, optimal_score, request.moment_context
+        )
+
+        return {
+            "puzzle_type":    request.puzzle_type,
+            "user_score":     user_score,
+            "optimal_path":   optimal_path,
+            "optimal_score":  optimal_score,
+            "medal":          medal,
+            "playstyle":      playstyle["name"],
+            "playstyle_desc": playstyle["description"],
+            "coaching":       coaching,
+        }
+
+    return {"error": f"Unknown puzzle type: {request.puzzle_type}"}
 
 
 class NetworkRequest(BaseModel):

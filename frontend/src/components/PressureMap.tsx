@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { NetworkGraph, NetworkNode } from '../types';
 import { getDisplayCoords } from '../constants/pitchCoords';
+import { computeEscapeShift } from '../utils/escapeShift';
 
-const DISPLAY_LABELS: Record<string, string> = { CB: 'LCB', CB2: 'RCB' };
-const BACK_LINE_IDS = new Set(['CB', 'CB2', 'LB', 'RB', 'LWB', 'RWB']);
+const DISPLAY_LABELS: Record<string, string> = { CB: 'LCB', CB2: 'RCB', CB3: 'CCB' };
+const BACK_LINE_IDS = new Set(['CB', 'CB2', 'CB3', 'LB', 'RB', 'LWB', 'RWB']);
 const SVG_W = 452; // W - 2*PX
 const SVG_H = 280; // H - 2*PY
 
@@ -135,6 +136,14 @@ function bodyPointer(cx: number, cy: number, toX: number, toY: number, r: number
   return `M ${tip[0].toFixed(1)},${tip[1].toFixed(1)} L ${b1[0].toFixed(1)},${b1[1].toFixed(1)} L ${b2[0].toFixed(1)},${b2[1].toFixed(1)} Z`;
 }
 
+// Transition duration per role — harassers rush, anchors reorganise slowly
+const ROLE_TRANSITION: Record<Role, string> = {
+  harasser: '0.32s cubic-bezier(0.22,1.2,0.36,1)',
+  shadower:  '0.52s cubic-bezier(0.34,1.1,0.64,1)',
+  anchor:    '0.72s cubic-bezier(0.25,0.8,0.25,1)',
+};
+
+
 export default function PressureMap({
   pressingGraph, escapeGraph, ballCarrierId,
   escapeFormation, pressingFormation,
@@ -143,16 +152,80 @@ export default function PressureMap({
 }: Props) {
   const [hoveredPresserId, setHoveredPresserId] = useState<string | null>(null);
 
-  // ── Escape team: formation-based positions ────────────────────────────
+  // Track previous ball carrier so we can show pass trail + space-opened glow
+  const prevCarrierRef = useRef<string>(ballCarrierId);
+  const [passTrail, setPassTrail]     = useState<{ fromX: number; fromY: number; toX: number; toY: number } | null>(null);
+  const [spaceGlows, setSpaceGlows]   = useState<Array<{ x: number; y: number }>>([]);
+  const [trailOpacity, setTrailOpacity] = useState(0);
+
+  // ── Escape team positions (needed early for trail calc) ──────────────
   const escapePos: Record<string, [number, number]> = {};
   escapeGraph.nodes.forEach(n => {
     escapePos[n.id] = getDisplayCoords(n.id, escapeFormation);
   });
 
+  // ── Ball change effects: pass trail + space-opened glow ───────────────
+  useEffect(() => {
+    const prev = prevCarrierRef.current;
+    if (prev === ballCarrierId) return;
+    prevCarrierRef.current = ballCarrierId;
+
+    const fromPos = escapePos[prev]        ?? [0.38, 0.5];
+    const toPos   = escapePos[ballCarrierId] ?? [0.38, 0.5];
+    const [fx, fy] = toSvg(fromPos[0], fromPos[1]);
+    const [tx, ty] = toSvg(toPos[0],   toPos[1]);
+
+    // Brief animated pass line on the press map
+    setPassTrail({ fromX: fx, fromY: fy, toX: tx, toY: ty });
+    setTrailOpacity(1);
+    const fadeTimer = setTimeout(() => setTrailOpacity(0), 480);
+    const clearTimer = setTimeout(() => setPassTrail(null), 900);
+
+    // Highlight vacated space — where pressers WERE before they shift
+    // (compute press positions for previous ball carrier)
+    const prevBallNorm = fromPos;
+    const glows: Array<{ x: number; y: number }> = [];
+    pressingGraph.nodes.forEach(pn => {
+      const [bx, by] = [1 - getDisplayCoords(pn.id, pressingFormation)[0], getDisplayCoords(pn.id, pressingFormation)[1]];
+      const [sx, sy] = computeShift(pn.id, 'anchor', prevBallNorm[0], prevBallNorm[1], bx, by);
+      const shiftMag = Math.abs(sx) + Math.abs(sy);
+      // Only glow positions that meaningfully vacate
+      if (shiftMag > 0.06) {
+        const [gx, gy] = toSvg(Math.max(0.05, Math.min(0.94, bx + sx)), Math.max(0.05, Math.min(0.94, by + sy)));
+        glows.push({ x: gx, y: gy });
+      }
+    });
+    setSpaceGlows(glows);
+    const glowTimer = setTimeout(() => setSpaceGlows([]), 800);
+
+    return () => { clearTimeout(fadeTimer); clearTimeout(clearTimer); clearTimeout(glowTimer); };
+  }, [ballCarrierId]);
+
   const ballPos   = escapePos[ballCarrierId] ?? [0.38, 0.5];
   const ballNormX = ballPos[0];
   const ballNormY = ballPos[1];
   const [ballSvgX, ballSvgY] = toSvg(ballNormX, ballNormY);
+
+  // ── Escape team: dynamic positional shifts ───────────────────────────
+  const escapeShiftMap: Record<string, [number, number]> = {};
+  escapeGraph.nodes.forEach(n => {
+    const isBall = n.id === ballCarrierId;
+    if (isBall) { escapeShiftMap[n.id] = [0, 0]; return; }
+    const [bx, by] = escapePos[n.id] ?? [n.x, n.y];
+    escapeShiftMap[n.id] = computeEscapeShift(n.id, ballNormX, ballNormY, bx, by);
+  });
+
+  // Progression clamp: players ahead of the carrier in base x must stay visually ahead.
+  const carrierBaseX = ballNormX;
+  escapeGraph.nodes.forEach(n => {
+    if (n.id === ballCarrierId) return;
+    const [bx, by] = escapePos[n.id] ?? [n.x, n.y];
+    if (bx <= carrierBaseX) return;
+    const [sx, sy] = escapeShiftMap[n.id];
+    if (bx + sx < carrierBaseX + 0.04) {
+      escapeShiftMap[n.id] = [carrierBaseX + 0.04 - bx, sy];
+    }
+  });
 
   // ── Pressing team: base formation positions ───────────────────────────
   const pressBasePos: Record<string, [number, number]> = {};
@@ -438,6 +511,25 @@ export default function PressureMap({
         );
       })}
 
+      {/* ── Escape ghost circles — vacated base positions ── */}
+      {escapeGraph.nodes.map(node => {
+        if (node.id === ballCarrierId) return null;
+        const [esx, esy] = escapeShiftMap[node.id] ?? [0, 0];
+        const shiftMag = Math.abs(esx) + Math.abs(esy);
+        if (shiftMag < 0.04) return null;
+        const [bx, by] = escapePos[node.id] ?? [node.x, node.y];
+        const [gcx, gcy] = toSvg(bx, by);
+        return (
+          <circle key={`esc-ghost-${node.id}`}
+            cx={gcx} cy={gcy} r={9}
+            fill="none"
+            stroke="rgba(88,166,255,0.18)"
+            strokeWidth="1"
+            strokeDasharray="3 3"
+          />
+        );
+      })}
+
       {/* ── Escape ghost nodes ── */}
       {escapeGraph.nodes.map(node => {
         const [ex, ey] = escapePos[node.id] ?? [node.x, node.y];
@@ -446,8 +538,18 @@ export default function PressureMap({
         const isTrap    = node.id === trapNodeId;
         const isMarked  = node.id === markedEscapeId;
         const isCovered = activePresserId !== null && !isBall && !isMarked;
+
+        // Dynamic shift — non-ball-carrier players reposition intelligently
+        const [esx, esy] = isBall ? [0, 0] : (escapeShiftMap[node.id] ?? [0, 0]);
+        const [etdx, etdy] = [esx * SVG_W, esy * SVG_H];
+
         return (
-          <g key={`esc-${node.id}`}>
+          <g key={`esc-${node.id}`}
+            style={{
+              transform: `translate(${etdx.toFixed(1)}px, ${etdy.toFixed(1)}px)`,
+              transition: 'transform 0.45s cubic-bezier(0.34,1.1,0.64,1)',
+            }}
+          >
             {isBall && <circle cx={cx} cy={cy} r={28} fill="url(#pm-ball-glow)" />}
             {isMarked && activePresserId && (
               <circle cx={cx} cy={cy} r={26} fill="url(#pm-danger-heat)" />
@@ -606,7 +708,7 @@ export default function PressureMap({
           <g key={`press-${node.id}`}
             style={{
               transform: `translate(${tdx.toFixed(1)}px, ${tdy.toFixed(1)}px)`,
-              transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)',
+              transition: `transform ${ROLE_TRANSITION[role]}`,
             }}
             onMouseEnter={() => setHoveredPresserId(node.id)}
             onMouseLeave={() => setHoveredPresserId(null)}
@@ -678,6 +780,34 @@ export default function PressureMap({
           </g>
         );
       })}
+
+      {/* ── Space-opened glows — vacated zones after press shifts ── */}
+      {spaceGlows.map((g, i) => (
+        <circle key={`space-${i}`}
+          cx={g.x} cy={g.y} r={22}
+          fill="rgba(0,220,160,0.13)"
+          stroke="rgba(0,220,160,0.35)"
+          strokeWidth="1"
+          strokeDasharray="4 3"
+          style={{ transition: 'opacity 0.4s', opacity: spaceGlows.length > 0 ? 1 : 0 }}
+        />
+      ))}
+
+      {/* ── Pass trail — brief animated line when ball moves ── */}
+      {passTrail && (
+        <line
+          x1={passTrail.fromX} y1={passTrail.fromY}
+          x2={passTrail.toX}   y2={passTrail.toY}
+          stroke="rgba(88,166,255,0.65)"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeDasharray="6 4"
+          style={{
+            opacity: trailOpacity,
+            transition: 'opacity 0.45s ease-out',
+          }}
+        />
+      )}
 
       {/* ── Intel bar ── */}
       <g>

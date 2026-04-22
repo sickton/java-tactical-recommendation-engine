@@ -5,6 +5,8 @@ export interface Moment {
   score: string;
   narrative: string;
   concept: string;
+  tactical_problem?: string;
+  mission?: string;
 }
 
 export interface StoryResponse {
@@ -45,4 +47,53 @@ export interface NetworkResponse {
   game_phase: string;
   escaping_formation: string;
   pressing_formation: string;
+}
+
+// ── Puzzle system ─────────────────────────────────────────────────────────────
+
+export interface PuzzleBrief {
+  problem: string;
+  mission: string;
+}
+
+export interface BreakThePressConfig {
+  escape_graph: NetworkGraph;
+  pressing_graph: NetworkGraph;
+  ball_carrier: string;
+  escaping_formation: string;
+  pressing_formation: string;
+  game_phase: string;
+}
+
+export interface PuzzleResponse {
+  puzzle_type: 'break_the_press';
+  brief: PuzzleBrief;
+  config: BreakThePressConfig;
+}
+
+export interface EvaluateRequest {
+  puzzle_type: string;
+  answer: Record<string, unknown>;
+  config: Record<string, unknown>;
+  moment_context: {
+    headline: string;
+    minute: number;
+    match: string;
+    score: string;
+    concept: string;
+    team: string;
+    tactical_problem: string;
+    mission: string;
+  };
+}
+
+export interface EvaluateResult {
+  puzzle_type: string;
+  user_score: number;
+  optimal_path: string[];
+  optimal_score: number;
+  medal: 'GOLD' | 'SILVER' | 'BRONZE' | 'MISS' | '—';
+  playstyle: string;
+  playstyle_desc: string;
+  coaching: string;
 }

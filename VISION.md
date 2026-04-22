@@ -385,6 +385,184 @@ The moments -> mission -> puzzle -> coaching path should become the center of gr
 
 ---
 
+## The Puzzle Suite
+
+JGaffer has a suite of 8 interactive puzzles. Each puzzle is triggered by a real match moment and ends with coaching that teaches one football concept. The puzzle shown is selected based on the moment type, game state, and what is most teachable at that point in the match.
+
+All puzzles follow the same structure:
+
+**Here is the moment. Here is the problem. Now solve it. Here is what it teaches.**
+
+---
+
+### 1. Break the Press
+
+**Phase:** In possession under pressure
+
+**What happens:**
+The opponent rushes the user's team. The user builds a passing sequence to escape the press — clicking through available players on the pitch. The sequence can be up to 4 passes.
+
+**The payoff:**
+The backend evaluates not just whether the sequence worked, but *how* the user passed. The sequence is mapped to a real-life football playstyle archetype and the user is taught what that style means.
+
+**Playstyle archetypes:**
+- Short central passes, staying compact → **Tiki-Taka** (patient, positional, suffocate the press)
+- Quick vertical passes bypassing the midfield line → **Vertical Pressing Escape** (play through fast before they reset)
+- Wide switch using the full width → **Wing Overload** (stretch the press, find space on the far side)
+- Few passes, long ball over the top → **Direct Press Escape** (go long, don't play into the trap)
+- Backward first, then switch side → **Guardiola Build-Up** (reset, invite the press, then exploit)
+
+**Coaching example:**
+*"You played like Pep's City — short, patient triangles that pulled the press apart before going forward. This is called positional play: the idea is to make the press chase shadows until a gap opens."*
+
+**Concept taught:** Press resistance, positional play, passing under pressure
+
+---
+
+### 2. Defend Yourself
+
+**Phase:** Out of possession, defending an attack or counter
+
+**What happens:**
+An opponent attack is unfolding. The user repositions one or two defenders to cut off passing lanes or close down the threat. The pitch shows the attacker positions and the available defensive moves.
+
+**The payoff:**
+Backend evaluates whether the defensive shape held or was bypassed. Maps the user's approach to a defensive archetype.
+
+**Defensive archetypes:**
+- Tracking the runner tightly → **Man-Marking**
+- Holding shape and covering the zone → **Zonal Defence**
+- Dropping to protect the goal line → **Low Block Recovery**
+- Pressing the ball carrier immediately → **High Press Recovery**
+
+**Coaching example:**
+*"You held your zone rather than following the runner — that's zonal defending. It protects the space but relies on your teammates tracking the runners you've left."*
+
+**Concept taught:** Defensive shape, zonal vs man-marking, recovery runs
+
+---
+
+### 3. Penalty Kick
+
+**Phase:** Dead ball, penalty situation
+
+**What happens:**
+The user is taking a penalty. They pick a direction — left low, left high, centre, right low, right high. The keeper has a modelled save probability per zone based on real tendencies. The backend runs the probability and returns a goal or save scenario.
+
+**The payoff:**
+The result is revealed with a visual, followed by coaching on penalty strategy, keeper tendencies, and decision-making under pressure.
+
+**Coaching example:**
+*"You picked right-low — the most popular direction in the league. Keepers train hardest for it. Takers who study the keeper's dive tendency first score 23% more. The top-corner remains the lowest save probability in every keeper's profile."*
+
+**Concept taught:** Probability, pressure decision-making, keeper tendencies, penalty psychology
+
+---
+
+### 4. Reshape
+
+**Phase:** Crisis — a red card has just occurred
+
+**What happens:**
+An unexpected red card leaves the team with 10 players. The user rearranges the remaining players into a new shape by selecting a formation from a set of options. The backend scores the shape on zone coverage — how well the defensive third, midfield, and attacking third are covered with one fewer player.
+
+**The payoff:**
+The backend maps the user's choice to a real formation and explains how it is used to protect a lead or manage a game with 10 men.
+
+**Coaching example:**
+*"You went 4-4-1 — the classic shape for a team down to 10. The flat four in midfield blocks the central lanes and the lone forward stays as an outlet. The risk is the wide areas, which the opposition will target."*
+
+**Concept taught:** Formation structure, zone coverage, game management with reduced numbers
+
+---
+
+### 5. Spring the Offside Trap
+
+**Phase:** Attacking transition
+
+**What happens:**
+The defensive line is sitting high. The user is the attacker and must time their run to beat the trap — picking the exact moment to move. Too early and the flag goes up. Too late and the defender recovers. The backend calculates based on line position and ball release timing whether the run succeeds.
+
+**The payoff:**
+The result is shown with a clear visual of where the line was and where the run was timed. Coaching explains the offside rule and the skill of timing a run.
+
+**Coaching example:**
+*"You timed it perfectly — that's a third-man run. The key is to move as the ball leaves the passer's foot, not before. The defender's job is to hold the line until that exact moment."*
+
+**Concept taught:** Offside rule, attacking movement, run timing, exploiting a high line
+
+---
+
+### 6. Set the Press
+
+**Phase:** Out of possession, pressing
+
+**What happens:**
+The mirror of Break the Press — now the user is defending. They pick which player triggers the press and which zones to overload against the opponent's formation. The backend evaluates whether the press wins the ball, forces a long ball, or gets bypassed.
+
+**The payoff:**
+The result is mapped to a pressing archetype and the user is taught what makes a press work.
+
+**Pressing archetypes:**
+- Cutting off the CB's short options → **Passing Lane Press**
+- Overloading one side to force a switch → **Half-Space Trap**
+- Pressing immediately on loss of possession → **Gegenpressing**
+- Holding shape and pressing on trigger cues → **Structured Press**
+
+**Coaching example:**
+*"You pressed like Klopp's Liverpool — you cut off the CB's passing lane and forced the long ball. That is gegenpressing: win the ball back high up the pitch before the opponent can reorganise."*
+
+**Concept taught:** Pressing triggers, compactness, coordinated pressure, pressing archetypes
+
+---
+
+### 7. Substitution Gamble
+
+**Phase:** Game management, mid-to-late match
+
+**What happens:**
+The match is in progress — the user's team is losing, drawing, or protecting a narrow lead with around 20-25 minutes left. Three substitutes are available, each with a different profile: an extra striker, a defensive midfielder, or a wide player. The backend knows the current match state, how many chances have been created, and how the opposition is sitting. The user picks one.
+
+**The payoff:**
+The backend calculates the probability shift each substitute creates and reveals what the choice signals tactically. The coaching explains the trade-offs.
+
+**Coaching example:**
+*"You went for the striker at 1-0 down with 22 minutes left — high risk, high reward. Managers who commit to a second striker this early win 31% of the time but concede on the counter in 44%. The defensive midfielder would have secured the draw more often."*
+
+**Concept taught:** Game management, risk vs reward, reading match state, tactical substitutions
+
+---
+
+### 8. Dead Ball
+
+**Phase:** Set piece — free kick near or around the box
+
+**What happens:**
+A free kick has been won in a dangerous position. The user picks the delivery type — curled around the wall, driven low under the wall, or lifted to the back post — and the target zone. The backend has wall height probabilities and keeper positioning models and calculates whether the delivery results in a goal, a save, or a block.
+
+**The payoff:**
+The result is shown visually with coaching on why certain deliveries work against certain keeper and wall setups.
+
+**Coaching example:**
+*"You went low and driven — the hardest delivery for keepers to get down to quickly. But the wall was well-set. The curl over the wall to the far post had a higher expected outcome here. Set piece specialists study keeper positioning before every delivery."*
+
+**Concept taught:** Set piece decision-making, delivery types, spatial awareness, keeper positioning
+
+---
+
+## Puzzle Selection Logic
+
+Puzzles are not shown randomly. The system selects the most appropriate puzzle based on:
+
+- **Moment type** — a press-heavy moment triggers Break the Press or Set the Press
+- **Game state** — a red card moment triggers Reshape; a late losing moment triggers Substitution Gamble
+- **Minute** — early moments suit pressing puzzles; late moments suit game management or dead ball
+- **Score context** — losing moments suit attacking puzzles; winning moments suit defensive or management puzzles
+
+Over time the selection logic improves as more moment metadata is available.
+
+---
+
 ## Long-Term Vision
 
 Long-term, JGaffer can become a library of interactive football lessons hidden inside real match moments.
@@ -392,11 +570,12 @@ Long-term, JGaffer can become a library of interactive football lessons hidden i
 A user should be able to:
 - return daily
 - explore moments from their club
+- play a different puzzle type each session
 - learn recurring tactical patterns
 - improve their football eye over time
 
 The ambition is not just to explain football.
 
-The ambition is to help a casual fan **see the game the way a more expert fan sees it** - through participation, guided attention, and repeated exposure to meaningful moments.
+The ambition is to help a casual fan **see the game the way a more expert fan sees it** — through participation, guided attention, and repeated exposure to meaningful moments across every phase of the game.
 
 That is the vision.

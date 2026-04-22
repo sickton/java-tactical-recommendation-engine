@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import type { NetworkGraph, NetworkEdge } from '../types';
 import { getDisplayCoords } from '../constants/pitchCoords';
+import { computeEscapeShift } from '../utils/escapeShift';
 
 const DISPLAY_LABELS: Record<string, string> = {
   CB:  'LCB',
   CB2: 'RCB',
+  CB3: 'CCB',
 };
 
 interface Props {
@@ -87,15 +89,58 @@ export default function PitchGraph({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [hoveredEdgeKey, setHoveredEdgeKey] = useState<string | null>(null);
   const [hoveredEdgeFull, setHoveredEdgeFull] = useState<NetworkEdge | null>(null);
-  const nodeMap: Record<string, { id: string; x: number; y: number }> = {};
+
+  // Base positions from formation coords
+  const basePos: Record<string, [number, number]> = {};
   graph.nodes.forEach(n => {
     const [dx, dy] = getDisplayCoords(n.id, formation);
-    nodeMap[n.id] = { id: n.id, x: dx, y: dy };
+    basePos[n.id] = [dx, dy];
   });
-  const nodeInfluence = buildNodeInfluence(graph);
 
   // The player currently holding the ball (last in sequence)
   const currentCarrier = highlightSequence[highlightSequence.length - 1] ?? ballNodeId;
+
+  // Ball position in normalised coords (from current carrier's base)
+  const [ballNormX, ballNormY] = basePos[currentCarrier ?? ''] ?? [0.38, 0.5];
+
+  // Dynamic positional shifts — non-carrier players move intelligently
+  const SVG_W_inner = W - 2 * PX;
+  const SVG_H_inner = H - 2 * PY;
+  const shiftMap: Record<string, [number, number]> = {};
+  graph.nodes.forEach(n => {
+    const isCurrent = n.id === currentCarrier;
+    if (isCurrent) { shiftMap[n.id] = [0, 0]; return; }
+    const [bx, by] = basePos[n.id];
+    shiftMap[n.id] = computeEscapeShift(n.id, ballNormX, ballNormY, bx, by);
+  });
+
+  // Progression clamp: any player whose base x is ahead of the carrier
+  // must stay visually ahead of the carrier — passes should never look like they go backward.
+  const carrierBaseX = ballNormX; // ballNormX IS the carrier's base x
+  graph.nodes.forEach(n => {
+    if (n.id === currentCarrier) return;
+    const [bx, by] = basePos[n.id];
+    if (bx <= carrierBaseX) return; // behind/level with carrier — free to drop
+    const [sx, sy] = shiftMap[n.id];
+    const finalX = bx + sx;
+    if (finalX < carrierBaseX + 0.04) {
+      shiftMap[n.id] = [carrierBaseX + 0.04 - bx, sy];
+    }
+  });
+
+  // nodeMap with shifted positions (for rendering)
+  const nodeMap: Record<string, { id: string; x: number; y: number }> = {};
+  graph.nodes.forEach(n => {
+    const [bx, by] = basePos[n.id];
+    const [sx, sy] = shiftMap[n.id] ?? [0, 0];
+    nodeMap[n.id] = {
+      id: n.id,
+      x: Math.max(0.02, Math.min(0.98, bx + sx)),
+      y: Math.max(0.02, Math.min(0.98, by + sy)),
+    };
+  });
+
+  const nodeInfluence = buildNodeInfluence(graph);
 
   // Escape probability FROM the current carrier TO each node — drives opacity/dimming
   const nodeEscapeProb: Record<string, number> = {};
@@ -147,6 +192,26 @@ export default function PitchGraph({
       <rect x={W - PX - 28} y={H / 2 - 30} width={28} height={60}
         fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
 
+      {/* ── Sequence edges without a matching graph edge (always show) ── */}
+      {highlightSequence.length >= 2 && highlightSequence.map((id, i) => {
+        if (i >= highlightSequence.length - 1) return null;
+        const nextId = highlightSequence[i + 1];
+        const hasGraphEdge = graph.edges.some(e => e.from === id && e.to === nextId);
+        if (hasGraphEdge) return null; // handled in main edge loop
+        const fn = nodeMap[id], tn = nodeMap[nextId];
+        if (!fn || !tn) return null;
+        const [x1, y1] = toSvg(fn.x, fn.y);
+        const [x2, y2] = toSvg(tn.x, tn.y);
+        const d = curvedPath(x1, y1, x2, y2);
+        return (
+          <path key={`seq-edge-${i}`} d={d}
+            stroke="rgba(0,230,180,0.95)" strokeWidth={3}
+            strokeLinecap="round" fill="none"
+            style={{ pointerEvents: 'none' }}
+          />
+        );
+      })}
+
       {/* ── Edges: ghost everything except options from current carrier ── */}
       {graph.edges.map((edge, i) => {
         const fn = nodeMap[edge.from];
@@ -163,6 +228,10 @@ export default function PitchGraph({
         const { color, width, dashed } = edgeStroke(edge);
         const d = curvedPath(x1, y1, x2, y2);
         const activeDashArray = dashed ? '5 4' : undefined;
+
+        // Hide low-probability (red/avoid) edges entirely — keeps the pitch clean
+        const isAvoid = (edge.escape_prob ?? 0) < 0.35;
+        if (isAvoid && !inSeq && !isEdgeHover) return null;
 
         const visPath = (
           <path
@@ -205,6 +274,24 @@ export default function PitchGraph({
             {/* Wide invisible hit area */}
             <path d={d} stroke="transparent" strokeWidth={16} fill="none" />
           </g>
+        );
+      })}
+
+      {/* ── Ghost circles — vacated base positions of shifted escape players ── */}
+      {graph.nodes.map(node => {
+        if (node.id === currentCarrier) return null;
+        const [sx, sy] = shiftMap[node.id] ?? [0, 0];
+        if (Math.abs(sx) + Math.abs(sy) < 0.04) return null;
+        const [bx, by] = toSvg(basePos[node.id][0], basePos[node.id][1]);
+        return (
+          <circle key={`pg-ghost-${node.id}`}
+            cx={bx} cy={by} r={9}
+            fill="none"
+            stroke="rgba(88,166,255,0.18)"
+            strokeWidth="1"
+            strokeDasharray="3 3"
+            style={{ pointerEvents: 'none' }}
+          />
         );
       })}
 
@@ -452,7 +539,11 @@ export default function PitchGraph({
       {graph.nodes.map(node => {
         const mapped = nodeMap[node.id];
         if (!mapped) return null;
-        const [cx, cy] = toSvg(mapped.x, mapped.y);
+        // Render at base coords; CSS transform animates the shift
+        const [cx, cy] = toSvg(basePos[node.id][0], basePos[node.id][1]);
+        const [sx, sy] = shiftMap[node.id] ?? [0, 0];
+        const tdx = sx * SVG_W_inner;
+        const tdy = sy * SVG_H_inner;
         const idx = highlightSequence.indexOf(node.id);
         const inSeq = idx !== -1;
         const isFirst = idx === 0;
@@ -471,17 +562,22 @@ export default function PitchGraph({
         const r = inSeq ? Math.max(baseR, 15) : baseR;
         const isKeyOutlet = !isBallCarrier && !inSeq && inf >= 0.65 && node.id !== currentCarrier;
         const isOptimal  = node.id === optimalNodeId && !inSeq && !isBallCarrier;
-        // Covered: no edge from carrier or very low escape_prob — dim the node
-        const isCovered  = !inSeq && !isBallCarrier && !isOptimal
-          && node.id !== currentCarrier && nodeEscapeProb[node.id] < 0.28;
+        // Covered: very low escape_prob from current carrier — dim the node
+        // (never dim the current carrier itself)
+        const isCovered  = !isCurrentCarrier && !isOptimal && nodeEscapeProb[node.id] < 0.28;
 
         return (
           <g key={node.id}
-            onClick={() => interactive && !isFirst && onNodeClick(node.id)}
+            onClick={() => interactive && !isCurrentCarrier && onNodeClick(node.id)}
             onMouseEnter={() => interactive && setHoveredNode(node.id)}
             onMouseLeave={() => interactive && setHoveredNode(null)}
-            style={{ cursor: interactive && !isFirst ? 'pointer' : 'default',
-                     opacity: isCovered ? 0.45 : 1 }}>
+            style={{
+              cursor: interactive && !isCurrentCarrier ? 'pointer' : 'default',
+              opacity: isCovered ? 0.45 : 1,
+              transform: `translate(${tdx.toFixed(1)}px, ${tdy.toFixed(1)}px)`,
+              transition: 'transform 0.45s cubic-bezier(0.34,1.1,0.64,1)',
+            }}
+          >
             {isBallCarrier && (
               <circle cx={cx} cy={cy} r={r + 8}
                 fill="none" stroke="rgba(240,200,48,0.4)" strokeWidth="1.5" strokeDasharray="4 3" />
@@ -534,8 +630,6 @@ export default function PitchGraph({
         <text x={PX + 14} y={H - PY - 4} fill="rgba(88,166,255,0.65)" fontSize="7.5" style={{ userSelect: 'none' }}>Safe</text>
         <circle cx={PX + 46} cy={H - PY - 8} r={4} fill="rgba(227,179,65,0.7)" />
         <text x={PX + 54} y={H - PY - 4} fill="rgba(227,179,65,0.65)" fontSize="7.5" style={{ userSelect: 'none' }}>Risky</text>
-        <circle cx={PX + 90} cy={H - PY - 8} r={4} fill="rgba(248,81,73,0.6)" />
-        <text x={PX + 98} y={H - PY - 4} fill="rgba(248,81,73,0.55)" fontSize="7.5" style={{ userSelect: 'none' }}>Avoid</text>
       </g>
     </svg>
   );

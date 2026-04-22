@@ -89,4 +89,45 @@ public class ApiController {
                 awayGoals
         ));
     }
+
+    /**
+     * POST /api/puzzle
+     *
+     * Looks up both team formations from squad data, injects them into the
+     * request body, then proxies to FastAPI /puzzle which selects the puzzle
+     * type and returns the full config.
+     */
+    @PostMapping("/puzzle")
+    public ResponseEntity<Object> getPuzzle(@RequestBody Map<String, Object> body) {
+        // Extract fields needed for formation lookup
+        @SuppressWarnings("unchecked")
+        Map<String, Object> moment = (Map<String, Object>) body.get("moment");
+        String league       = (String) body.getOrDefault("league", "PL");
+        String pressingTeam = (String) body.getOrDefault("pressing_team", "");
+        String escapingTeam = moment != null ? (String) moment.get("team") : "";
+
+        Team escaping = matchService.getTeam(league, escapingTeam);
+        Team pressing = matchService.getTeam(league, pressingTeam);
+
+        // Inject formations — fall back to a default if team not found
+        String escapingFormation = escaping != null ? escaping.getFormation().name() : "F_4_3_3";
+        String pressingFormation = pressing != null ? pressing.getFormation().name() : "F_4_3_3";
+
+        Map<String, Object> enriched = new java.util.HashMap<>(body);
+        enriched.put("escaping_formation", escapingFormation);
+        enriched.put("pressing_formation", pressingFormation);
+
+        return ResponseEntity.ok(ragService.getPuzzle(enriched));
+    }
+
+    /**
+     * POST /api/evaluate
+     *
+     * Proxies the user's puzzle answer straight to FastAPI /evaluate.
+     * FastAPI owns all scoring, optimal path computation, and coaching.
+     */
+    @PostMapping("/evaluate")
+    public ResponseEntity<Object> evaluatePuzzle(@RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(ragService.evaluatePuzzle(body));
+    }
 }

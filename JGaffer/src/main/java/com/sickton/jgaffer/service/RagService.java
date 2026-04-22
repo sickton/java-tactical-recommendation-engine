@@ -68,4 +68,30 @@ public class RagService {
 
         return response.getBody();
     }
+
+    public Object getPuzzle(Map<String, Object> body)
+    {
+        String url = PYTHON_SERVICE_URL + "/puzzle";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
+
+        return response.getBody();
+    }
+
+    public Object evaluatePuzzle(Map<String, Object> body)
+    {
+        String url = PYTHON_SERVICE_URL + "/evaluate";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
+
+        return response.getBody();
+    }
 }

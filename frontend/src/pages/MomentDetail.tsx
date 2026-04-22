@@ -18,6 +18,30 @@ interface LocationState {
   imageIndex: number;
 }
 
+const MISSION_MAP: Record<string, { problem: string; task: string }> = {
+  'Press Resistance':     { problem: 'Your team are trapped under pressure and need a way out.', task: 'Find the passing route that breaks the press.' },
+  'High Press':           { problem: 'The press is on — one mistake and possession is gone.', task: 'Pick the sequence that survives the press.' },
+  'Weak-Side Switch':     { problem: 'The ball is pinned on one side. The far side is open.', task: 'Find the switch before the defence adjusts.' },
+  'Third-Man Run':        { problem: 'The obvious pass is covered. A third player is making a run.', task: 'Spot the move and play the right ball.' },
+  'Counter Attack':       { problem: 'Space has opened up in behind. The moment is now.', task: 'Pick the right route before the defence recovers.' },
+  'Game Management':      { problem: 'The lead is there to protect. Every pass matters.', task: 'Keep the ball and see the game out.' },
+  'Cover Shadow':         { problem: 'A player is being blocked out of the game deliberately.', task: 'Find the pass that bypasses the shadow.' },
+  'Turning Point':        { problem: 'The match is at a tipping point. One decision changes everything.', task: 'Make the right call under pressure.' },
+  'Dominant Possession':  { problem: 'Your team are in control but need to find the opening.', task: 'Move the ball to unlock the defence.' },
+  'Comeback':             { problem: 'Your team are behind. The game is running out.', task: 'Find the move that shifts the momentum.' },
+  'Under Pressure':       { problem: 'The opposition are squeezing space. Options are shrinking.', task: 'Escape the press and find a foothold.' },
+  'Surprise':             { problem: 'Something unexpected is unfolding on the pitch.', task: 'Spot what changed and react to it.' },
+};
+
+function getMission(concept: string): { problem: string; task: string } {
+  return (
+    MISSION_MAP[concept] ?? {
+      problem: 'A tactical problem is unfolding on the pitch.',
+      task: 'Solve it on the pitch.',
+    }
+  );
+}
+
 export default function MomentDetail() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,6 +53,7 @@ export default function MomentDetail() {
   const [explanation, setExplanation] = useState<string>('');
   const [displayedExplanation, setDisplayedExplanation] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
 
   useLeagueTheme(league);
   usePageTitle(moment?.headline ?? 'Moment Detail');
@@ -57,7 +82,7 @@ export default function MomentDetail() {
   }, [moment, teamName]);
 
   useEffect(() => {
-    if (!explanation) return;
+    if (!explanation || !breakdownOpen) return;
     let i = 0;
     setDisplayedExplanation('');
     const timer = setInterval(() => {
@@ -66,7 +91,7 @@ export default function MomentDetail() {
       if (i >= explanation.length) clearInterval(timer);
     }, 12);
     return () => clearInterval(timer);
-  }, [explanation]);
+  }, [explanation, breakdownOpen]);
 
   if (!moment) {
     return (
@@ -80,16 +105,17 @@ export default function MomentDetail() {
     );
   }
 
+  const mission = {
+    problem: moment.tactical_problem ?? getMission(moment.concept).problem,
+    task:    moment.mission        ?? getMission(moment.concept).task,
+  };
+
   return (
     <>
       <Header />
       <main className="container">
         <div className="detail-hero-banner">
-          <img
-            src={heroImage}
-            alt=""
-            className="detail-hero-img"
-          />
+          <img src={heroImage} alt="" className="detail-hero-img" />
           <div className="detail-hero-overlay" />
           <div className="detail-hero-content">
             <div className="mode-team-badge">
@@ -105,56 +131,76 @@ export default function MomentDetail() {
         </div>
 
         <div className="detail-card">
+          {/* Context strip */}
           <div className="detail-meta">
             <span className="moment-minute">⏱ {moment.minute}'</span>
             <span className="moment-concept">{moment.concept}</span>
           </div>
           <h1 className="detail-headline">{moment.headline}</h1>
-          <p className="detail-match">{moment.match}</p>
-          <p className="detail-score">{moment.score}</p>
+          <p className="detail-match">{moment.match} &mdash; {moment.score}</p>
 
           <div className="detail-divider" />
 
+          {/* Narrative hook */}
           <h3 className="detail-section-title">What happened</h3>
           <p className="detail-narrative">{moment.narrative}</p>
 
-          <h3 className="detail-section-title">Understanding the moment</h3>
-          {loading ? (
-            <div className="moments-loading">
-              <div className="moments-spinner" />
-              <p>Generating explanation...</p>
-            </div>
-          ) : (
-            <p className="detail-explanation">
-            {displayedExplanation}
-            {displayedExplanation.length < explanation.length && (
-              <span className="typewriter-cursor">|</span>
-            )}
-          </p>
-          )}
-        </div>
+          <div className="detail-divider" />
 
-        <div style={{ display: 'flex', gap: 16, marginTop: 32, flexWrap: 'wrap' }}>
+          {/* Mission briefing */}
+          <div className="brief-block">
+            <p className="brief-problem">{mission.problem}</p>
+            <p className="brief-task">Your mission: {mission.task}</p>
+          </div>
+
+          {/* Primary CTA */}
           <button
-            className="btn-puzzle-cta"
+            className="btn-puzzle-cta btn-puzzle-cta--inline"
             onClick={() =>
               navigate('/puzzle', {
                 state: { moment, teamName, league, teamId, mode, queryType, imageIndex },
               })
             }
           >
-            ⚽ Try the Tactical Puzzle
+            ⚽ Take on the Puzzle
           </button>
+
+          {/* Collapsible full breakdown */}
+          <button
+            className="brief-breakdown-toggle"
+            onClick={() => setBreakdownOpen(o => !o)}
+          >
+            {breakdownOpen ? '▲ Hide breakdown' : '▼ See the tactical breakdown'}
+          </button>
+
+          {breakdownOpen && (
+            <div className="brief-breakdown">
+              {loading ? (
+                <div className="moments-loading">
+                  <div className="moments-spinner" />
+                  <p>Generating explanation...</p>
+                </div>
+              ) : (
+                <p className="detail-explanation">
+                  {displayedExplanation}
+                  {displayedExplanation.length < explanation.length && (
+                    <span className="typewriter-cursor">|</span>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
+        {/* Secondary nav */}
+        <div className="detail-nav-row">
           <button
             className="btn-back"
             onClick={() =>
               navigate(`/moments?teamId=${teamId}&teamName=${encodeURIComponent(teamName)}&league=${league}&mode=${mode}&queryType=${queryType}`)
             }
           >
-            &#8592; Explore other moments
+            &#8592; Other moments
           </button>
           <button
             className="btn-back"
@@ -162,13 +208,13 @@ export default function MomentDetail() {
               navigate(`/query?teamId=${teamId}&teamName=${encodeURIComponent(teamName)}&league=${league}&mode=${mode}`)
             }
           >
-            🔄 Try a different theme
+            🔄 Different theme
           </button>
           <button
             className="btn-back"
             onClick={() => navigate(`/clubs?league=${league}`)}
           >
-            🏟️ Try another team
+            🏟️ Another team
           </button>
         </div>
       </main>

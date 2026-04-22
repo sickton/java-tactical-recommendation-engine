@@ -13,6 +13,7 @@ const BASE_COORDS: Record<string, Coords> = {
   GK:  [0.05, 0.50],
   CB:  [0.20, 0.36],
   CB2: [0.20, 0.64],
+  CB3: [0.20, 0.50],  // centre CB in 3-back formations
   LB:  [0.22, 0.14],
   RB:  [0.22, 0.86],
   LWB: [0.40, 0.10],
@@ -83,12 +84,13 @@ const FORMATION_OVERRIDES: Record<string, Partial<Record<string, Coords>>> = {
   },
 
   // ── 3-4-3 ──────────────────────────────────────────────────────────────────
-  // Row 1 (def):    CB  CB  CB   ← CB=left, CB2=right; centre implied
-  // Row 2 (mid):    CM  CDM  CDM  CM  ← LM + CDM + CM + RM
+  // Row 1 (def):    CB(L)  CB3(C)  CB2(R)
+  // Row 2 (mid):    LM  CDM  CM  RM
   // Row 3 (att):    LW  ST  RW
   F_3_4_3: {
-    CB:  [0.20, 0.28],   // left CB
-    CB2: [0.20, 0.72],   // right CB (centre implied between)
+    CB:  [0.20, 0.24],   // left CB
+    CB3: [0.20, 0.50],   // centre CB
+    CB2: [0.20, 0.76],   // right CB
     LM:  [0.48, 0.12],   // wide left mid
     CDM: [0.48, 0.38],   // inner left mid
     CM:  [0.48, 0.62],   // inner right mid
@@ -99,16 +101,18 @@ const FORMATION_OVERRIDES: Record<string, Partial<Record<string, Coords>>> = {
   },
 
   // ── 3-5-2 ──────────────────────────────────────────────────────────────────
-  // Row 1 (def):    CB centred (represents the back three)
+  // Row 1 (def):    CB(L)  CB3(C)  CB2(R)
   // Row 2 (mid):    LWB  LM  CDM  RM  RWB
   // Row 3 (att):    CF  ST
   F_3_5_2: {
-    CB:  [0.20, 0.50],   // centred — represents the entire back three
-    LWB: [0.40, 0.10],
-    RWB: [0.40, 0.90],
+    CB:  [0.20, 0.24],   // left CB
+    CB3: [0.20, 0.50],   // centre CB
+    CB2: [0.20, 0.76],   // right CB
+    LWB: [0.38, 0.08],
     LM:  [0.52, 0.28],
     CDM: [0.54, 0.50],
     RM:  [0.52, 0.72],
+    RWB: [0.38, 0.92],
     CF:  [0.80, 0.36],
     ST:  [0.80, 0.64],
   },
