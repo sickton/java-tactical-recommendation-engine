@@ -4501,78 +4501,169 @@ body.league-sa .btn-puzzle-cta:hover { border-color: rgba(232, 184, 75, 0.9); bo
     border-top: 1px solid rgba(123, 94, 167, 0.2);
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
 }
 
 .btp-result-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 14px;
 }
 
-.btp-playstyle {
+.btp-result-headline {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #8b949e;
+}
+
+/* ── Two-panel style cards ── */
+.btp-style-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 700px) {
+    .btp-style-panels { grid-template-columns: 1fr; }
+}
+
+.btp-style-card {
+    border-radius: 14px;
+    padding: 20px 22px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 10px;
 }
 
-.btp-playstyle-label {
-    font-size: 0.68rem;
+.btp-style-card--yours {
+    background: rgba(88, 166, 255, 0.06);
+    border: 1px solid rgba(88, 166, 255, 0.22);
+}
+
+.btp-style-card--realworld {
+    background: rgba(123, 94, 167, 0.08);
+    border: 1px solid rgba(123, 94, 167, 0.30);
+}
+
+body.league-pl .btp-style-card--realworld {
+    background: rgba(232, 102, 140, 0.07);
+    border-color: rgba(232, 102, 140, 0.28);
+}
+
+body.league-sa .btp-style-card--realworld {
+    background: rgba(232, 184, 75, 0.07);
+    border-color: rgba(232, 184, 75, 0.28);
+}
+
+.btp-style-card-label {
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
+    color: #58a6ff;
+}
+
+.btp-style-card--realworld .btp-style-card-label {
     color: #7B5EA7;
 }
 
-.btp-playstyle-name {
+body.league-pl .btp-style-card--realworld .btp-style-card-label { color: #e8668c; }
+body.league-sa .btp-style-card--realworld .btp-style-card-label { color: #e8b84b; }
+
+.btp-style-card-name {
     font-family: 'Space Grotesk', 'Inter', sans-serif;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: #e6edf3;
+    line-height: 1.25;
 }
 
-body.league-pl .btp-playstyle-label { color: #e8668c; }
-body.league-sa .btp-playstyle-label { color: #e8b84b; }
-
-.btp-playstyle-desc {
-    font-size: 0.95rem;
+.btp-style-card-desc {
+    font-size: 0.88rem;
     color: #c9d1d9;
     line-height: 1.7;
-    max-width: 680px;
     margin: 0;
+    flex: 1;
 }
 
-.btp-coaching {
-    background: rgba(123, 94, 167, 0.08);
-    border: 1px solid rgba(123, 94, 167, 0.25);
-    border-left: 3px solid #7B5EA7;
-    border-radius: 10px;
-    padding: 16px 20px;
+/* Teams list */
+.btp-teams {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.07);
 }
 
-body.league-pl .btp-coaching { border-left-color: #e8668c; border-color: rgba(232,102,140,0.25); }
-body.league-sa .btp-coaching { border-left-color: #e8b84b; border-color: rgba(232,184,75,0.25); }
+.btp-teams-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #8b949e;
+}
 
-.btp-coaching-label {
-    font-size: 0.68rem;
+.btp-teams-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.btp-team-chip {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #c9d1d9;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 3px 10px;
+}
+
+/* ── Pundit box ── */
+.btp-pundit {
+    background: rgba(19, 10, 30, 0.6);
+    border: 1px solid rgba(123, 94, 167, 0.30);
+    border-left: 3px solid #7B5EA7;
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+body.league-pl .btp-pundit { border-left-color: #e8668c; border-color: rgba(232,102,140,0.25); }
+body.league-sa .btp-pundit { border-left-color: #e8b84b; border-color: rgba(232,184,75,0.25); }
+
+.btp-pundit-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btp-pundit-icon {
+    font-size: 1rem;
+}
+
+.btp-pundit-label {
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
     color: #7B5EA7;
 }
 
-body.league-pl .btp-coaching-label { color: #e8668c; }
-body.league-sa .btp-coaching-label { color: #e8b84b; }
+body.league-pl .btp-pundit-label { color: #e8668c; }
+body.league-sa .btp-pundit-label { color: #e8b84b; }
 
-.btp-coaching-text {
+.btp-pundit-text {
     font-size: 0.95rem;
     color: #c9d1d9;
     line-height: 1.75;
     margin: 0;
+    font-style: italic;
 }
 
 .btp-sequences {

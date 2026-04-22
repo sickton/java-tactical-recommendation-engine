@@ -928,6 +928,15 @@ def classify_playstyle(sequence: list[str], edges: list[dict]) -> dict:
                 "they leave gaps in the middle or on the far side. "
                 "It's like stretching a rubber band: the more they shift, the more room appears elsewhere."
             ),
+            "real_world": {
+                "tactical_name": "Wide Play / Flank Overload",
+                "explanation": (
+                    "Teams that play wide use their wingers as weapons — not just to cross, "
+                    "but to pull opponents out of their positions. Once the defence shifts to one side, "
+                    "there's usually a teammate free on the other. It's about creating imbalance."
+                ),
+                "teams": ["Klopp's Liverpool", "Leverkusen (Alonso)", "Barcelona", "Real Madrid"],
+            },
         }
 
     # ── 2. Go Long ────────────────────────────────────────────────────────
@@ -940,6 +949,15 @@ def classify_playstyle(sequence: list[str], edges: list[dict]) -> dict:
                 "but it can work brilliantly when the other team is bunched up near your defenders "
                 "and there's room behind them for your attackers to run into."
             ),
+            "real_world": {
+                "tactical_name": "Direct / Long Ball",
+                "explanation": (
+                    "Direct play is about getting the ball to your best attackers as fast as possible. "
+                    "It bypasses the midfield battle entirely. The trade-off is that you need forwards "
+                    "who are excellent in the air or have the pace to chase long passes down."
+                ),
+                "teams": ["Brentford", "Burnley", "Long-ball Mourinho sides", "Watford (Ranieri era)"],
+            },
         }
 
     # ── 3. Build from the Back ────────────────────────────────────────────
@@ -952,6 +970,15 @@ def classify_playstyle(sequence: list[str], edges: list[dict]) -> dict:
                 "The idea is simple: if you're patient, the other team eventually "
                 "runs towards you — and the moment they do, a gap opens up behind them."
             ),
+            "real_world": {
+                "tactical_name": "Playing Out from the Back",
+                "explanation": (
+                    "The goalkeeper and defenders become the starting point of every attack. "
+                    "Rather than hoofing it forward, the ball is worked carefully through the thirds. "
+                    "It demands courage under pressure — but it gives the team control of the game's tempo."
+                ),
+                "teams": ["Man City (Guardiola)", "Arsenal (Arteta)", "Spain national team", "Bayern Munich"],
+            },
         }
 
     # ── 4. Quick Combinations ─────────────────────────────────────────────
@@ -964,6 +991,15 @@ def classify_playstyle(sequence: list[str], edges: list[dict]) -> dict:
                 "The other team has to keep turning and chasing, "
                 "and eventually someone gets caught out of position — that's when you go forward."
             ),
+            "real_world": {
+                "tactical_name": "Tiki-Taka / Positional Play",
+                "explanation": (
+                    "Short, fast passes in tight spaces — the ball moves so quickly that defenders "
+                    "never get a chance to settle. The whole point isn't just to pass; "
+                    "it's to make the other team run themselves into exhaustion before the killer ball arrives."
+                ),
+                "teams": ["Barcelona (Guardiola 2008–12)", "Spain 2008–2012", "Man City", "Ajax"],
+            },
         }
 
     # ── 5. Play Through Quickly ───────────────────────────────────────────
@@ -975,6 +1011,16 @@ def classify_playstyle(sequence: list[str], edges: list[dict]) -> dict:
             "It's direct but not just a long ball: you're using your midfielders "
             "as stepping stones, getting the ball to dangerous areas while defenders are still scrambling."
         ),
+        "real_world": {
+            "tactical_name": "Vertical Football",
+            "explanation": (
+                "Vertical football is about speed of thought, not just speed of running. "
+                "The ball travels forward as quickly as possible through the lines — "
+                "midfielders receive and immediately turn or play forward, "
+                "giving the opposition no time to organise."
+            ),
+            "teams": ["Klopp's Liverpool", "RB Leipzig", "Atletico Madrid", "Napoli (Conte era)"],
+        },
     }
 
 
@@ -1023,7 +1069,7 @@ def medal_for(user: float, optimal: float) -> str:
 
 # ─── GPT coaching ──────────────────────────────────────────────────────────────
 
-def generate_coaching(
+def generate_pundit(
     playstyle: dict,
     user_sequence: list[str],
     optimal_path: list[str],
@@ -1031,30 +1077,28 @@ def generate_coaching(
     optimal_score: float,
     moment: MomentContext,
 ) -> str:
+    ratio = user_score / optimal_score if optimal_score > 0 else 1.0
+    verdict = "excellent" if ratio >= 0.9 else "decent" if ratio >= 0.7 else "risky"
     prompt = f"""
-You are talking to someone who watches football on TV but has never studied tactics.
-They just played a passing puzzle. Write feedback that a 16-year-old football fan could understand immediately.
+You are a sharp, entertaining football pundit — think Gary Neville meets Jamie Carragher.
+You're reacting to a fan's passing choice in a tactical game. Be honest, warm, a little dramatic if it fits.
 
 Situation: {moment.team}, minute {moment.minute}', score {moment.score}.
-Their passes: {" → ".join(user_sequence)} — {round(user_score * 100)}% success chance.
-Best passes: {" → ".join(optimal_path)} — {round(optimal_score * 100)}% success chance.
+Fan's route: {" → ".join(user_sequence)} — {round(user_score * 100)}% success.
+Optimal route: {" → ".join(optimal_path)} — {round(optimal_score * 100)}% success.
+Verdict: {verdict}
 
-Write exactly 3 sentences. No more, no less.
+Write exactly 3 pundit-style sentences:
+1. React to what they did — be vivid. Describe the move like you're in the studio watching the replay. Name the positions. Show some personality.
+2. If verdict is risky: explain what the better option gave and why, like you're drawing on a tactics board. If decent or excellent: give genuine credit and say specifically what worked.
+3. End with one line of advice that sounds like pundit wisdom — the kind of thing that sticks in your head after watching Match of the Day.
 
-Sentence 1: Describe what they actually did — where the ball went and why that's interesting. Use the position names (LCB, RB, CM etc.) since they're shown on screen. Do NOT label it with a style name.
-Sentence 2: If their score was more than 10% below optimal, explain in plain English why the better route was safer (e.g. "Going through RCB first gave GK more room because two defenders had already drawn the runners away"). If within 10%, say the choice was smart and briefly why.
-Sentence 3: One takeaway they'll actually remember — phrased like a friend, not a coach.
-
-BANNED WORDS — using any of these fails the task:
-press, pressing, build-up, positional play, high line, exploit, transition, overload, structure, stretch, shape, defensive block, tactical, unlock, clinical, composure, outlet
-
-Replacements to use instead:
-- "press / pressing" → "the other team running at you to win the ball"
-- "space / exploit space" → "room to move" or "gap to aim for"
-- "build-up" → "working the ball forward"
-- "transition" → "when the ball switches quickly"
-
-Keep the whole response under 75 words. Warm, direct, human.
+Rules:
+- Sound like a pundit, not a textbook. Opinions are welcome.
+- Never use: "positional play", "high line", "transition", "build-up", "exploit", "structure", "defensive block"
+- Position abbreviations (LCB, RB, CM, LW etc.) are fine — the viewer can see them on screen
+- Keep it under 80 words total
+- No bullet points, no headers — just 3 flowing sentences
 """
     response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
@@ -1141,7 +1185,7 @@ def evaluate_puzzle(request: EvaluateRequest):
         optimal_score = score_sequence(optimal_path, edges)
         playstyle     = classify_playstyle(sequence, edges)
         medal         = medal_for(user_score, optimal_score)
-        coaching      = generate_coaching(
+        pundit = generate_pundit(
             playstyle, sequence, optimal_path,
             user_score, optimal_score, request.moment_context
         )
@@ -1154,7 +1198,8 @@ def evaluate_puzzle(request: EvaluateRequest):
             "medal":          medal,
             "playstyle":      playstyle["name"],
             "playstyle_desc": playstyle["description"],
-            "coaching":       coaching,
+            "real_world":     playstyle["real_world"],
+            "pundit":         pundit,
         }
 
     return {"error": f"Unknown puzzle type: {request.puzzle_type}"}

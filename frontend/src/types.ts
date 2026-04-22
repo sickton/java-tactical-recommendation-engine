@@ -87,6 +87,12 @@ export interface EvaluateRequest {
   };
 }
 
+export interface RealWorldStyle {
+  tactical_name: string;
+  explanation: string;
+  teams: string[];
+}
+
 export interface EvaluateResult {
   puzzle_type: string;
   user_score: number;
@@ -95,5 +101,6 @@ export interface EvaluateResult {
   medal: 'GOLD' | 'SILVER' | 'BRONZE' | 'MISS' | '—';
   playstyle: string;
   playstyle_desc: string;
-  coaching: string;
+  real_world: RealWorldStyle;
+  pundit: string;
 }

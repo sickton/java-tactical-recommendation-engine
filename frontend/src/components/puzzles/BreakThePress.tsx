@@ -211,7 +211,8 @@ export default function BreakThePress({
       {/* ── Result section ── */}
       {submitted && result && (
         <div className="btp-result">
-          {/* Medal + playstyle header */}
+
+          {/* ── Medal header ── */}
           <div className="btp-result-header">
             <span
               className="puzzle-medal-pill"
@@ -219,35 +220,57 @@ export default function BreakThePress({
             >
               {result.medal}
             </span>
-            <div className="btp-playstyle">
-              <span className="btp-playstyle-label">Your playstyle</span>
-              <span className="btp-playstyle-name">{result.playstyle}</span>
+            <span className="btp-result-headline">Your passing style decoded</span>
+          </div>
+
+          {/* ── Two-panel: your style vs real-world ── */}
+          <div className="btp-style-panels">
+            {/* Left — what you did */}
+            <div className="btp-style-card btp-style-card--yours">
+              <div className="btp-style-card-label">YOUR PLAYSTYLE</div>
+              <div className="btp-style-card-name">{result.playstyle}</div>
+              <p className="btp-style-card-desc">{result.playstyle_desc}</p>
+            </div>
+
+            {/* Right — real-world equivalent */}
+            <div className="btp-style-card btp-style-card--realworld">
+              <div className="btp-style-card-label">IN REAL FOOTBALL</div>
+              <div className="btp-style-card-name">{result.real_world.tactical_name}</div>
+              <p className="btp-style-card-desc">{result.real_world.explanation}</p>
+              <div className="btp-teams">
+                <span className="btp-teams-label">Teams known for this</span>
+                <div className="btp-teams-list">
+                  {result.real_world.teams.map(t => (
+                    <span key={t} className="btp-team-chip">{t}</span>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Playstyle description */}
-          <p className="btp-playstyle-desc">{result.playstyle_desc}</p>
-
-          {/* Coaching */}
-          <div className="btp-coaching">
-            <span className="btp-coaching-label">Coach says</span>
-            <p className="btp-coaching-text">{result.coaching}</p>
+          {/* ── Pundit box ── */}
+          <div className="btp-pundit">
+            <div className="btp-pundit-header">
+              <span className="btp-pundit-icon">🎙</span>
+              <span className="btp-pundit-label">PUNDIT TAKE</span>
+            </div>
+            <p className="btp-pundit-text">{result.pundit}</p>
           </div>
 
-          {/* Sequence comparison */}
+          {/* ── Sequence comparison ── */}
           <div className="btp-sequences">
             <div className="btp-seq-card">
               <div className="btp-seq-card-label">Your route</div>
               <div className="puzzle-result-sequence">
                 {userSequence.map((n, i) => (
-                  <span key={n}>
+                  <span key={`u-${i}`}>
                     <span className="seq-node seq-node-user">{label(n)}</span>
                     {i < userSequence.length - 1 && <span className="seq-arrow">→</span>}
                   </span>
                 ))}
               </div>
               <span className="btp-seq-score" style={{ color: scoreColor(result.user_score) }}>
-                {Math.round(result.user_score * 100)}% escape probability
+                {Math.round(result.user_score * 100)}% success chance
               </span>
             </div>
 
@@ -255,14 +278,14 @@ export default function BreakThePress({
               <div className="btp-seq-card-label">Optimal route</div>
               <div className="puzzle-result-sequence">
                 {result.optimal_path.map((n, i) => (
-                  <span key={n}>
+                  <span key={`o-${i}`}>
                     <span className="seq-node seq-node-optimal">{label(n)}</span>
                     {i < result.optimal_path.length - 1 && <span className="seq-arrow">→</span>}
                   </span>
                 ))}
               </div>
               <span className="btp-seq-score" style={{ color: scoreColor(result.optimal_score) }}>
-                {Math.round(result.optimal_score * 100)}% escape probability
+                {Math.round(result.optimal_score * 100)}% success chance
               </span>
             </div>
           </div>
