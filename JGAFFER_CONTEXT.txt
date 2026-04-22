@@ -1,0 +1,311 @@
+================================================================================
+JGAFFER — PROJECT CONTEXT DOCUMENT
+Last updated: April 2026
+================================================================================
+
+--------------------------------------------------------------------------------
+1. THE NAME
+--------------------------------------------------------------------------------
+
+JGaffer = Java Manager.
+
+The user IS the manager — assisted by Java's brain. Not a stats consumer.
+Not a puzzle solver. A manager who understands why their team plays the way
+they play.
+
+
+--------------------------------------------------------------------------------
+2. THE PROBLEM
+--------------------------------------------------------------------------------
+
+A casual football fan watching a match sees 22 players moving around a pitch
+and feels the emotion — the goal, the miss, the tackle — but has no framework
+to understand the intelligence behind it.
+
+They don't know that the reason the goal happened was set up 15 passes ago by
+a rotation the manager drilled in training for three weeks.
+
+The tools that exist today serve two audiences that aren't the casual fan:
+  - Stat dashboards (Sofascore, FBref) — built for analysts who already speak
+    the language
+  - YouTube breakdowns — passive, 15 minutes long, forgotten by next match
+
+Nobody is building for the fan in the middle — the person who watches every
+game, has strong opinions, but has never had the chance to feel what it is
+like to make a tactical decision.
+
+
+--------------------------------------------------------------------------------
+3. THE VISION
+--------------------------------------------------------------------------------
+
+"Providing an expert guide to a casual fan."
+
+JGaffer's job is to close the gap between emotion and understanding — not by
+teaching tactics as a subject, but by showing the fan the manager's intention
+in real time, at the moment it is unfolding, in language they already
+understand.
+
+The fan does not become an analyst. They become someone who watches the same
+game and sees more of it.
+
+One sentence version:
+"The Duolingo for Football Tactics."
+
+Duolingo does not give you a dictionary. It makes you play a game to learn a
+language. JGaffer does not give you a stat dashboard. It makes you experience
+a decision to learn the language of the pitch.
+
+
+--------------------------------------------------------------------------------
+4. THE USER
+--------------------------------------------------------------------------------
+
+A Premier League fan who:
+  - Watches every weekend
+  - Uses Twitter/X during games
+  - Has strong opinions about their club
+  - Could not explain what a "half-space" is
+  - Paid 12 euros for a ticket and wants to appreciate the football on display
+    — not just be frustrated that their team is not scoring
+
+They feel the game fine. What they cannot do is answer WHY things happen.
+
+
+--------------------------------------------------------------------------------
+5. THE CORE INSIGHT
+--------------------------------------------------------------------------------
+
+Every player on a football pitch has an expected position — where their role,
+formation, and game situation says they SHOULD be.
+
+At any given moment there is a delta between where they are and where they
+should be. That delta is not random noise. That delta is the tactical story.
+
+  - A defender 5 metres ahead of where he should be → space behind him
+  - A midfielder 3 metres too narrow → the wide channel is open
+  - A striker not making the run his formation demands → the attack breaks down
+
+The casual fan watches the ball. The actual game is happening in those deltas.
+
+"Should be" means: how well the players are implementing the manager's system.
+
+
+--------------------------------------------------------------------------------
+6. THE MANAGER DNA CONCEPT
+--------------------------------------------------------------------------------
+
+Every manager has a tactical fingerprint. Not just a formation — a behaviour.
+
+Examples:
+  - Luis Enrique (PSG): fluid front-three rotations. Dembele starts as CF but
+    drifts to RW. Kvaratskhelia moves to CF. Doue takes the left. These
+    rotations are designed, not random.
+  - Pep Guardiola (Man City): inverted fullbacks, high defensive line,
+    goalkeeper as passing option, half-space occupation.
+  - Jurgen Klopp (Liverpool): gegenpressing trigger within 5 seconds of losing
+    the ball, vertical transitions, high energy pressing in wide areas.
+
+The manager's DNA is:
+  1. A historic, predominant way of playing
+  2. Tactical instructions given to players — strict discipline OR freedom
+  3. Observable in positional and event data across enough matches
+  4. The thing that makes unusual player positions make sense
+
+The fan who understands this watches Enrique's front three rotate and thinks
+"oh — that is the plan" instead of "why is Dembele on the right?"
+
+
+--------------------------------------------------------------------------------
+7. THE DATA REQUIRED
+--------------------------------------------------------------------------------
+
+The most important data is SPATIAL — not statistical.
+
+What is needed:
+  1. Freeze frame positions — all 22 players + ball at the exact moment a
+     decision is made (pass played, shot taken, run started). Not averages.
+     Not heatmaps. Snapshots at decision moments.
+
+  2. Sequential event chains — the 5-10 events leading to a moment. Goals and
+     chances do not happen in isolation. The story starts several passes ago.
+
+  3. Pressure context — distance of nearest defender, direction they are
+     coming from, time the player had on the ball. Turns "bad decision" into
+     "actually that was almost impossible."
+
+  4. Formation and role data — what shape is each team in, what is each
+     player's designated role in the manager's system.
+
+  5. Manager behaviour profiles — observable tactical patterns inferred from
+     tracking data across multiple matches.
+
+What is NOT needed:
+  - Season-long heatmaps (averages hide the specific moment)
+  - PPDA, progressive carries, xA (nobody outside analytics Twitter knows
+    these)
+  - Transfer values, wages (different product entirely)
+
+Best available data source: StatsBomb 360 open data (freeze frames of all 22
+players at every event — exactly what is needed).
+
+The key principle: humans understand geometry instantly. Show them where 22
+people are and where the gap is and they understand without needing football
+knowledge. The data job is to make that geometry visible.
+
+
+--------------------------------------------------------------------------------
+8. THE PRODUCT JOURNEY (VERSION HISTORY)
+--------------------------------------------------------------------------------
+
+V1 — Tactical Recommendation Engine
+"Tell me what to do, manager."
+Problem: You cannot recommend tactics to someone who does not speak the
+language yet. Like giving someone a recipe in French when they have never
+cooked.
+
+V2 — Learn Through Puzzles (current build)
+"Let me teach you the language first."
+Problem: The puzzles are still abstract. A node graph of passing routes does
+not feel like football. The fan is learning ABOUT the game, not experiencing
+it.
+What was built: RAG pipeline, HistGradientBoosting escape probability model,
+Break the Press puzzle, playstyle classification, result screen with real-
+world team equivalents and pundit commentary.
+
+V3 — The Manager's Mind (target)
+"Now you understand why the manager does what he does — and you can see it
+happening in real time."
+The fan is not learning tactics in isolation. They are watching Enrique and
+suddenly thinking "oh — that rotation — I know why he set that up."
+
+
+--------------------------------------------------------------------------------
+9. THE PRODUCT LOOP (NON-NEGOTIABLE)
+--------------------------------------------------------------------------------
+
+Every feature must fit this four-step loop. If it does not fit, cut it.
+
+  Step 1 — THE HOOK (Moment)
+  "Did you see that Arsenal goal yesterday?"
+
+  Step 2 — THE CHALLENGE (Mission)
+  "Most people missed the run Saka made to drag the defender away. Can you
+  see the space he created?"
+
+  Step 3 — THE ACTION (Interaction)
+  The user makes a decision — moves a player, picks a pass, identifies a gap.
+  Something active. Not passive reading.
+
+  Step 4 — THE REWARD (Understanding)
+  "Spot on. That is called a decoy run. Arteta drills this every week in
+  training. Here is how it opened the goal."
+
+
+--------------------------------------------------------------------------------
+10. THE SUCCESS CONDITION
+--------------------------------------------------------------------------------
+
+A user goes from the home screen to a genuine "aha" moment in under 60
+seconds and says: "Oh — I get why they did that now."
+
+Not "cool graphics." Not "interesting stats." That specific sentence.
+
+
+--------------------------------------------------------------------------------
+11. WHAT NEEDS TO BE REWORKED (CURRENT PRIORITIES)
+--------------------------------------------------------------------------------
+
+  1. DATA LAYER
+     Understand and design the schema required to encode manager DNA.
+     Research one manager deeply before building the system to store them.
+     StatsBomb 360 freeze frames are the target data source.
+
+  2. FLOW
+     The time-to-meaning is too long. Too many steps before the fan reaches
+     the moment that matters. Target: one sentence, one visual, one decision.
+
+  3. THE INTERACTION
+     Pick ONE interaction that perfectly expresses the vision. Not three puzzle
+     types. One. Go deep on it.
+
+  4. DATA SWAP (not a full rewrite)
+     The RAG pipeline stays — point it at better data.
+     The ML model (escape probability) likely goes — wrong question.
+     The three-layer architecture (React / Spring Boot / FastAPI) stays.
+     The data changes.
+
+  5. BACKEND-FIRST PRINCIPLE
+     The backend sends meaning. The frontend renders it.
+     If a developer reads the JSON and immediately understands the tactical
+     story being told — the UI will make sense.
+     Formation coordinates and shift logic should NOT live in the frontend.
+
+  6. CLARITY
+     For every feature: who is confused without it, and who understands
+     because of it? If you cannot name a specific person in a specific moment,
+     the feature is not clear yet.
+
+
+--------------------------------------------------------------------------------
+12. WHAT TO BUILD NEXT (ORDERED)
+--------------------------------------------------------------------------------
+
+Before any code:
+  a. Pick one manager. Study them until you can write down 5 observable
+     tactical behaviours.
+  b. Confirm StatsBomb 360 as the data source. Understand the freeze frame
+     schema.
+  c. Design the one core interaction on paper. Not in code. On paper.
+
+Then code:
+  d. Build the manager DNA schema around what you learned in step (a).
+  e. Swap the data source. Keep the pipeline architecture.
+  f. Build one interaction end to end — not a prototype, a working thing.
+
+Then:
+  g. Rebuild the flow around that one working interaction.
+
+
+--------------------------------------------------------------------------------
+13. CURRENT TECHNICAL STACK
+--------------------------------------------------------------------------------
+
+Frontend:   React 18 / TypeScript / Vite
+Backend:    Spring Boot 3 / Java 23 (port 8080)
+AI/ML:      FastAPI / Python (port 8000)
+Vector DB:  ChromaDB (local — target: Pinecone or equivalent for production)
+LLM:        GPT-4o-mini (OpenAI)
+Data:       StatsBomb open data (CSV — target: StatsBomb 360 freeze frames)
+Hosting:    Local development only
+
+Spring Boot role: API gateway, formation lookup, proxies to FastAPI
+FastAPI role:     RAG retrieval, ML model inference, GPT calls
+
+
+--------------------------------------------------------------------------------
+14. THE QUESTION TO ASK BEFORE BUILDING ANY FEATURE
+--------------------------------------------------------------------------------
+
+"Does this help a casual fan understand one specific thing that happened in a
+real match — faster than watching a YouTube video?"
+
+If yes — build it.
+If no — cut it.
+
+
+--------------------------------------------------------------------------------
+15. SCOPE FOR V3 (DO NOT EXPAND BEYOND THIS)
+--------------------------------------------------------------------------------
+
+  - One league: Premier League
+  - One puzzle/interaction type: TBD (design before build)
+  - One data source: StatsBomb 360
+  - One manager profile to start: TBD
+
+If a user can go from the home screen to "Oh, I get why they did that now"
+in under 60 seconds — the project is a success.
+
+================================================================================
+END OF CONTEXT DOCUMENT
+================================================================================
